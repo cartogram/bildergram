@@ -3,8 +3,9 @@
 // Handles cron triggers and coordinates per-device rendering.
 // ============================================================
 
-import type { RenderMetadata } from "../types";
+import type { AppEnv, RenderMetadata } from "../types";
 import { DEVICES, getDeviceById } from "../devices";
+import { aggregateDeviceData } from "../data/aggregate";
 import { renderDeviceImage } from "./renderer";
 
 /**
@@ -25,7 +26,7 @@ export async function handleCronTrigger(
  * Each device renders independently with error isolation.
  */
 export async function renderAllDevices(
-  env: Env,
+  env: AppEnv,
   deviceId?: string,
 ): Promise<void> {
   const targets = deviceId
@@ -38,7 +39,11 @@ export async function renderAllDevices(
       const startTime = Date.now();
 
       try {
-        const pngBuffer = await renderDeviceImage(device, env);
+        // Phase 3: aggregate per-device data from the configured sources
+        // (weather / calendar / tasks) with cached-data fallbacks.
+        const dashboard = await aggregateDeviceData(device, env);
+        const pngBuffer = await renderDeviceImage(device, dashboard);
+        const hadErrors = Object.values(dashboard.errors).some((v) => v === true);
         const renderedAt = Math.floor(Date.now() / 1000);
 
         // Write to R2 with metadata
@@ -49,7 +54,13 @@ export async function renderAllDevices(
             deviceId: device.id,
             fileSize: pngBuffer.byteLength.toString(),
             layout: device.layout,
-            hadErrors: "false",
+            hadErrors: hadErrors ? "true" : "false",
+            // Cache the last-known data per source so failed sources can
+            // still be displayed later (with a warning icon).
+            cachedWeather: dashboard.weather ? JSON.stringify(dashboard.weather) : "",
+            cachedForecast: dashboard.forecast?.length ? JSON.stringify(dashboard.forecast) : "",
+            cachedEvents: dashboard.events?.length ? JSON.stringify(dashboard.events) : "",
+            cachedTasks: dashboard.tasks?.length ? JSON.stringify(dashboard.tasks) : "",
           } satisfies Record<keyof RenderMetadata, string>,
         });
 

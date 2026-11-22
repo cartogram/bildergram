@@ -9,8 +9,8 @@ Renders high-contrast household dashboards as 1-bit/grayscale PNGs and serves th
 ```
 External APIs ──→ Cloudflare Worker (Cron) ──→ R2 Storage
                        │                          │
-                       │  SVG → PNG pipeline       │
-                       │  (resvg-wasm)             │
+                       │  Bitmap render pipeline     │
+                       │  (pure JS, no WASM)         │
                        │                          │
 Kindle Client ──→ Worker (HTTP) ───────────→ R2 (stream PNG)
 (trmnl.koplugin)   GET /api/display
@@ -22,7 +22,7 @@ Kindle Client ──→ Worker (HTTP) ───────────→ R2 (s
 - **Runtime**: Cloudflare Workers (V8 isolate)
 - **Build**: Vite 6 + `@cloudflare/vite-plugin`
 - **Storage**: Cloudflare R2
-- **Rendering**: SVG → PNG via `@resvg/resvg-wasm` (Phase 3)
+- **Rendering**: pure-JS bitmap renderer (bitmap font + shapes) → 1-bit grayscale PNG
 - **Scheduling**: Cloudflare Cron Triggers
 - **Admin UI**: Vanilla TypeScript SPA bundled via Vite
 
@@ -154,5 +154,5 @@ bildergram/
 
 - [x] **Phase 1**: Project scaffolding — Vite + Worker + R2 + mock handlers
 - [x] **Phase 2**: End-to-end client validation with Kindle #1 (token auth, JSON payload, R2→media flow validated on workerd dev server)
-- [ ] **Phase 3**: Data aggregation engine + resvg-wasm rendering + dithering
+- [x] **Phase 3**: Data aggregation & E-Ink image engine — OpenWeatherMap weather + forecast, Google Calendar/iCal events, Todoist tasks, data-driven dashboard layout, pure-JS bitmap renderer (Arimo-based bitmap font), 1-bit grayscale PNG output, graceful degradation to cached data
 - [ ] **Phase 4**: Multi-device expansion + admin dashboard polish

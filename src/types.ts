@@ -2,6 +2,15 @@
 // Shared type definitions
 // ============================================================
 
+/** Cloudflare Worker environment — core bindings plus Phase 3 secrets. */
+export interface AppEnv extends Env {
+  // Phase 3 external API secrets (set via `wrangler secret put`)
+  OPENWEATHERMAP_API_KEY?: string;
+  GOOGLE_CALENDAR_ACCESS_TOKEN?: string;
+  TODOIST_API_KEY?: string;
+  HOME_ASSISTANT_TOKEN?: string;
+}
+
 /** Configuration for a single managed display device */
 export interface DeviceConfig {
   /** Internal device identifier */
@@ -24,6 +33,18 @@ export interface DeviceConfig {
   layout: string;
   /** R2 object key for the latest rendered image */
   r2Key: string;
+  /** OpenWeatherMap city for the weather widget (e.g. "Berlin") */
+  weatherCity?: string;
+  /** Google Calendar calendar ID (defaults to "primary" when a token is set) */
+  calendarId?: string;
+  /** iCal URL fallback — used when no Google Calendar access token is set */
+  calendarIcsUrl?: string;
+  /** Show the Todoist tasks widget (requires the TODOIST_API_KEY secret) */
+  tasksEnabled?: boolean;
+  /** Max calendar events per render (default 4) */
+  maxCalendarEvents?: number;
+  /** Max tasks per render (default 5) */
+  maxTasks?: number;
 }
 
 /** TRMNL-compliant /api/display JSON response */
@@ -48,4 +69,97 @@ export interface RenderMetadata {
   layout: string;
   /** Whether the render encountered any upstream errors */
   hadErrors: boolean;
+  /** Cached weather data (JSON) — used when the weather source failed */
+  cachedWeather?: string;
+  /** Cached 5-day forecast (JSON) */
+  cachedForecast?: string;
+  /** Cached calendar events (JSON) */
+  cachedEvents?: string;
+  /** Cached Todoist tasks (JSON) */
+  cachedTasks?: string;
+}
+
+// ------------------------------------------------------------------
+// Phase 3 — Aggregated dashboard data
+// ------------------------------------------------------------------
+
+/** Current weather conditions (from the OpenWeatherMap API) */
+export interface WeatherData {
+  /** Current temperature in °C */
+  temp: number;
+  /** "Feels like" temperature in °C */
+  feelsLike: number;
+  /** Humidity percentage (0–100) */
+  humidity: number;
+  /** Wind speed in m/s */
+  windSpeed: number;
+  /** Condition name from the API (e.g. "Clear", "Rain") */
+  condition: string;
+  /** Condition description (e.g. "clear sky") */
+  description: string;
+  /** Icon slug ("sunny" | "cloudy" | "rain" | "storm" | "snow" | "fog") */
+  iconName: string;
+  /** Latitude used for the forecast lookup */
+  lat?: number;
+  /** Longitude used for the forecast lookup */
+  lon?: number;
+}
+
+/** Forecast row (from the OpenWeatherMap onecall endpoint) */
+export interface ForecastDay {
+  /** Display date (e.g. "Sun 2 Jun") */
+  date: string;
+  /** Condition name (e.g. "Clouds") */
+  condition: string;
+  /** Icon slug */
+  iconName: string;
+  /** Daily high temperature in °C */
+  high: number;
+  /** Daily low temperature in °C */
+  low: number;
+}
+
+/** A single calendar event shown in the calendar widget */
+export interface CalendarEvent {
+  /** Event title */
+  title: string;
+  /** Display start string (e.g. "14:30" or "All day") */
+  start: string;
+  /** ISO 8601 start (used for sorting) */
+  startIso: string;
+  /** Whether the event is all-day */
+  allDay: boolean;
+  /** Display end string, if any */
+  end?: string;
+  /** Event location, if any */
+  location?: string;
+  /** Event description, if any */
+  description?: string;
+}
+
+/** A Todoist task shown in the tasks widget */
+export interface Task {
+  /** Task content */
+  content: string;
+  /** Priority 1 (low) – 4 (urgent); higher sorts first */
+  priority: number;
+  /** Display due date, if any */
+  due?: string;
+}
+
+/** Source error flags — set when fresh data was unavailable for a source */
+export interface SourceErrors {
+  weather?: boolean;
+  calendar?: boolean;
+  tasks?: boolean;
+}
+
+/** Aggregated dashboard data for one device (Phase 3) */
+export interface DashboardData {
+  weather?: WeatherData;
+  forecast?: ForecastDay[];
+  events?: CalendarEvent[];
+  tasks?: Task[];
+  /** Per-source error flags (drives "stale data" warning icons) */
+  errors: SourceErrors;
 }

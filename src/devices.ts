@@ -23,6 +23,8 @@ export const DEVICES: DeviceConfig[] = [
     refreshRate: 900,     // 15 minutes
     layout: "household-overview",
     r2Key: "renders/kindle_01_latest.png",
+    weatherCity: "Berlin",
+    calendarId: "primary",
   },
   {
     id: "kindle_02",
@@ -35,6 +37,8 @@ export const DEVICES: DeviceConfig[] = [
     refreshRate: 1800,    // 30 minutes
     layout: "productivity",
     r2Key: "renders/kindle_02_latest.png",
+    calendarId: "primary",
+    tasksEnabled: true,
   },
 ];
 
