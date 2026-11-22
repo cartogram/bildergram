@@ -46,6 +46,16 @@ function timeAgo(ts: number | null): string {
   return `${Math.floor(seconds / 86400)}d ago`;
 }
 
+/** Escape HTML special characters so dynamic values can't inject markup. */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 async function fetchDevices(): Promise<DeviceStatus[]> {
   const res = await fetch("/api/admin/devices");
   const data = await res.json();
@@ -107,30 +117,30 @@ function renderDeviceCard(d: DeviceStatus): string {
   const statusLabel = d.hasImage ? (d.hadErrors ? "⚠ Stale (errors)" : "✓ Active") : "○ No image";
 
   const imgSrc = d.hasImage
-    ? `/media/${d.r2Key.split("/").pop()}?v=${d.lastRenderedAt ?? Date.now()}`
+    ? `/media/${escapeHtml(d.r2Key.split("/").pop() ?? "")}?v=${d.lastRenderedAt ?? Date.now()}`
     : "";
 
   return `
     <article class="device-card">
       <div class="device-header">
-        <h2>${d.name}</h2>
+        <h2>${escapeHtml(d.name)}</h2>
         <span class="status-badge ${statusClass}">${statusLabel}</span>
       </div>
 
       <div class="device-preview">
         ${d.hasImage
-          ? `<img src="${imgSrc}" alt="${d.name} preview"
-               class="preview-img ${d.orientation}" loading="lazy" />`
+          ? `<img src="${imgSrc}" alt="${escapeHtml(d.name)} preview"
+               class="preview-img ${escapeHtml(d.orientation)}" loading="lazy" />`
           : `<div class="preview-placeholder">No image rendered yet</div>`
         }
       </div>
 
       <table class="device-meta">
-        <tr><th>Device ID</th><td><code>${d.id}</code></td></tr>
-        <tr><th>MAC Address</th><td><code>${d.macAddress}</code></td></tr>
-        <tr><th>Resolution</th><td>${d.width} × ${d.height} px (${d.orientation})</td></tr>
+        <tr><th>Device ID</th><td><code>${escapeHtml(d.id)}</code></td></tr>
+        <tr><th>MAC Address</th><td><code>${escapeHtml(d.macAddress)}</code></td></tr>
+        <tr><th>Resolution</th><td>${d.width} × ${d.height} px (${escapeHtml(d.orientation)})</td></tr>
         <tr><th>Refresh Rate</th><td>${d.refreshRate}s (${d.refreshRate / 60} min)</td></tr>
-        <tr><th>Layout</th><td>${d.layout}</td></tr>
+        <tr><th>Layout</th><td>${escapeHtml(d.layout)}</td></tr>
         <tr><th>Last Rendered</th><td>${formatTimestamp(d.lastRenderedAt)} <small>${timeAgo(d.lastRenderedAt)}</small></td></tr>
         <tr><th>File Size</th><td>${formatBytes(d.fileSize)}</td></tr>
       </table>

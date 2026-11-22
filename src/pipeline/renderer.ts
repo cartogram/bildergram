@@ -161,11 +161,10 @@ function escapeXml(str: string): string {
 // ============================================================
 
 /**
- * Encode a minimal valid 1-bit white PNG image.
- * This is a placeholder — real rendering uses resvg-wasm.
- *
- * We store the SVG source in R2 metadata so the admin UI
- * can render a preview without needing the actual rasteriser.
+ * Encode a minimal valid 8-bit grayscale white PNG at the given size.
+ * This is the Phase 1 placeholder — Phase 3 replaces it with real
+ * SVG→PNG rasterisation (resvg-wasm), and stores the SVG source in
+ * R2 metadata so the admin UI can render previews without it.
  */
 function encodeMinimalPng(
   width: number,

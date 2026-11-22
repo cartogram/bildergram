@@ -2,20 +2,6 @@
 // Shared type definitions
 // ============================================================
 
-/**
- * Cloudflare Worker environment bindings.
- * Core bindings (DISPLAY_ASSETS, ASSETS, DEVICE_TOKEN_*)
- * are auto-generated in worker-configuration.d.ts by `wrangler types`.
- * This interface extends the generated Env with optional Phase 3 secrets.
- */
-export interface AppEnv extends Env {
-  // External API keys (Phase 3)
-  OPENWEATHERMAP_API_KEY?: string;
-  GOOGLE_CALENDAR_API_KEY?: string;
-  TODOIST_API_KEY?: string;
-  HOME_ASSISTANT_TOKEN?: string;
-}
-
 /** Configuration for a single managed display device */
 export interface DeviceConfig {
   /** Internal device identifier */
