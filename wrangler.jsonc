@@ -1,0 +1,31 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "bildergram",
+  "main": "./src/worker.ts",
+  "compatibility_date": "2026-11-19",
+
+  // R2 bucket for rendered e-ink PNG assets
+  "r2_buckets": [
+    {
+      "binding": "DISPLAY_ASSETS",
+      "bucket_name": "trmnl-display-assets"
+    }
+  ],
+
+  // Cron triggers for scheduled data aggregation & rendering
+  // Active hours (06:00–23:00): every 15 minutes
+  // Overnight  (23:00–06:00): every 60 minutes
+  "triggers": {
+    "crons": [
+      "*/15 6-22 * * *",
+      "0 23-5 * * *"
+    ]
+  },
+
+  // Vite SPA assets config — the @cloudflare/vite-plugin
+  // handles the directory mapping automatically at build time
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "binding": "ASSETS"
+  }
+}
