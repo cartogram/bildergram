@@ -25,7 +25,7 @@ export const DEVICES: DeviceConfig[] = [
     r2Key: "renders/kindle_01_latest.png",
     weatherCity: "Berlin",
     calendarIcsUrlEnvKey: "APPLE_CALENDAR_ICS_URL_01",
-    metric: { label: "Outdoor Temperature" },
+    metric: { label: "Tempelhof Field", source: "templehof" },
   },
   {
     id: "kindle_02",

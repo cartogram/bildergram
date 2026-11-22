@@ -15,13 +15,16 @@ export interface AppEnv extends Env {
 
 /**
  * Simple metric widget to show alongside the layout widgets —
- * the value is sourced from the weather data (temperature).
+ * the value is sourced from the weather data (temperature),
+ * or computed from local data sources like Templehof Field.
  */
 export interface MetricConfig {
   /** Widget title (e.g. "Outdoor Temperature") */
   label: string;
   /** Unit shown after the value — defaults to "°C" when weather is present */
   unit?: string;
+  /** Where the value comes from — "weather" (default) or "templehof" */
+  source?: "weather" | "templehof";
 }
 
 /** Configuration for a single managed display device */

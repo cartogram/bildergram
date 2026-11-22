@@ -125,20 +125,27 @@ device resolution.
 
 ## Metrics (Phase 5)
 
-Devices can show a **metric widget** — a single label + value + unit,
-sourced from the weather data (e.g. Outdoor Temperature on Kindle #1).
-Configure it per device via `DeviceConfig.metric`:
+Devices can show a **metric widget** — a single label + value + unit.
+Two sources exist:
+
+- `source: "weather"` (the default) — the value comes from
+  `data.weather.temp` (e.g. Outdoor Temperature). See
+  `metricValue`/`metricRows` in `src/pipeline/draw.ts`.
+- `source: "templehof"` — Kindle #1 shows the **Tempelhof Field** status
+  (open/closed + countdown to the next event), ported from
+  [openfeld](https://isthefeldopen.com) (`src/data/templehof.ts`): while the
+  field is open — "Open — closes 22:00" and "2h 15m to close" — or closed —
+  "Closed — opens 06:00" and "5h 12m until open".
+
+Configure it per device via `DeviceConfig.metric` —
+`{ label: string, unit?: string, source?: "weather" | "templehof" }`:
 
 ```ts
 {
   // ... other fields ...
-  metric: { label: "Outdoor Temperature", unit: "°C" },
+  metric: { label: "Tempelhof Field", source: "templehof" },
 }
 ```
-
-The value comes from `data.weather.temp` — see `metricValue`/`metricRows`
-in `src/pipeline/draw.ts`. To source a metric from another value, extend
-those functions.
 
 ## API Endpoints
 

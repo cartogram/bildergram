@@ -10,6 +10,7 @@
 import type { CalendarEvent, DashboardData, DeviceConfig, ForecastDay, Task, WeatherData } from "../types";
 import { Bitmap, drawCircleStroke, drawLine, drawRect, drawText, drawTriangle, textWidth } from "./bitmap";
 import { parseIcsDate } from "../data/calendar";
+import { getTemplehofStatus } from "../data/templehof";
 
 const MARGIN = 16;
 const FRAME = 3;
@@ -98,7 +99,8 @@ function widgetBoxes(device: DeviceConfig, data: DashboardData): WidgetBox[] {
 
   // Phase 5 — simple metric widget: a single label + value + unit.
   if (device.metric) {
-    add(device.metric.label, metricRows(device, data), !data.weather);
+    const source = device.metric.source;
+    add(device.metric.label, metricRows(device, data), !data.weather && source !== "templehof");
   }
 
   return boxes;
@@ -114,9 +116,30 @@ export function metricValue(data: DashboardData): string {
   return w && w.temp != null ? `${w.temp}` : "N/A";
 }
 
-function metricRows(device: DeviceConfig, data: DashboardData): string[] {
-  const unit = device.metric?.unit ?? (data.weather ? "°C" : "");
-  return [unit ? `${metricValue(data)} ${unit}` : metricValue(data)];
+/** Rows for the weather metric — value + unit. */
+function weatherMetricRows(data: DashboardData): string[] {
+  const unit = data.weather ? "°C" : "";
+  const value = metricValue(data);
+  return unit ? [`${value} ${unit}`] : [value];
+}
+
+/**
+ * Rows for the Templehof Field metric — state + countdown to the
+ * next event: "Open — closes 22:00" / "2h 15m to close" while open,
+ * "Closed — opens 06:00" / "5h 12m until open" while closed
+ * (logic ported from openfeld — see ./data/templehof.ts).
+ */
+function templehofRows(): string[] {
+  const status = getTemplehofStatus();
+  const state = status.open ? "Open — closes" : "Closed — opens";
+  const target = status.open ? status.closesAt : status.opensAt;
+  const verdict = status.open ? "to close" : "until open";
+  return [`${state} ${target}`, `${status.remaining} ${verdict}`];
+}
+
+export function metricRows(device: DeviceConfig, data: DashboardData): string[] {
+  if (device.metric?.source === "templehof") return templehofRows();
+  return weatherMetricRows(data);
 }
 
 // ------------------------------------------------------------------
