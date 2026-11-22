@@ -14,11 +14,11 @@
 
   // Cron triggers for scheduled data aggregation & rendering
   // Active hours (06:00–23:00): every 15 minutes
-  // Overnight  (23:00–06:00): every 60 minutes
+  // Overnight  (23:00–06:00): hourly — 00:00–06:00 and 23:00
   "triggers": {
     "crons": [
       "*/15 6-22 * * *",
-      "0 23-5 * * *"
+      "0 0-6,23 * * *"
     ]
   },
 

@@ -64,11 +64,12 @@ export async function renderAllDevices(
           err,
         );
 
-        // Graceful degradation: write a fallback error image if none exists yet
+        // Graceful degradation: if a stale image exists, keep serving it —
+        // R2 doesn't support metadata-only updates, so the error can't be
+        // flagged on the object itself. If no image exists yet, the device
+        // sees a 404 from /api/display until the next successful render.
         const existing = await env.DISPLAY_ASSETS.head(device.r2Key);
         if (existing) {
-          // Update metadata to flag the error, but keep the stale image
-          // R2 doesn't support metadata-only updates, so we leave it as-is
           console.log(
             `[render] Keeping stale image for ${device.name} (last rendered: ${existing.customMetadata?.renderedAt})`,
           );
