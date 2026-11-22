@@ -126,11 +126,27 @@ export function parseICal(ics: string): CalendarEvent[] {
   return events.sort((a, b) => a.startIso.localeCompare(b.startIso));
 }
 
-/** Format an ISO timestamp for display (clock for datetimes, date otherwise). */
+/** Parse an ICS date value: basic format ("20261225", "20260602T180000Z") or ISO. */
+function parseIcsDate(value: string): Date | null {
+  const m = value.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?$/);
+  if (m) {
+    const y = Number(m[1]);
+    const mo = Number(m[2]);
+    const d = Number(m[3]);
+    const hh = m[4] ? Number(m[4]) : 0;
+    const mi = m[5] ? Number(m[5]) : 0;
+    const ss = m[6] ? Number(m[6]) : 0;
+    return new Date(Date.UTC(y, mo - 1, d, hh, mi, ss));
+  }
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** Format an ICS/ISO timestamp for display (clock for datetimes, date otherwise). */
 export function formatClockOrDate(iso: string): string {
   if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
+  const d = parseIcsDate(iso);
+  if (!d || Number.isNaN(d.getTime())) return "";
   if (iso.includes("T")) {
     return d.toLocaleTimeString("en-GB", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" });
   }
