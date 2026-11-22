@@ -13,6 +13,17 @@ export interface AppEnv extends Env {
   APPLE_CALENDAR_ICS_URL_01?: string;
 }
 
+/**
+ * Simple metric widget to show alongside the layout widgets —
+ * the value is sourced from the weather data (temperature).
+ */
+export interface MetricConfig {
+  /** Widget title (e.g. "Outdoor Temperature") */
+  label: string;
+  /** Unit shown after the value — defaults to "°C" when weather is present */
+  unit?: string;
+}
+
 /** Configuration for a single managed display device */
 export interface DeviceConfig {
   /** Internal device identifier */
@@ -33,6 +44,8 @@ export interface DeviceConfig {
   refreshRate: number;
   /** Active layout template name */
   layout: string;
+  /** Simple metric widget (label + value + unit) — see MetricConfig */
+  metric?: MetricConfig;
   /** R2 object key for the latest rendered image */
   r2Key: string;
   /** OpenWeatherMap city for the weather widget (e.g. "Berlin") */

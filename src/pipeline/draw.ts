@@ -1,9 +1,10 @@
 // ============================================================
-// Dashboard Drawing (Phase 3)
+// Dashboard Drawing (Phase 3/5)
 // drawDashboard renders a device's layout onto a bitmap canvas
 // from aggregated DashboardData, using the pure-JS bitmap engine:
 // a header (name, clock, date), per-layout widgets (calendar,
-// weather, tasks) with rows of text, and a footer.
+// weather, tasks), the device's metric widget (Phase 5), and a
+// footer.
 // ============================================================
 
 import type { CalendarEvent, DashboardData, DeviceConfig, ForecastDay, Task, WeatherData } from "../types";
@@ -95,7 +96,27 @@ function widgetBoxes(device: DeviceConfig, data: DashboardData): WidgetBox[] {
   if (hasWeather) add("Weather", weatherRows(device, data), data.errors.weather, data.weather?.iconName);
   if (hasTasks) add("Tasks", taskRows(device, data), data.errors.tasks);
 
+  // Phase 5 — simple metric widget: a single label + value + unit.
+  if (device.metric) {
+    add(device.metric.label, metricRows(device, data), !data.weather);
+  }
+
   return boxes;
+}
+
+// ------------------------------------------------------------------
+// Phase 5 — Metric widget
+// ------------------------------------------------------------------
+
+/** The metric's current value — sourced from the weather temperature. */
+export function metricValue(data: DashboardData): string {
+  const w = data.weather;
+  return w && w.temp != null ? `${w.temp}` : "N/A";
+}
+
+function metricRows(device: DeviceConfig, data: DashboardData): string[] {
+  const unit = device.metric?.unit ?? (data.weather ? "°C" : "");
+  return [unit ? `${metricValue(data)} ${unit}` : metricValue(data)];
 }
 
 // ------------------------------------------------------------------
@@ -148,6 +169,10 @@ function taskRows(device: DeviceConfig, data: DashboardData): string[] {
 function taskLine(t: Task): string {
   const priority = t.priority >= 4 ? "P4" : t.priority >= 3 ? "P3" : t.priority >= 2 ? "P2" : "P1";
   return `[${priority}] ${t.content}`;
+}
+
+function truncate(s: string, n: number): string {
+  return s.length > n ? `${s.slice(0, n - 1)}…` : s;
 }
 
 // ------------------------------------------------------------------
@@ -212,8 +237,4 @@ function clockDate(): string {
 
 function layoutLabel(device: DeviceConfig): string {
   return `Layout: ${device.layout} · ${device.orientation} · ${device.width}×${device.height}`;
-}
-
-function truncate(s: string, n: number): string {
-  return s.length > n ? `${s.slice(0, n - 1)}…` : s;
 }

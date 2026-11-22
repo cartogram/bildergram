@@ -123,6 +123,23 @@ UTC) and writes the PNG to R2; Kindle #1 wakes on its 900 s refresh, GETs
 Until Phase 3, the rendered image is a valid white placeholder at the full
 device resolution.
 
+## Metrics (Phase 5)
+
+Devices can show a **metric widget** — a single label + value + unit,
+sourced from the weather data (e.g. Outdoor Temperature on Kindle #1).
+Configure it per device via `DeviceConfig.metric`:
+
+```ts
+{
+  // ... other fields ...
+  metric: { label: "Outdoor Temperature", unit: "°C" },
+}
+```
+
+The value comes from `data.weather.temp` — see `metricValue`/`metricRows`
+in `src/pipeline/draw.ts`. To source a metric from another value, extend
+those functions.
+
 ## API Endpoints
 
 | Endpoint | Method | Description |
