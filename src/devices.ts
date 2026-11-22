@@ -14,8 +14,8 @@ import type { DeviceConfig } from "./types";
 export const DEVICES: DeviceConfig[] = [
   {
     id: "kindle_01",
-    name: "Kitchen Display",
-    macAddress: "AA:BB:CC:DD:EE:01",
+    name: "Matt Display",
+    macAddress: "74:75:48:81:93:FA",
     tokenEnvKey: "DEVICE_TOKEN_KINDLE_01",
     width: 1024,
     height: 758,
@@ -29,7 +29,7 @@ export const DEVICES: DeviceConfig[] = [
   },
   {
     id: "kindle_02",
-    name: "Office Display",
+    name: "Fiona Display",
     macAddress: "AA:BB:CC:DD:EE:02",
     tokenEnvKey: "DEVICE_TOKEN_KINDLE_02",
     width: 1440,

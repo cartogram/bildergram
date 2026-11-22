@@ -8,6 +8,35 @@ import { DEVICES, getDeviceById } from "../devices";
 import { aggregateDeviceData } from "../data/aggregate";
 import { renderDeviceImage } from "./renderer";
 
+// ============================================================
+// R2 user metadata — kept under Cloudflare's size limit
+// ============================================================
+
+/** R2 caps object user metadata near 2KB (error 10012 when exceeded). */
+export const METADATA_MAX_BYTES = 1150;
+
+const CACHED_KEYS = ["cachedWeather", "cachedForecast", "cachedEvents", "cachedTasks"] as const;
+
+/**
+ * Shrink or drop the cached-data blobs until the serialized metadata
+ * fits R2's limit. Fixed fields (renderedAt, renderCount, ...) are never
+ * trimmed — the live render always carries the full data; the cached
+ * blobs only help if a source later fails.
+ */
+export function fitMetadata(meta: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = { ...meta };
+  while (JSON.stringify(out).length > METADATA_MAX_BYTES) {
+    const key = [...CACHED_KEYS]
+      .filter((k) => out[k])
+      .sort((a, b) => out[b].length - out[a].length)[0];
+    if (!key) break; // only fixed fields remain — nothing more we can trim
+    const half = Math.max(0, Math.floor(out[key].length / 2));
+    if (half === 0) delete out[key];
+    else out[key] = out[key].slice(0, half);
+  }
+  return out;
+}
+
 /**
  * Cron trigger handler.
  * Iterates all registered devices and renders their dashboard images
@@ -52,25 +81,27 @@ export async function renderAllDevices(
         const prevCount = parseInt(head?.customMetadata?.renderCount ?? "0", 10);
         const renderCount = (Number.isNaN(prevCount) ? 0 : prevCount + 1).toString();
 
-        // Write to R2 with metadata
+        // Write to R2 with metadata — fitMetadata trims the cached
+        // blobs so the metadata stays under R2's user-metadata limit.
+        const metadata = {
+          renderedAt: renderedAt.toString(),
+          deviceId: device.id,
+          fileSize: pngBuffer.byteLength.toString(),
+          layout: device.layout,
+          hadErrors: hadErrors ? "true" : "false",
+          renderCount,
+          lastOutcome: "ok",
+          lastError: "",
+          // Cache the last-known data per source so failed sources can
+          // still be displayed later (with a warning icon).
+          cachedWeather: dashboard.weather ? JSON.stringify(dashboard.weather) : "",
+          cachedForecast: dashboard.forecast?.length ? JSON.stringify(dashboard.forecast) : "",
+          cachedEvents: dashboard.events?.length ? JSON.stringify(dashboard.events) : "",
+          cachedTasks: dashboard.tasks?.length ? JSON.stringify(dashboard.tasks) : "",
+        } satisfies Record<keyof RenderMetadata, string>;
         await env.DISPLAY_ASSETS.put(device.r2Key, pngBuffer, {
           httpMetadata: { contentType: "image/png" },
-          customMetadata: {
-            renderedAt: renderedAt.toString(),
-            deviceId: device.id,
-            fileSize: pngBuffer.byteLength.toString(),
-            layout: device.layout,
-            hadErrors: hadErrors ? "true" : "false",
-            renderCount,
-            lastOutcome: "ok",
-            lastError: "",
-            // Cache the last-known data per source so failed sources can
-            // still be displayed later (with a warning icon).
-            cachedWeather: dashboard.weather ? JSON.stringify(dashboard.weather) : "",
-            cachedForecast: dashboard.forecast?.length ? JSON.stringify(dashboard.forecast) : "",
-            cachedEvents: dashboard.events?.length ? JSON.stringify(dashboard.events) : "",
-            cachedTasks: dashboard.tasks?.length ? JSON.stringify(dashboard.tasks) : "",
-          } satisfies Record<keyof RenderMetadata, string>,
+          customMetadata: fitMetadata(metadata),
         });
 
         const elapsed = Date.now() - startTime;
@@ -97,12 +128,12 @@ export async function renderAllDevices(
           const message = err instanceof Error ? err.message : String(err);
           await env.DISPLAY_ASSETS.put(device.r2Key, existing.body, {
             httpMetadata: { contentType: "image/png" },
-            customMetadata: {
+            customMetadata: fitMetadata({
               ...(existing.customMetadata ?? {}),
               hadErrors: "true",
               lastOutcome: "error",
               lastError: message,
-            },
+            }),
           });
         }
       }
