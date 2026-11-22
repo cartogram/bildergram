@@ -70,6 +70,51 @@ For local development, these are configured in `.dev.vars` (not committed).
 
 Edit `src/devices.ts` to add or modify Kindle device profiles (MAC address, resolution, orientation, refresh rate, layout template).
 
+## Kindle #1 — Client Setup (KOReader + trmnl.koplugin)
+
+Per the PRD, Kindle #1 is the first validation target (Kitchen Display —
+landscape, 1024 × 758 px, 15-min refresh).
+
+**Prerequisites**
+
+- Kindle is jailbroken and runs a modern build of KOReader.
+- The `trmnl.koplugin` client plugin is available — copy it to the Kindle:
+  ```
+  cp -R trmnl.koplugin <kindle-mount>/koreader/plugins/
+  ```
+  (or transfer over USB into `/koreader/plugins/`)
+
+**API Key Setup**
+
+Save the assigned device token on the Kindle:
+
+```
+/koreader/plugins/trmnl.koplugin/apikey.txt
+```
+
+For production, this token is the `DEVICE_TOKEN_KINDLE_01` Cloudflare Worker
+secret (set with `npx wrangler secret put DEVICE_TOKEN_KINDLE_01`).
+
+**Base URL Configuration**
+
+In KOReader: **Tools → TRMNL Display → Configure TRMNL → Server Base URL** —
+set it to the production Cloudflare Workers URL, e.g.
+`https://bildergram.your-subdomain.workers.dev` (no trailing slash).
+
+**Power & Display Tuning**
+
+- Desk/Wall Power Mode: enable **Tools → More tools → Keep alive** so the
+  Kindle stays connected for rendering.
+- Battery Saver Mode: keep native suspend enabled; configure
+  `trmnl.koplugin` wake intervals to match the device's `refreshRate`
+  (Kindle #1: 900 s).
+
+**Expected first run:** the render pipeline runs every 15 minutes (06:00–23:00
+UTC) and writes the PNG to R2; Kindle #1 wakes on its 900 s refresh, GETs
+`/api/display`, and downloads the PNG from `/media/kindle_01_latest.png`.
+Until Phase 3, the rendered image is a valid white placeholder at the full
+device resolution.
+
 ## API Endpoints
 
 | Endpoint | Method | Description |
@@ -108,6 +153,6 @@ bildergram/
 ## Implementation Phases
 
 - [x] **Phase 1**: Project scaffolding — Vite + Worker + R2 + mock handlers
-- [ ] **Phase 2**: End-to-end client validation with Kindle #1
+- [x] **Phase 2**: End-to-end client validation with Kindle #1 (token auth, JSON payload, R2→media flow validated on workerd dev server)
 - [ ] **Phase 3**: Data aggregation engine + resvg-wasm rendering + dithering
 - [ ] **Phase 4**: Multi-device expansion + admin dashboard polish
