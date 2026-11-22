@@ -8,6 +8,7 @@
 
 import type { CalendarEvent, DashboardData, DeviceConfig, ForecastDay, Task, WeatherData } from "../types";
 import { Bitmap, drawCircleStroke, drawLine, drawRect, drawText, drawTriangle, textWidth } from "./bitmap";
+import { parseIcsDate } from "../data/calendar";
 
 const MARGIN = 16;
 const FRAME = 3;
@@ -102,7 +103,12 @@ function widgetBoxes(device: DeviceConfig, data: DashboardData): WidgetBox[] {
 // ------------------------------------------------------------------
 
 function calendarRows(device: DeviceConfig, data: DashboardData): string[] {
-  const events = data.events ?? [];
+  // Show only upcoming events — feeds include past entries. Unparseable
+  // timestamps are kept (assume upcoming).
+  const events = (data.events ?? []).filter((e) => {
+    const d = parseIcsDate(e.startIso);
+    return d === null || d.getTime() >= Date.now() - 60_000;
+  });
   const max = device.maxCalendarEvents ?? 4;
   if (events.length > 0) {
     return events.slice(0, max).map((e) => truncate(eventLine(e), 100));

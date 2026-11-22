@@ -127,7 +127,7 @@ export function parseICal(ics: string): CalendarEvent[] {
 }
 
 /** Parse an ICS date value: basic format ("20261225", "20260602T180000Z") or ISO. */
-function parseIcsDate(value: string): Date | null {
+export function parseIcsDate(value: string): Date | null {
   const m = value.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?$/);
   if (m) {
     const y = Number(m[1]);
