@@ -42,6 +42,10 @@ export async function handleAdminApi(
           lastRenderedAt: meta?.renderedAt ? parseInt(meta.renderedAt, 10) : null,
           fileSize: r2Head?.size ?? null,
           hadErrors: meta?.hadErrors === "true",
+          // Phase 4 health diagnostics
+          renderCount: meta?.renderCount ? parseInt(meta.renderCount, 10) : null,
+          lastOutcome: meta?.lastOutcome ?? null,
+          lastError: meta?.lastError || null,
         };
       }),
     );

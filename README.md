@@ -155,4 +155,4 @@ bildergram/
 - [x] **Phase 1**: Project scaffolding — Vite + Worker + R2 + mock handlers
 - [x] **Phase 2**: End-to-end client validation with Kindle #1 (token auth, JSON payload, R2→media flow validated on workerd dev server)
 - [x] **Phase 3**: Data aggregation & E-Ink image engine — OpenWeatherMap weather + forecast, Google Calendar/iCal events, Todoist tasks, data-driven dashboard layout, pure-JS bitmap renderer (Arimo-based bitmap font), 1-bit grayscale PNG output, graceful degradation to cached data
-- [ ] **Phase 4**: Multi-device expansion + admin dashboard polish
+- [x] **Phase 4**: Multi-device expansion + admin dashboard polish (Kindle #2 profile; SPA served at /admin; side-by-side device previews; health diagnostics: renderCount, lastOutcome, lastError + auto-refresh; manual render triggers)

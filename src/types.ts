@@ -69,6 +69,12 @@ export interface RenderMetadata {
   layout: string;
   /** Whether the render encountered any upstream errors */
   hadErrors: boolean;
+  /** Number of successful renders so far (incremented per render) */
+  renderCount: string;
+  /** Last render outcome: "ok" or "error" */
+  lastOutcome: string;
+  /** Last render error message (when `lastOutcome` is "error") */
+  lastError: string;
   /** Cached weather data (JSON) — used when the weather source failed */
   cachedWeather?: string;
   /** Cached 5-day forecast (JSON) */

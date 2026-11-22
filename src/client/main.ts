@@ -20,9 +20,15 @@ interface DeviceStatus {
   lastRenderedAt: number | null;
   fileSize: number | null;
   hadErrors: boolean;
+  renderCount: number | null;
+  lastOutcome: string | null;
+  lastError: string | null;
 }
 
 const app = document.getElementById("app")!;
+
+/** Refresh timer (cleared/restarted on each render). */
+let refreshTimer: ReturnType<typeof setInterval> | null = null;
 
 function formatTimestamp(ts: number | null): string {
   if (!ts) return "Never";
@@ -90,6 +96,8 @@ function renderApp(devices: DeviceStatus[]): void {
   `;
 
   // Wire up buttons
+  if (refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(() => { init(); }, 30_000);
   document.getElementById("btn-render-all")!.addEventListener("click", async () => {
     const btn = document.getElementById("btn-render-all") as HTMLButtonElement;
     btn.disabled = true;
@@ -116,6 +124,13 @@ function renderDeviceCard(d: DeviceStatus): string {
   const statusClass = d.hasImage ? (d.hadErrors ? "status-warn" : "status-ok") : "status-none";
   const statusLabel = d.hasImage ? (d.hadErrors ? "⚠ Stale (errors)" : "✓ Active") : "○ No image";
 
+  // Phase 4 health diagnostics line
+  const healthParts: string[] = [];
+  if (d.renderCount != null) healthParts.push(`Renders: ${d.renderCount}`);
+  healthParts.push(`Outcome: ${d.lastOutcome ?? "—"}`);
+  if (d.lastError) healthParts.push(`⚠ ${d.lastError}`);
+  const healthText = healthParts.join(" · ");
+
   const imgSrc = d.hasImage
     ? `/media/${escapeHtml(d.r2Key.split("/").pop() ?? "")}?v=${d.lastRenderedAt ?? Date.now()}`
     : "";
@@ -126,6 +141,7 @@ function renderDeviceCard(d: DeviceStatus): string {
         <h2>${escapeHtml(d.name)}</h2>
         <span class="status-badge ${statusClass}">${statusLabel}</span>
       </div>
+      <p class="health">${healthText}</p>
 
       <div class="device-preview">
         ${d.hasImage

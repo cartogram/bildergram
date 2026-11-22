@@ -46,6 +46,12 @@ export async function renderAllDevices(
         const hadErrors = Object.values(dashboard.errors).some((v) => v === true);
         const renderedAt = Math.floor(Date.now() / 1000);
 
+        // Phase 4: track render history in the metadata (renders happen
+        // every 15 min per device — two renders may race; accept the race).
+        const head = await env.DISPLAY_ASSETS.head(device.r2Key);
+        const prevCount = parseInt(head?.customMetadata?.renderCount ?? "0", 10);
+        const renderCount = (Number.isNaN(prevCount) ? 0 : prevCount + 1).toString();
+
         // Write to R2 with metadata
         await env.DISPLAY_ASSETS.put(device.r2Key, pngBuffer, {
           httpMetadata: { contentType: "image/png" },
@@ -55,6 +61,9 @@ export async function renderAllDevices(
             fileSize: pngBuffer.byteLength.toString(),
             layout: device.layout,
             hadErrors: hadErrors ? "true" : "false",
+            renderCount,
+            lastOutcome: "ok",
+            lastError: "",
             // Cache the last-known data per source so failed sources can
             // still be displayed later (with a warning icon).
             cachedWeather: dashboard.weather ? JSON.stringify(dashboard.weather) : "",
@@ -76,14 +85,25 @@ export async function renderAllDevices(
         );
 
         // Graceful degradation: if a stale image exists, keep serving it —
-        // R2 doesn't support metadata-only updates, so the error can't be
-        // flagged on the object itself. If no image exists yet, the device
-        // sees a 404 from /api/display until the next successful render.
-        const existing = await env.DISPLAY_ASSETS.head(device.r2Key);
+        // R2 doesn't support metadata-only updates, so the error is recorded
+        // by re-putting the object with updated metadata. If no image exists
+        // yet, the device sees a 404 from /api/display until the next
+        // successful render.
+        const existing = await env.DISPLAY_ASSETS.get(device.r2Key);
         if (existing) {
           console.log(
             `[render] Keeping stale image for ${device.name} (last rendered: ${existing.customMetadata?.renderedAt})`,
           );
+          const message = err instanceof Error ? err.message : String(err);
+          await env.DISPLAY_ASSETS.put(device.r2Key, existing.body, {
+            httpMetadata: { contentType: "image/png" },
+            customMetadata: {
+              ...(existing.customMetadata ?? {}),
+              hadErrors: "true",
+              lastOutcome: "error",
+              lastError: message,
+            },
+          });
         }
       }
     }),

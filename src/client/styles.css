@@ -141,6 +141,15 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+/* Phase 4 health diagnostics line */
+.health {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  padding: 8px 20px 0;
+  margin: 0;
+  font-style: normal;
+}
+
 .device-header h2 {
   font-size: 1.15rem;
   font-weight: 700;
