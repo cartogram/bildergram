@@ -66,6 +66,14 @@ npx wrangler secret put DEVICE_TOKEN_KINDLE_02
 
 For local development, these are configured in `.dev.vars` (not committed).
 
+For Kindle #1's Apple Calendar feed (Phase 3):
+
+```bash
+npx wrangler secret put APPLE_CALENDAR_ICS_URL_01
+```
+
+Set this to the calendar's published ICS URL — e.g. Apple's `webcal://` link converted to `https://` (a plain GET returns the calendar as `text/calendar`). The URL can be rotated at any time with another `wrangler secret put` — no code changes needed.
+
 ### Device Profiles
 
 Edit `src/devices.ts` to add or modify Kindle device profiles (MAC address, resolution, orientation, refresh rate, layout template).

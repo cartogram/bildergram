@@ -82,7 +82,7 @@ function widgetBoxes(device: DeviceConfig, data: DashboardData): WidgetBox[] {
   const boxes: WidgetBox[] = [];
   let y = Math.floor(device.height * 0.16);
 
-  const hasCalendar = !!(device.calendarId || device.calendarIcsUrl);
+  const hasCalendar = !!(device.calendarId || device.calendarIcsUrlEnvKey);
   const hasWeather = device.layout === "household-overview" && !!device.weatherCity;
   const hasTasks = device.layout === "productivity" && !!device.tasksEnabled;
 

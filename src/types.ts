@@ -9,6 +9,8 @@ export interface AppEnv extends Env {
   GOOGLE_CALENDAR_ACCESS_TOKEN?: string;
   TODOIST_API_KEY?: string;
   HOME_ASSISTANT_TOKEN?: string;
+  /** Published ICS URL for the device's Apple Calendar feed (Kindle #1) */
+  APPLE_CALENDAR_ICS_URL_01?: string;
 }
 
 /** Configuration for a single managed display device */
@@ -37,8 +39,8 @@ export interface DeviceConfig {
   weatherCity?: string;
   /** Google Calendar calendar ID (defaults to "primary" when a token is set) */
   calendarId?: string;
-  /** iCal URL fallback — used when no Google Calendar access token is set */
-  calendarIcsUrl?: string;
+  /** Env var (secret) holding the device's ICS URL — Apple Calendar feeds */
+  calendarIcsUrlEnvKey?: string;
   /** Show the Todoist tasks widget (requires the TODOIST_API_KEY secret) */
   tasksEnabled?: boolean;
   /** Max calendar events per render (default 4) */

@@ -24,7 +24,7 @@ export const DEVICES: DeviceConfig[] = [
     layout: "household-overview",
     r2Key: "renders/kindle_01_latest.png",
     weatherCity: "Berlin",
-    calendarId: "primary",
+    calendarIcsUrlEnvKey: "APPLE_CALENDAR_ICS_URL_01",
   },
   {
     id: "kindle_02",

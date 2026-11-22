@@ -54,7 +54,7 @@ export async function aggregateDeviceData(
     data.forecast = forecast.data?.length ? forecast.data : undefined;
   }
 
-  if (device.calendarId || device.calendarIcsUrl) {
+  if (device.calendarId || device.calendarIcsUrlEnvKey) {
     const events = await loadSource(
       () => fetchEvents(device, env),
       () => getCachedEvents(env, device),

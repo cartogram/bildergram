@@ -1,9 +1,9 @@
 // ============================================================
-// Calendar Source — Google Calendar API + iCal fallback (Phase 3)
+// Calendar Source — Google Calendar API + ICS fallback (Phase 3)
 // Fetches events for the device using the
-// GOOGLE_CALENDAR_ACCESS_TOKEN secret, or an iCal URL
-// configured on the device (e.g. Google Calendar's private
-// address in iCal format).
+// GOOGLE_CALENDAR_ACCESS_TOKEN secret, or the ICS URL stored in the
+// device's `calendarIcsUrlEnvKey` secret (e.g. Apple Calendar's
+// published .ics URL).
 // ============================================================
 
 import type { AppEnv, CalendarEvent, DeviceConfig } from "../types";
@@ -13,12 +13,23 @@ export async function fetchEvents(device: DeviceConfig, env: AppEnv): Promise<Ca
   if (env.GOOGLE_CALENDAR_ACCESS_TOKEN) {
     return fetchGoogleEvents(device, env);
   }
-  if (device.calendarIcsUrl) {
-    const res = await fetch(device.calendarIcsUrl);
+  const icsUrl = resolveIcsUrl(device, env);
+  if (icsUrl) {
+    const res = await fetch(icsUrl);
     if (!res.ok) throw new Error(`Calendar iCal URL returned ${res.status}`);
     return parseICal(await res.text());
   }
   return [];
+}
+
+/**
+ * Resolve the device's ICS URL from its env var (Worker secret).
+ * The device names the secret via `calendarIcsUrlEnvKey`.
+ */
+export function resolveIcsUrl(device: DeviceConfig, env: AppEnv): string | undefined {
+  if (!device.calendarIcsUrlEnvKey) return undefined;
+  const url = (env as unknown as Record<string, unknown>)[device.calendarIcsUrlEnvKey];
+  return typeof url === "string" && url ? url : undefined;
 }
 
 async function fetchGoogleEvents(device: DeviceConfig, env: AppEnv): Promise<CalendarEvent[]> {
