@@ -1,52 +1,27 @@
 // ============================================================
-// Worker Entry Point
-// Routes incoming requests to the appropriate handler and
-// processes scheduled cron triggers for background rendering.
+// Worker Entry Point — Kindle hub (Phase 7)
+// The Kindle dashboard checks in here for its schedule and the
+// Yorck listings (rendered by the Vercel function at KINO_URL);
+// the admin SPA edits the schedule. Everything else is the SPA.
 // ============================================================
 
-import { handleDisplayRequest } from "./routes/display";
-import { handleMediaRequest } from "./routes/media";
-import { handleAdminApi } from "./routes/admin-api";
-import { handleCronTrigger } from "./pipeline/scheduler";
+import { handleKindleAdmin, handleKindleDevice } from "./routes/kindle";
 
 export default {
-  async fetch(
-    request: Request,
-    env: Env,
-    ctx: ExecutionContext,
-  ): Promise<Response> {
-    const url = new URL(request.url);
-    const path = url.pathname;
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const path = new URL(request.url).pathname;
 
-    // --- API Routes (run Worker first, before static assets) ---
-
-    // TRMNL Display API
-    if (path === "/api/display" && request.method === "GET") {
-      return handleDisplayRequest(request, env);
+    if (path.startsWith("/api/kindle/")) {
+      return handleKindleDevice(request, env);
+    }
+    if (path === "/api/admin/kindle" || path.startsWith("/api/admin/kindle/")) {
+      return handleKindleAdmin(request, env);
+    }
+    if (path.startsWith("/api/")) {
+      return Response.json({ error: "not found" }, { status: 404 });
     }
 
-    // Media streaming from R2
-    if (path.startsWith("/media/")) {
-      return handleMediaRequest(request, env);
-    }
-
-    // Admin API endpoints
-    if (path.startsWith("/api/admin/")) {
-      return handleAdminApi(request, env, ctx);
-    }
-
-    // --- Static Assets / SPA fallback ---
-    // The @cloudflare/vite-plugin + assets binding handles this.
-    // Any unmatched route falls through to the SPA via the
-    // "not_found_handling": "single-page-application" config.
+    // Admin SPA (static assets, single-page-application fallback).
     return env.ASSETS.fetch(request);
-  },
-
-  async scheduled(
-    controller: ScheduledController,
-    env: Env,
-    ctx: ExecutionContext,
-  ): Promise<void> {
-    ctx.waitUntil(handleCronTrigger(controller, env));
   },
 } satisfies ExportedHandler<Env>;

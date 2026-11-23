@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm install --omit=dev --ignore-scripts",
+  "buildCommand": "",
+  "outputDirectory": "kindle/vercel-public",
+  "functions": {
+    "api/kino.mjs": {
+      "includeFiles": "{assets/fonts/Arimo.ttf,kindle/lib/glyphs.ts,kindle/lib/*.mjs,node_modules/@resvg/resvg-wasm/index_bg.wasm}",
+      "maxDuration": 30
+    }
+  }
+}

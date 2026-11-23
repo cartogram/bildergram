@@ -24,3 +24,5 @@ worker-configuration.d.ts
 
 # Kindle dashboard build output
 kindle/dist/
+.vercel
+.env*

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Home Dashboard Server — TRMNL BYOS on Cloudflare Workers for e-ink Kindle displays",
+  "description": "Kindle e-ink dashboard: Tempelhof Field status and Yorck cinema listings on a battery-powered Paperwhite 3",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
@@ -13,6 +13,8 @@
     "glyphs": "node tools/gen-glyphs.mjs",
     "kindle:build": "node kindle/build.mjs",
     "kindle:install": "sh kindle/install.sh",
+    "kino:preview": "node kindle/kino-preview.mjs",
+    "kino:dev": "node kindle/kino-dev-server.mjs",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

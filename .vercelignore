@@ -1,0 +1,9 @@
+# Only api/, kindle/lib, the font, the glyph table and package files are needed on Vercel.
+.dev.vars
+.env*
+.wrangler
+node_modules
+dist
+kindle/dist
+worker-configuration.d.ts
+*.HEIC

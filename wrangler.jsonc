@@ -4,7 +4,8 @@
   "main": "./src/worker.ts",
   "compatibility_date": "2026-11-19",
 
-  // R2 bucket for rendered e-ink PNG assets
+  // Kindle hub state (schedule config, last check-in) as small JSON objects.
+  // The bucket name predates the hub; the binding name is what the code uses.
   "r2_buckets": [
     {
       "binding": "DISPLAY_ASSETS",
@@ -12,18 +13,19 @@
     }
   ],
 
-  // Cron triggers for scheduled data aggregation & rendering
-  // Active hours (06:00–23:00): every 15 minutes
-  // Overnight  (23:00–06:00): hourly — 00:00–06:00 and 23:00
-  "triggers": {
-    "crons": [
-      "*/15 6-22 * * *",
-      "0 0-6,23 * * *"
-    ]
+  // Vercel cinema renderer (api/kino.mjs). Secrets: ADMIN_TOKEN, KINO_TOKEN,
+  // DEVICE_TOKEN_KINDLE_01 (wrangler secret put).
+  "vars": {
+    "KINO_URL": "https://bildergram-kino.vercel.app"
   },
 
-  // Vite SPA assets config — the @cloudflare/vite-plugin
-  // handles the directory mapping automatically at build time
+  // No cron triggers: the Kindle checks in when it needs data. The explicit
+  // empty list removes the old 15-minute render schedule on deploy.
+  "triggers": {
+    "crons": []
+  },
+
+  // Admin SPA — the @cloudflare/vite-plugin maps the built client here
   "assets": {
     "not_found_handling": "single-page-application",
     "binding": "ASSETS"

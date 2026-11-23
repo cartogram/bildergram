@@ -5,22 +5,25 @@
 //
 // Everything the Kindle needs is computed here, so the device
 // never needs Wi-Fi: the open/close schedule for the next few
-// years (from src/data/templehof.ts), one full-screen background
+// years (from kindle/lib/templehof.ts), one full-screen background
 // per state, and one countdown image per minute value. The
-// device script (kindle/device/tempelhof.sh) just looks up the
+// device script (kindle/device/dashboard.sh) just looks up the
 // next event and pastes images with `eips`.
 //
 // Output: kindle/dist/
-//   tempelhof/   → copied to /mnt/us/tempelhof on the Kindle
+//   dashboard/   → copied to /mnt/us/dashboard on the Kindle
 //   documents/   → scriptlets, copied to /mnt/us/documents
 //   preview/     → composited frames to review in a browser
 // ============================================================
 
-import { initWasm, Resvg } from "@resvg/resvg-wasm";
-import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { deflateSync } from "node:zlib";
+import { execFileSync } from "node:child_process";
+import { copyFileSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { HOURS, getCloseTime, getTemplehofStatus, formatCountdown } from "../src/data/templehof.ts";
+import { HOURS, getCloseTime, getTemplehofStatus, formatCountdown } from "./lib/templehof.ts";
+import {
+  H, ROTATE, W, bold, encodePng, initRenderer, paste, rasterize, rotate, rotatedOrigin, svgOpen, unrotate,
+} from "./lib/eink.mjs";
+import { TITLE as KINO_TITLE } from "./lib/kino.mjs";
 
 const REPO = fileURLToPath(new URL("..", import.meta.url));
 const OUT = `${REPO}/kindle/dist`;
@@ -32,9 +35,6 @@ const OUT = `${REPO}/kindle/dist`;
 // landscape image is turned; build with KINDLE_ROTATE=cw if the
 // dashboard shows upside down on the mounted Kindle.
 // ------------------------------------------------------------------
-const ROTATE = process.env.KINDLE_ROTATE ?? "ccw";
-const W = 1448; // landscape width
-const H = 1072; // landscape height
 const YEARS = 3; // schedule length — reinstall before it runs out
 
 // Landscape layout (px at 300 ppi)
@@ -132,91 +132,8 @@ function verifySchedule(events, fromMs) {
 }
 
 // ------------------------------------------------------------------
-// Rendering (resvg in Node) → 8-bit gray, 16 levels, rotated
-// ------------------------------------------------------------------
-
-await initWasm(readFileSync(`${REPO}/node_modules/@resvg/resvg-wasm/index_bg.wasm`));
-const FONT = readFileSync(`${REPO}/assets/fonts/Arimo.ttf`);
-
-/** Faux bold: resvg can't pick a weight from the variable font, so stroke the outline. */
-const bold = (size) => `stroke="#000" stroke-width="${(size * 0.035).toFixed(1)}" stroke-linejoin="round"`;
-
-function rasterize(svg) {
-  const img = new Resvg(svg, { font: { fontBuffers: [FONT], loadSystemFonts: false, defaultFontFamily: "Arimo" } }).render();
-  const rgba = img.pixels; // a getter that copies out of WASM memory — read it once
-  const gray = new Uint8Array(img.width * img.height);
-  for (let i = 0; i < gray.length; i++) {
-    // Black-on-white art: any channel is the gray value. Quantize to
-    // the panel's 16 levels so eips doesn't dither.
-    gray[i] = Math.round(rgba[i * 4] / 17) * 17;
-  }
-  return { w: img.width, h: img.height, px: gray };
-}
-
-/** Rotate 90°: "ccw" maps landscape (x, y) → portrait (y, w-1-x). */
-function rotate(img) {
-  const { w, h, px } = img;
-  const out = new Uint8Array(w * h);
-  const ccw = ROTATE === "ccw";
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const nx = ccw ? y : h - 1 - y;
-      const ny = ccw ? w - 1 - x : x;
-      out[ny * h + nx] = px[y * w + x];
-    }
-  }
-  return { w: h, h: w, px: out };
-}
-
-/** Where a landscape rect lands in the portrait framebuffer after rotation. */
-function rotatedOrigin(r) {
-  return ROTATE === "ccw" ? { x: r.y, y: W - r.x - r.w } : { x: H - r.y - r.h, y: r.x };
-}
-
-const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
-  let c = n;
-  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-  return c >>> 0;
-});
-function crc32(buf) {
-  let c = 0xffffffff;
-  for (const b of buf) c = CRC_TABLE[(c ^ b) & 0xff] ^ (c >>> 8);
-  return (c ^ 0xffffffff) >>> 0;
-}
-function chunk(type, data) {
-  const out = Buffer.alloc(12 + data.length);
-  out.writeUInt32BE(data.length, 0);
-  out.write(type, 4, "ascii");
-  Buffer.from(data).copy(out, 8);
-  out.writeUInt32BE(crc32(out.subarray(4, 8 + data.length)), 8 + data.length);
-  return out;
-}
-/** 8-bit grayscale PNG, no alpha — what eips expects. */
-function encodePng({ w, h, px }) {
-  const raw = Buffer.alloc((w + 1) * h);
-  for (let y = 0; y < h; y++) {
-    raw[y * (w + 1)] = 0;
-    Buffer.from(px.buffer, px.byteOffset + y * w, w).copy(raw, y * (w + 1) + 1);
-  }
-  const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(w, 0);
-  ihdr.writeUInt32BE(h, 4);
-  ihdr[8] = 8; // bit depth
-  ihdr[9] = 0; // grayscale
-  return Buffer.concat([
-    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
-    chunk("IHDR", ihdr),
-    chunk("IDAT", deflateSync(raw, { level: 9 })),
-    chunk("IEND", Buffer.alloc(0)),
-  ]);
-}
-
-// ------------------------------------------------------------------
 // Screens
 // ------------------------------------------------------------------
-
-const svgOpen = (w, h) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><rect width="${w}" height="${h}" fill="#fff"/>`;
 
 /** Full-screen background for one state; the countdown area is left blank. */
 function backgroundSvg(key) {
@@ -255,6 +172,22 @@ function dateSvg(y, m, d) {
 
 const dateKey = (p) => `${p.y}-${String(p.m).padStart(2, "0")}-${String(p.d).padStart(2, "0")}`;
 
+/** Shown in the bottom-right corner while the Kindle checks in over Wi-Fi. */
+function updatingSvg() {
+  return `${svgOpen(BATTERY.w, BATTERY.h)}
+    <text x="${BATTERY.w}" y="${BATTERY.h - 18}" font-size="46" text-anchor="end" fill="#222">Updating…</text>
+  </svg>`;
+}
+
+/** Full screen for the cinema slot when no listing has been downloaded yet. */
+function kinoMissingSvg() {
+  return `${svgOpen(W, H)}
+    <text x="${M}" y="118" font-size="46" letter-spacing="6" fill="#444">${KINO_TITLE}</text>
+    <text x="${M}" y="${H / 2}" font-size="72" fill="#222">No cinema listing yet</text>
+    <text x="${M}" y="${H / 2 + 90}" font-size="46" fill="#444">Press the power button to update over Wi-Fi.</text>
+  </svg>`;
+}
+
 function batterySvg() {
   return `${svgOpen(BATTERY.w, BATTERY.h)}
     <text x="${BATTERY.w}" y="${BATTERY.h - 18}" font-size="46" text-anchor="end" ${bold(46)}>Battery low</text>
@@ -265,19 +198,29 @@ function batterySvg() {
 // Build
 // ------------------------------------------------------------------
 
+/** Short git hash (+ "-dirty") so check-ins report what is installed. */
+function version() {
+  try {
+    return execFileSync("git", ["describe", "--always", "--dirty"], { cwd: REPO, encoding: "utf8" }).trim();
+  } catch {
+    return "dev";
+  }
+}
+
 const t0 = performance.now();
+await initRenderer();
 const now = Date.now();
 const events = buildSchedule(now);
 const checked = verifySchedule(events, now);
 
 rmSync(OUT, { recursive: true, force: true });
-for (const dir of ["tempelhof/bin", "tempelhof/img/bg", "tempelhof/img/cd", "tempelhof/img/date", "documents", "preview"]) {
+for (const dir of ["dashboard/bin", "dashboard/img/bg", "dashboard/img/cd", "dashboard/img/date", "documents", "preview"]) {
   mkdirSync(`${OUT}/${dir}`, { recursive: true });
 }
 
 // Schedule: "<epoch-seconds> <open|close> <background-key>"
 writeFileSync(
-  `${OUT}/tempelhof/schedule.txt`,
+  `${OUT}/dashboard/schedule.txt`,
   events.map((e) => `${Math.round(e.t / 1000)} ${e.kind} ${e.bg}`).join("\n") + "\n",
 );
 
@@ -286,7 +229,7 @@ const bgs = new Map();
 for (const key of new Set(events.map((e) => e.bg))) {
   const img = rotate(rasterize(backgroundSvg(key)));
   bgs.set(key, img);
-  writeFileSync(`${OUT}/tempelhof/img/bg/${key}.png`, encodePng(img));
+  writeFileSync(`${OUT}/dashboard/img/bg/${key}.png`, encodePng(img));
 }
 
 // Countdown images: 1 … longest gap between events, in minutes
@@ -298,10 +241,12 @@ const cds = new Map();
 for (let m = 0; m <= maxMinutes; m++) {
   const img = rotate(rasterize(countdownSvg(m)));
   cds.set(m, img);
-  writeFileSync(`${OUT}/tempelhof/img/cd/${m}.png`, encodePng(img));
+  writeFileSync(`${OUT}/dashboard/img/cd/${m}.png`, encodePng(img));
 }
 const battery = rotate(rasterize(batterySvg()));
-writeFileSync(`${OUT}/tempelhof/img/battery-low.png`, encodePng(battery));
+writeFileSync(`${OUT}/dashboard/img/battery-low.png`, encodePng(battery));
+writeFileSync(`${OUT}/dashboard/img/updating.png`, encodePng(rotate(rasterize(updatingSvg()))));
+writeFileSync(`${OUT}/dashboard/img/kino-missing.png`, encodePng(rotate(rasterize(kinoMissingSvg()))));
 
 // Date images: every Berlin day the schedule covers (img/date/YYYY-MM-DD.png)
 const dates = new Map();
@@ -309,7 +254,7 @@ for (const key of new Set(events.map((e) => dateKey(berlinParts(e.t))))) {
   const [y, m, d] = key.split("-").map(Number);
   const img = rotate(rasterize(dateSvg(y, m, d)));
   dates.set(key, img);
-  writeFileSync(`${OUT}/tempelhof/img/date/${key}.png`, encodePng(img));
+  writeFileSync(`${OUT}/dashboard/img/date/${key}.png`, encodePng(img));
 }
 
 // Paste positions for eips (portrait framebuffer coordinates)
@@ -317,14 +262,15 @@ const cd = rotatedOrigin(COUNTDOWN);
 const dt = rotatedOrigin(DATE);
 const bat = rotatedOrigin(BATTERY);
 writeFileSync(
-  `${OUT}/tempelhof/layout.env`,
+  `${OUT}/dashboard/layout.env`,
   `# Generated by kindle/build.mjs (rotation: ${ROTATE}) — eips paste positions\n` +
-    `CD_X=${cd.x}\nCD_Y=${cd.y}\nDATE_X=${dt.x}\nDATE_Y=${dt.y}\nBAT_X=${bat.x}\nBAT_Y=${bat.y}\n`,
+    `CD_X=${cd.x}\nCD_Y=${cd.y}\nDATE_X=${dt.x}\nDATE_Y=${dt.y}\nBAT_X=${bat.x}\nBAT_Y=${bat.y}\n` +
+    `VERSION=${version()}\n`,
 );
 
 // Device script + scriptlets
-copyFileSync(`${REPO}/kindle/device/tempelhof.sh`, `${OUT}/tempelhof/bin/tempelhof.sh`);
-for (const name of ["Tempelhof.sh", "Tempelhof test.sh", "Tempelhof log.sh"]) {
+copyFileSync(`${REPO}/kindle/device/dashboard.sh`, `${OUT}/dashboard/bin/dashboard.sh`);
+for (const name of ["Dashboard.sh", "Dashboard test.sh", "Dashboard log.sh"]) {
   copyFileSync(`${REPO}/kindle/scriptlets/${name}`, `${OUT}/documents/${name}`);
 }
 
@@ -332,24 +278,6 @@ for (const name of ["Tempelhof.sh", "Tempelhof test.sh", "Tempelhof log.sh"]) {
 // Preview: composite frames exactly as the device would (paste the
 // rotated images at the eips offsets), then rotate back to landscape.
 // ------------------------------------------------------------------
-
-function paste(dst, src, at) {
-  for (let y = 0; y < src.h; y++) {
-    dst.px.set(src.px.subarray(y * src.w, (y + 1) * src.w), (at.y + y) * dst.w + at.x);
-  }
-}
-function unrotate(img) {
-  const { w, h, px } = img; // portrait
-  const out = new Uint8Array(w * h);
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      // inverse of rotate(): portrait (x, y) → landscape
-      const [lx, ly] = ROTATE === "ccw" ? [h - 1 - y, x] : [y, w - 1 - x];
-      out[ly * h + lx] = px[y * w + x];
-    }
-  }
-  return { w: h, h: w, px: out };
-}
 
 const today = berlinParts(now);
 const todaysEvent = (kind) =>
