@@ -4,6 +4,11 @@
 
 Renders high-contrast household dashboards as 1-bit/grayscale PNGs and serves them to jailbroken Kindle devices running [KOReader](https://github.com/koreader/koreader) + `trmnl.koplugin` over HTTPS.
 
+**Kindle #1 no longer uses the server.** It runs a standalone, battery-powered
+[Tempelhof Field dashboard](#kindle-1--tempelhof-dashboard-on-device-phase-6)
+that updates every minute with Wi-Fi off. The Worker stays for future devices
+(Kindle #2 is still to be decided).
+
 ## Architecture
 
 ```
@@ -78,48 +83,68 @@ Set this to the calendar's published ICS URL — e.g. Apple's `webcal://` link c
 
 Edit `src/devices.ts` to add or modify Kindle device profiles (MAC address, resolution, orientation, refresh rate, layout template).
 
-## Kindle #1 — Client Setup (KOReader + trmnl.koplugin)
+## Kindle #1 — Tempelhof dashboard (on-device, Phase 6)
 
-Per the PRD, Kindle #1 is the first validation target (Kitchen Display —
-landscape, 1024 × 758 px, 15-min refresh).
+Kindle #1 is a **Kindle Paperwhite 3** (7th gen, firmware 5.13.7, jailbroken
+with WinterBreak). It shows whether Tempelhofer Feld is open, the closing or
+opening time, a countdown that updates every minute, today's date and today's
+opening hours.
 
-**Prerequisites**
+**How it works.** The status depends only on the opening-hours table and the
+clock, so everything is computed ahead of time on your computer and nothing is
+fetched at runtime:
 
-- Kindle is jailbroken and runs a modern build of KOReader.
-- The `trmnl.koplugin` client plugin is available — copy it to the Kindle:
-  ```
-  cp -R trmnl.koplugin <kindle-mount>/koreader/plugins/
-  ```
-  (or transfer over USB into `/koreader/plugins/`)
+- `npm run kindle:build` (`kindle/build.mjs`) writes `kindle/dist/`:
+  - the open/close schedule for the next 3 years, from `src/data/templehof.ts`
+    and checked against `getTemplehofStatus` at every 7th minute for a year;
+  - one full-screen background per state, one countdown image per minute
+    value (up to 17h), and one date image per day, all rendered with resvg and
+    Arimo in 8-bit, 16-level grayscale and rotated for the portrait
+    framebuffer;
+  - a browser preview in `kindle/dist/preview/index.html`.
+- On the Kindle, `kindle/device/tempelhof.sh` runs one loop per minute: wake on
+  the RTC alarm, look up the next event, paste the countdown with `eips`
+  (a full redraw every 15 minutes and on state changes clears ghosting), then
+  suspend to RAM until the next minute. Wi-Fi is switched off while it runs.
 
-**API Key Setup**
+**Install** (KOReader → gear → Network → tick **SSH server**; it listens on
+port 2222 and accepts the keys in `koreader/settings/SSH/authorized_keys`):
 
-Save the assigned device token on the Kindle:
-
+```bash
+npm run kindle:build
+KINDLE_HOST=192.168.0.93 npm run kindle:install   # the IP KOReader shows
 ```
-/koreader/plugins/trmnl.koplugin/apikey.txt
-```
 
-For production, this token is the `DEVICE_TOKEN_KINDLE_01` Cloudflare Worker
-secret (set with `npx wrangler secret put DEVICE_TOKEN_KINDLE_01`).
+**Use.** Three books appear in the Kindle library:
 
-**Base URL Configuration**
+| Book | What it does |
+|---|---|
+| **Tempelhof** | Starts the dashboard. |
+| **Tempelhof (30-min test)** | Same, but returns to the Kindle UI by itself after 30 minutes. |
+| **Tempelhof log** | Shows the end of `/mnt/us/tempelhof/tempelhof.log` on screen. Times are UTC. |
 
-In KOReader: **Tools → TRMNL Display → Configure TRMNL → Server Base URL** —
-set it to the production Cloudflare Workers URL, e.g.
-`https://bildergram.your-subdomain.workers.dev` (no trailing slash).
+To exit, short-press the power button (plugging in USB also exits). The Kindle
+interface then reloads, which looks like a restart but isn't one. The log
+records each start, the battery level every hour, and why the dashboard
+exited.
 
-**Power & Display Tuning**
+**Rebuild before the schedule runs out** (3 years from the build date), or
+after changing the opening hours in `src/data/templehof.ts`. If the image
+shows upside down, build with `KINDLE_ROTATE=cw`.
 
-- Desk/Wall Power Mode: enable **Tools → More tools → Keep alive** so the
-  Kindle stays connected for rendering.
-- Battery Saver Mode: keep native suspend enabled; configure
-  `trmnl.koplugin` wake intervals to match the device's `refreshRate`
-  (Kindle #1: 900 s).
+### TRMNL client (Worker-rendered devices)
 
-**Expected first run:** the render pipeline runs every 15 minutes (06:00–23:00
-UTC) and writes the PNG to R2; Kindle #1 wakes on its 900 s refresh, GETs
-`/api/display`, and downloads the PNG from `/media/kindle_01_latest.png`.
+Devices served by the Worker use [trmnl-koreader](https://github.com/usetrmnl/trmnl-koreader):
+put the device token (`DEVICE_TOKEN_KINDLE_0x`) in `koreader/plugins/trmnl.koplugin/apikey.txt`
+and set **Tools → TRMNL Display → Configure TRMNL → Base URL** to the Worker
+URL. The plugin keeps the Kindle awake to refresh, so it suits plugged-in
+displays.
+
+Known issue: the plugin only re-downloads when the `filename` in the
+`/api/display` response changes, and the Worker always returns
+`kindle_0x_latest.png`, so a running plugin keeps showing its first image.
+Fix this (e.g. put the render timestamp in the filename) before using the
+Worker for a device again.
 
 ## Metrics (Phase 5)
 
@@ -166,6 +191,11 @@ bildergram/
 ├── assets/fonts/          # Arimo.ttf (+ OFL license) — source for the bitmap font
 ├── tools/
 │   └── gen-glyphs.mjs     # Font → src/pipeline/glyphs.ts (`npm run glyphs`)
+├── kindle/                # Kindle #1 on-device Tempelhof dashboard (Phase 6)
+│   ├── build.mjs          # Schedule + images → kindle/dist (`npm run kindle:build`)
+│   ├── install.sh         # Copies kindle/dist to the Kindle over SSH (`npm run kindle:install`)
+│   ├── device/tempelhof.sh  # The loop that runs on the Kindle
+│   └── scriptlets/        # Library "books" that start it / show the log
 ├── src/
 │   ├── worker.ts          # Worker entry — routing & cron handler
 │   ├── types.ts           # Shared TypeScript types
@@ -223,3 +253,5 @@ regenerate.
 - [x] **Phase 2**: End-to-end client validation with Kindle #1 (token auth, JSON payload, R2→media flow validated on workerd dev server)
 - [x] **Phase 3**: Data aggregation & E-Ink image engine — OpenWeatherMap weather + forecast, Google Calendar/iCal events, Todoist tasks, data-driven dashboard layout, pure-JS bitmap renderer (Arimo-based bitmap font), 1-bit grayscale PNG output, graceful degradation to cached data
 - [x] **Phase 4**: Multi-device expansion + admin dashboard polish (Kindle #2 profile; SPA served at /admin; side-by-side device previews; health diagnostics: renderCount, lastOutcome, lastError + auto-refresh; manual render triggers)
+- [x] **Phase 5**: Metric widget — a single label + value, sourced from the weather or the Tempelhof Field status
+- [x] **Phase 6**: Kindle #1 standalone Tempelhof dashboard — schedule and images built ahead of time, per-minute RTC wake + `eips` on a Paperwhite 3, Wi-Fi off, power-button exit (verified on the device; battery life still being measured)

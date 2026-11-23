@@ -11,6 +11,8 @@
     "deploy": "vite build && wrangler deploy",
     "types": "wrangler types",
     "glyphs": "node tools/gen-glyphs.mjs",
+    "kindle:build": "node kindle/build.mjs",
+    "kindle:install": "sh kindle/install.sh",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

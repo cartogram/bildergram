@@ -21,3 +21,6 @@ worker-configuration.d.ts
 # Environment
 .env
 .env.local
+
+# Kindle dashboard build output
+kindle/dist/
