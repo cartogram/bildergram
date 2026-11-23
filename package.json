@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "deploy": "vite build && wrangler deploy",
     "types": "wrangler types",
+    "glyphs": "node tools/gen-glyphs.mjs",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

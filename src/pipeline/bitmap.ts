@@ -4,7 +4,7 @@
 // Used by the pure-JS e-ink renderer — no rasteriser required.
 // ============================================================
 
-import { GLYPHS } from "./glyphs";
+import { GLYPHS, GLYPH_CAP_HEIGHT, type GlyphBitmap } from "./glyphs";
 
 export class Bitmap {
   readonly width: number;
@@ -39,36 +39,49 @@ export class Bitmap {
 // Text (bitmap font, glyphs in ./glyphs)
 // ------------------------------------------------------------------
 
-/** Cap height of the font at its reference size — used to scale. */
-const FONT_CAP_HEIGHT = 18;
+/** Integer scale factor for a requested text size (the font is a single bitmap size). */
+function scaleFor(size: number): number {
+  return Math.max(1, Math.round(size / GLYPH_CAP_HEIGHT));
+}
+
+/**
+ * Glyph for a character. Accented letters missing from the table fall
+ * back to their base letter (e.g. "č" → "c"); anything else is undefined.
+ */
+function glyphFor(ch: string): GlyphBitmap | undefined {
+  return GLYPHS[ch] ?? GLYPHS[ch.normalize("NFD")[0]];
+}
+
+/** Advance used for characters with no glyph — the width of a space. */
+const FALLBACK_ADVANCE = GLYPHS[" "]?.adv ?? 7;
 
 export function textWidth(text: string, size: number): number {
-  const s = Math.max(1, Math.round(size / FONT_CAP_HEIGHT));
+  const s = scaleFor(size);
   let w = 0;
-  for (const ch of text) {
-    const g = GLYPHS[ch];
-    const advance = (g ? g.w + 1 : 2);
-    w += advance * s;
-  }
+  for (const ch of text) w += (glyphFor(ch)?.adv ?? FALLBACK_ADVANCE) * s;
   return w;
 }
 
+/** Draw text with its cap top at `y` (descenders and accents extend beyond the cap height). */
 export function drawText(bm: Bitmap, text: string, x: number, y: number, size: number): void {
-  const s = Math.max(1, Math.round(size / FONT_CAP_HEIGHT));
-  let cx = x;
+  const s = scaleFor(size);
+  // Snap to whole pixels: centered text (W / 2 - width / 2) can land on a
+  // half pixel, and fractional indices into the bitmap are silently dropped.
+  let cx = Math.round(x);
+  const top = Math.round(y);
   for (const ch of text) {
-    const g = GLYPHS[ch];
-    if (g?.rows.length) {
+    const g = glyphFor(ch);
+    if (g) {
+      const gx = cx + g.x * s;
+      const gy = top + g.y * s;
       for (let r = 0; r < g.rows.length; r++) {
         const row = g.rows[r];
         for (let c = 0; c < row.length; c++) {
-          if (row[c] === "#") {
-            bm.fillBlock(cx + c * s, y + r * s, s, s);
-          }
+          if (row[c] === "#") bm.fillBlock(gx + c * s, gy + r * s, s, s);
         }
       }
     }
-    cx += (g ? g.w + 1 : 2) * s;
+    cx += (g?.adv ?? FALLBACK_ADVANCE) * s;
   }
 }
 

@@ -120,8 +120,6 @@ set it to the production Cloudflare Workers URL, e.g.
 **Expected first run:** the render pipeline runs every 15 minutes (06:00–23:00
 UTC) and writes the PNG to R2; Kindle #1 wakes on its 900 s refresh, GETs
 `/api/display`, and downloads the PNG from `/media/kindle_01_latest.png`.
-Until Phase 3, the rendered image is a valid white placeholder at the full
-device resolution.
 
 ## Metrics (Phase 5)
 
@@ -165,6 +163,9 @@ bildergram/
 ├── wrangler.jsonc         # Cloudflare Worker config (R2, crons, assets)
 ├── vite.config.ts         # Vite + @cloudflare/vite-plugin
 ├── index.html             # Admin SPA entry
+├── assets/fonts/          # Arimo.ttf (+ OFL license) — source for the bitmap font
+├── tools/
+│   └── gen-glyphs.mjs     # Font → src/pipeline/glyphs.ts (`npm run glyphs`)
 ├── src/
 │   ├── worker.ts          # Worker entry — routing & cron handler
 │   ├── types.ts           # Shared TypeScript types
@@ -173,14 +174,48 @@ bildergram/
 │   │   ├── display.ts     # GET /api/display (TRMNL API)
 │   │   ├── media.ts       # GET /media/* (R2 streaming)
 │   │   └── admin-api.ts   # /api/admin/* endpoints
+│   ├── data/
+│   │   ├── aggregate.ts   # Per-device source fetch + cached fallback
+│   │   ├── cached.ts      # Reads last-known data from R2 metadata
+│   │   ├── weather.ts     # OpenWeatherMap current + forecast
+│   │   ├── calendar.ts    # Google Calendar API / ICS feeds
+│   │   ├── tasks.ts       # Todoist
+│   │   └── templehof.ts   # Tempelhof Field open/closed status
 │   ├── pipeline/
-│   │   ├── scheduler.ts   # Cron orchestrator
-│   │   └── renderer.ts    # SVG → PNG rendering engine
+│   │   ├── scheduler.ts   # Cron orchestrator — renders + writes to R2
+│   │   ├── renderer.ts    # Bitmap → PNG rendering entry point
+│   │   ├── draw.ts        # Dashboard layout & widgets
+│   │   ├── bitmap.ts      # 1-bit canvas, text & shape drawing
+│   │   ├── glyphs.ts      # Generated bitmap font (do not edit)
+│   │   └── eink.ts        # 1-bit grayscale PNG encoder
 │   └── client/
 │       ├── main.ts        # Admin SPA app
 │       └── styles.css     # Admin UI styles
 └── .dev.vars              # Local dev secrets (not committed)
 ```
+
+## Bitmap Font
+
+The Worker never rasterises a font itself: text is drawn from a bitmap
+glyph table, `src/pipeline/glyphs.ts`. The table is generated from
+`assets/fonts/Arimo.ttf` (Google Fonts' `Arimo[wght].ttf`, SIL Open Font
+License — see `assets/fonts/OFL.txt`) at 26px, which gives an 18px cap height.
+`drawText` scales it by whole numbers only, so sizes 14–26 render at 1× and
+36 renders at 2×.
+
+Regenerate the table after changing the font or the character set:
+
+```bash
+npm run glyphs   # node tools/gen-glyphs.mjs [fontPath] [fontFamily]
+```
+
+The table covers printable ASCII, Latin-1 letters (ä ö ü ß é …) and
+`° × € – — ‘ ’ “ ” • · …`. Each glyph stores its ink bitmap plus its
+offset and advance width, so all text sits on a shared baseline.
+Accented letters outside the table fall back to their base letter
+(č → c). Any other missing character renders as a blank space. To support
+more characters, add them to `CHARS` in `tools/gen-glyphs.mjs` and
+regenerate.
 
 ## Implementation Phases
 

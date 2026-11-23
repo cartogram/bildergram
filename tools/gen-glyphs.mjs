@@ -1,40 +1,57 @@
 #!/usr/bin/env node
 // tools/gen-glyphs.mjs — generates src/pipeline/glyphs.ts from a font file.
 //
-// Usage: node tools/gen-glyphs.mjs <fontPath> [fontFamily]
-// Example: node tools/gen-glyphs.mjs assets/fonts/Arimo.ttf Arimo
+// Usage: node tools/gen-glyphs.mjs [fontPath] [fontFamily]
+//        (defaults: assets/fonts/Arimo.ttf, Arimo — or `npm run glyphs`)
 //
 // Each glyph is the cropped ink bitmap of one character, rendered through
 // @resvg/resvg-wasm (resvg renders in Node, where WASM is allowed):
-// rows of '#' (ink) and '.' (blank).
+// rows of '#' (ink) and '.' (blank), plus the metrics drawText needs to
+// place it on a shared baseline — the ink offset from the pen position
+// (x = left bearing, y = offset below the cap top) and the advance width.
 
 import { initWasm, Resvg } from "@resvg/resvg-wasm";
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const fontPath = process.argv[2];
-if (!fontPath) {
-  console.error("usage: node tools/gen-glyphs.mjs <fontPath> [fontFamily]");
-  process.exit(1);
-}
-const family = process.argv[3] ?? "Arimo";
 const REPO = fileURLToPath(new URL("..", import.meta.url));
-const arimo = new Uint8Array(readFileSync(fontPath));
-const OPTS = { font: { fontBuffers: [arimo], loadSystemFonts: false, sansSerifFamily: family } };
+const fontPath = process.argv[2] ?? `${REPO}/assets/fonts/Arimo.ttf`;
+const family = process.argv[3] ?? "Arimo";
+const font = new Uint8Array(readFileSync(fontPath));
+const OPTS = { font: { fontBuffers: [font], loadSystemFonts: false, sansSerifFamily: family } };
 
-const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,:;-()°×?!";
+// Printable ASCII, Latin-1 letters (calendar titles are often German /
+// European), and the typographic symbols the dashboard layout uses.
+const ASCII = Array.from({ length: 0x7f - 0x20 }, (_, i) => String.fromCharCode(0x20 + i)).join("");
+const LATIN1 =
+  "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝß" +
+  "àáâãäåæçèéêëìíîïñòóôõöøùúûüýÿ";
+const SYMBOLS = "°×€–—‘’“”•·…";
+const CHARS = ASCII + LATIN1 + SYMBOLS;
 
-function renderChar(ch) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
-    <rect width="40" height="40" fill="#FFFFFF"/>
-    <text x="2" y="28" font-size="26" fill="#000000" font-family="Arimo, sans-serif">${ch}</text>
+/** Reference render size — Arimo's cap height is 18px at 26px. */
+const SIZE = 26;
+/** Advances are measured at this multiple of SIZE, then scaled back, for sub-pixel precision. */
+const MEASURE_SCALE = 4;
+
+function escapeXml(s) {
+  return s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+}
+
+function render(text, size, width, height, originX, baseline) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+    <rect width="${width}" height="${height}" fill="#FFFFFF"/>
+    <text x="${originX}" y="${baseline}" font-size="${size}" fill="#000000" font-family="${family}, sans-serif">${escapeXml(text)}</text>
   </svg>`;
-  const img = new Resvg(svg, OPTS).render();
+  return new Resvg(svg, OPTS).render();
+}
+
+/** Bounding box of the ink (dark pixels), or null for a blank image. */
+function inkBox(img) {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (let y = 0; y < img.height; y++) {
     for (let x = 0; x < img.width; x++) {
-      const i = (y * img.width + x) * 4;
-      if (img.pixels[i] < 128) {
+      if (img.pixels[(y * img.width + x) * 4] < 128) {
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
         if (y < minY) minY = y;
@@ -42,43 +59,95 @@ function renderChar(ch) {
       }
     }
   }
-  if (maxX < 0) return null;
+  return maxX < 0 ? null : { minX, minY, maxX, maxY };
+}
+
+// Glyph cell at the reference size: pen at (ORIGIN_X, BASELINE), with
+// room for negative left bearings, accents above caps and descenders.
+const CELL = 56;
+const ORIGIN_X = 12;
+const BASELINE = 40;
+
+function renderGlyph(ch) {
+  const img = render(ch, SIZE, CELL, CELL, ORIGIN_X, BASELINE);
+  const box = inkBox(img);
+  if (!box) return null;
   const rows = [];
-  for (let y = minY; y <= maxY; y++) {
+  for (let y = box.minY; y <= box.maxY; y++) {
     let row = "";
-    for (let x = minX; x <= maxX; x++) {
-      const i = (y * img.width + x) * 4;
-      row += img.pixels[i] < 128 ? "#" : ".";
+    for (let x = box.minX; x <= box.maxX; x++) {
+      row += img.pixels[(y * img.width + x) * 4] < 128 ? "#" : ".";
     }
     rows.push(row);
   }
-  return { w: maxX - minX + 1, h: maxY - minY + 1, rows };
+  return { box, rows };
+}
+
+/** Ink width of `text` rendered at SIZE × MEASURE_SCALE. */
+function inkWidth(text) {
+  const size = SIZE * MEASURE_SCALE;
+  const box = inkBox(render(text, size, size * 3.5, size * 1.5, size / 4, size));
+  return box ? box.maxX - box.minX + 1 : 0;
 }
 
 await initWasm(new Uint8Array(readFileSync(`${REPO}/node_modules/@resvg/resvg-wasm/index_bg.wasm`)));
 
+// The cap top of "H" is the reference line: drawText's `y` is the top of
+// the capitals, so a glyph's `y` offset is measured from there.
+const cap = renderGlyph("H");
+const capTop = cap.box.minY;
+const capHeight = cap.box.maxY - cap.box.minY + 1;
+
+// Advance of `ch` = ink width of "H{ch}H" minus that of "HH" (the
+// distance between the two H's grows by exactly the advance of `ch`).
+const hhWidth = inkWidth("HH");
+
 const glyphs = {};
 for (const ch of CHARS) {
-  const g = renderChar(ch);
-  glyphs[ch] = g ? { w: g.w, h: g.h, rows: g.rows } : { w: 0, h: 0, rows: [] };
+  const adv = Math.round((inkWidth(`H${ch}H`) - hhWidth) / MEASURE_SCALE);
+  const g = renderGlyph(ch);
+  glyphs[ch] = g
+    ? {
+        w: g.box.maxX - g.box.minX + 1,
+        h: g.box.maxY - g.box.minY + 1,
+        x: g.box.minX - ORIGIN_X,
+        y: g.box.minY - capTop,
+        adv,
+        rows: g.rows,
+      }
+    : { w: 0, h: 0, x: 0, y: 0, adv, rows: [] };
 }
 
 const body = `/**
  * Bitmap glyph table for the pure-JS e-ink renderer (Phase 3).
- * Generated by tools/gen-glyphs.mjs from a font file (pass the path and
- * family name, e.g. \`node tools/gen-glyphs.mjs assets/fonts/Arimo.ttf Arimo\`).
+ * Generated by tools/gen-glyphs.mjs (\`npm run glyphs\`) from
+ * assets/fonts/Arimo.ttf — do not edit by hand.
  * Each glyph is the cropped ink bitmap of one character, encoded as
- * rows of '#' (ink) and '.' (blank).
+ * rows of '#' (ink) and '.' (blank), plus its placement metrics.
  */
 export interface GlyphBitmap {
+  /** Ink width in px */
   w: number;
+  /** Ink height in px */
   h: number;
+  /** Ink offset right of the pen position (left side bearing) */
+  x: number;
+  /** Ink offset below the cap top (negative = above, e.g. accents) */
+  y: number;
+  /** Advance width — how far the pen moves after this glyph */
+  adv: number;
   rows: string[];
 }
 
+/** Cap height (px) at the reference size — drawText scales by round(size / GLYPH_CAP_HEIGHT). */
+export const GLYPH_CAP_HEIGHT = ${capHeight};
+
 export const GLYPHS: Record<string, GlyphBitmap> = {
 ${Object.entries(glyphs)
-    .map(([ch, g]) => `  "${ch}": { w: ${g.w}, h: ${g.h}, rows: [${g.rows.map((r) => JSON.stringify(r)).join(", ")}] },`)
+    .map(
+      ([ch, g]) =>
+        `  ${JSON.stringify(ch)}: { w: ${g.w}, h: ${g.h}, x: ${g.x}, y: ${g.y}, adv: ${g.adv}, rows: [${g.rows.map((r) => JSON.stringify(r)).join(", ")}] },`,
+    )
     .join("\n")}
 };
 `;
