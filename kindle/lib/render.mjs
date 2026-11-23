@@ -1,0 +1,55 @@
+// ============================================================
+// kindle/lib/render.mjs — load data for a screen and render it
+// (Phase 9). Used by the Vercel function (api/screen.mjs), the
+// gallery and the local renderer dev server, so every path draws a
+// screen the same way.
+// ============================================================
+
+import { deTime } from "./design.mjs";
+import { encodePng, initRenderer, rasterize, rotate } from "./eink.mjs";
+import { DEFAULT_CINEMAS, fetchProgramme } from "./kino.mjs";
+import { entryFor } from "./modules/ausdruck.mjs";
+import { fetchWeather } from "./modules/wetter.mjs";
+import { buildSchedule, tempelhofState } from "./schedule.mjs";
+import { SCREENS, screenSvg } from "./screens.mjs";
+
+/** Berlin calendar date of an epoch (ms) as YYYY-MM-DD. */
+export function berlinDate(ms = Date.now()) {
+  return new Date(ms).toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+}
+
+/**
+ * Data for the modules on screen `id`. Only what the screen shows is
+ * fetched. `now` (ms) drives the Tempelhof state for full renders.
+ */
+export async function screenData(id, { date = berlinDate(), battery = null, cinemas = DEFAULT_CINEMAS, from = "18:00", now = Date.now() } = {}) {
+  const modules = new Set(SCREENS[id].boxes.map((b) => b.module));
+  const data = { date, battery };
+  const jobs = [];
+  if (modules.has("wetter")) {
+    jobs.push(fetchWeather().then((w) => {
+      data.wetter = w;
+      data.updated = { wetter: deTime(w.fetchedAt) };
+    }));
+  }
+  if (modules.has("kino")) {
+    jobs.push(fetchProgramme(cinemas).then((p) => {
+      data.kino = { programme: p, from, updated: deTime(p.fetchedAt) };
+    }));
+  }
+  if (modules.has("ausdruck")) data.ausdruck = entryFor(date);
+  if (modules.has("tempelhof")) data.tempelhof = tempelhofState(buildSchedule(now, 1), now);
+  await Promise.all(jobs);
+  return data;
+}
+
+/**
+ * PNG of screen `id`. mode "base" (Kindle-drawn boxes blank, rotated for
+ * eips), "full" (everything, landscape: previews) or "fallback".
+ */
+export async function renderScreen(id, opts = {}, mode = "base") {
+  await initRenderer();
+  const data = mode === "fallback" ? {} : await screenData(id, opts);
+  const img = rasterize(screenSvg(id, data, mode));
+  return encodePng(mode === "full" ? img : rotate(img));
+}

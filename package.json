@@ -13,8 +13,8 @@
     "glyphs": "node tools/gen-glyphs.mjs",
     "kindle:build": "node kindle/build.mjs",
     "kindle:install": "sh kindle/install.sh",
-    "kino:preview": "node kindle/kino-preview.mjs",
-    "kino:dev": "node kindle/kino-dev-server.mjs",
+    "kindle:gallery": "node kindle/gallery.mjs",
+    "renderer:dev": "node kindle/renderer-dev-server.mjs",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

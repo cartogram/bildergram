@@ -1,50 +1,63 @@
 # bildergram
 
-A battery-powered e-ink dashboard on a jailbroken **Kindle Paperwhite 3**:
+A battery-powered e-ink dashboard on a jailbroken **Kindle Paperwhite 3**, in
+German. It shows a few hand-designed screens on a daily schedule:
 
-- **Daytime: Tempelhofer Feld.** Open or closed, the closing or opening time, a
-  countdown that updates every minute, today's date and today's opening hours.
-- **Evening: IM KINO.** That evening's screenings at your chosen
-  [Yorck](https://www.yorck.de) cinemas (default: Rollberg, Passage,
-  Neues Off), with formats such as OmU / OV.
+| Default time | Screen | What it shows |
+|---|---|---|
+| 06:00 | **Morgen** | Weather (now, 3-day high/low and precipitation, wind, sunset) and the *Ausdruck des Tages* |
+| 09:00 | **Tag** | Tempelhofer Feld (open/closed, countdown updated every minute) and the weather |
+| 18:15 | **Abend** | IM KINO: the evening's screenings at your chosen [Yorck](https://www.yorck.de) cinemas |
+| 23:00 | **Nacht** | The *Ausdruck des Tages* (B2: expression, English meaning, example sentence) |
 
-The Kindle sleeps between updates with Wi-Fi off. It only goes online to fetch
-new cinema listings (every few days) or when you press its power button.
+The Kindle sleeps between updates with Wi-Fi off. It goes online on an
+interval (default hourly) while a weather screen is showing, when it doesn't
+have the current screen yet, and when you press its power button.
 
 ## How it works
 
 ```
-┌──────────── Kindle Paperwhite 3 (kindle/device/dashboard.sh) ───────────┐
-│  every minute: wake on RTC alarm → paste countdown with eips → suspend   │
-│  evening:      show the downloaded listing → sleep until 06:00          │
-└───────┬──────────────────────────────────────────────────────────────────┘
-        │ check-in (06:00 when a listing is missing, or power button)
+┌──────────── Kindle Paperwhite 3 (kindle/device/dashboard.sh) ─────────────┐
+│  draw the screen's base image; on Tag also paste the Tempelhof panel and   │
+│  a countdown every minute (prebuilt) → suspend until the next wake (RTC)   │
+└───────┬────────────────────────────────────────────────────────────────────┘
+        │ check-in: battery + log up; schedule down; then one base image per screen
         ▼
-Cloudflare Worker hub (src/)  ── schedule, status, admin page, R2 state
-        │ GET /api/kino
+Cloudflare Worker hub (src/) ── schedule, status + battery history, admin page, R2 state
+        │ GET /api/screen?screen=…
         ▼
-Vercel function (api/kino.mjs) ── fetches yorck.de cinema pages, renders PNG
+Vercel function (api/screen.mjs) ── Open-Meteo, yorck.de, phrase list → screen PNG
 ```
 
-- **Tempelhof is precomputed.** Its status depends only on the opening-hours
-  table and the clock, so `npm run kindle:build` writes the open/close
-  schedule for the next 3 years plus every image the screen needs (one
-  background per state, one countdown image per minute value, one date image
-  per day). The Kindle never downloads anything for it.
-- **The cinema listing is rendered on Vercel.** yorck.de publishes a few days
-  ahead. Rendering needs more CPU than the Workers free plan allows (10 ms),
-  so the Worker only passes the image through.
-- **The Worker is the hub.** It stores the schedule and the last check-in in
-  R2 and serves the admin page. The Kindle only ever talks to the Worker.
+- **Screens are built from modules.** `kindle/lib/screens.mjs` places modules
+  in boxes on a shared frame (date and battery in the top bar):
+  - `tempelhof`: every minute, drawn on the Kindle;
+  - `wetter`: hourly, from Open-Meteo;
+  - `kino`: daily, from the yorck.de cinema pages;
+  - `ausdruck`: daily, from `kindle/data/ausdruecke.json`.
+- **One design system.** `kindle/lib/design.mjs` holds the type scale, three
+  ink levels tuned to the panel's 16 grays, spacing, Arimo Regular and Bold,
+  the weather icons and German formatting (dates, decimal commas, "2 h 15 min").
+- **The server renders everything except Tempelhof.** Rendering needs more
+  CPU than the Workers free plan allows (10 ms), so a Vercel function draws
+  each screen's base and the Worker only passes it through. The Tempelhof
+  status depends only on the opening hours and the clock, so its images are
+  prebuilt: `npm run kindle:build` writes the schedule for 3 years, a panel
+  per state and a countdown per minute, and checks that the pasted pieces
+  reproduce the design pixel for pixel.
+- **The Worker is the hub.** It stores the config and the last check-in
+  (with a week of battery readings) in R2 and serves the admin page. The
+  Kindle only ever talks to the Worker.
 
 ### On the Kindle
 
 | When | What happens |
 |---|---|
-| 06:00–18:15 (default) | Tempelhof screen, updated every minute; a full redraw every 15 minutes clears ghosting |
-| 18:15–06:00 (default) | IM KINO for that evening; the Kindle sleeps until the next switch |
-| First wake after 06:00 | If the listing for today or tomorrow is missing, check in over Wi-Fi |
-| Power button | Check in now ("Updating…" in the corner): picks up schedule changes and fresh listings |
+| A slot starts | Draw that screen (the downloaded base, or a "Keine Verbindung" fallback) |
+| Tag | The Tempelhof countdown changes every minute; a full redraw every 15 minutes clears ghosting |
+| Every 60 min (configurable) while Morgen/Tag shows | Check in: fresh weather, schedule changes |
+| Current screen not downloaded for its day | Check in (retries every 15 min if offline) |
+| Power button | Check in now ("Aktualisiere …" in the top bar) |
 | USB plugged in (or "Return to Kindle UI" on the admin page) | Exit to the normal Kindle UI, which reloads (it looks like a restart but isn't one) |
 
 Three books in the Kindle library control it:
@@ -59,13 +72,13 @@ Three books in the Kindle library control it:
 
 ### 1. Vercel renderer
 
-The function lives in `api/kino.mjs` and reuses `kindle/lib/`; `vercel.json`
-skips the Vite build and bundles the font and WASM. The project is
-`bildergram-kino` on the `matt-seccafiens-projects` team (linked to this
-GitHub repo, so pushes deploy).
+The function is `api/screen.mjs`; it reuses `kindle/lib/`. `vercel.json`
+skips the Vite build and bundles the fonts, WASM and phrase list. The project
+is `bildergram-kino` on the `matt-seccafiens-projects` team, linked to this
+GitHub repo, so pushes to `main` deploy it.
 
 ```bash
-vercel env add KINO_TOKEN production   # shared secret, also set on the Worker
+vercel env add RENDERER_TOKEN production   # shared secret, also set on the Worker
 vercel deploy --prod
 ```
 
@@ -73,18 +86,18 @@ vercel deploy --prod
 
 ```bash
 npx wrangler secret put ADMIN_TOKEN             # for the admin page
-npx wrangler secret put KINO_TOKEN              # same value as on Vercel
+npx wrangler secret put RENDERER_TOKEN          # same value as on Vercel
 npx wrangler secret put DEVICE_TOKEN_KINDLE_01  # the Kindle's token (goes into hub.env)
 npm run deploy
 ```
 
-`KINO_URL` (the Vercel URL) is a plain var in `wrangler.jsonc`. The R2 bucket
-`trmnl-display-assets` holds the hub state (`kindle/kindle_01/config.json`,
+`RENDERER_URL` (the Vercel URL) is a plain var in `wrangler.jsonc`. The R2
+bucket `trmnl-display-assets` holds the hub state (`kindle/kindle_01/config.json`,
 `status.json`).
 
 ### 3. Kindle
 
-Requires a jailbroken Kindle (WinterBreak; firmware 5.13.7 here) and
+Requires a jailbroken Kindle (WinterBreak2; firmware 5.13.7 here) and
 KOReader, whose SSH server is used for installing: KOReader → gear →
 Network → tick **SSH server** (port 2222; put your public key in
 `koreader/settings/SSH/authorized_keys`).
@@ -106,13 +119,15 @@ first time. Rebuild and reinstall before the Tempelhof schedule runs out
 
 ## Admin page
 
-The Worker URL (https://bildergram.distance.workers.dev) serves the admin page.
-It asks once for `ADMIN_TOKEN` and then shows:
+The Worker URL (https://bildergram.distance.workers.dev) serves the admin page
+(in English). It asks once for `ADMIN_TOKEN` and then shows:
 
-- the last check-in: time, battery, screen, listings on the device, recent log;
-- the schedule (which screen from which time) and the cinemas;
+- the last check-in (time, battery, screen, version, recent log) and a
+  battery chart for the last week;
+- the schedule (which screen from which time) and the check-in interval;
+- the cinemas for IM KINO and the first screening time to list;
 - a one-shot **Return to the normal Kindle UI** switch;
-- a preview of the next published listing.
+- a live preview of each screen.
 
 Changes reach the Kindle at its next check-in; press its power button to apply
 them right away.
@@ -121,46 +136,56 @@ them right away.
 
 ```bash
 npm install
-npm run dev            # Worker + admin page locally (workerd), secrets from .dev.vars
-npm run kino:dev       # local stand-in for the Vercel function on :3999
-npm run kino:preview   # render tonight's listing to kindle/dist/preview/
-npm run kindle:build   # Tempelhof schedule + images + kindle/dist/preview/index.html
-npm run lint           # typecheck the Worker and kindle/lib/*.ts
+npm run dev              # Worker + admin page locally (workerd), secrets from .dev.vars
+npm run renderer:dev     # local stand-in for the Vercel function on :3999
+npm run kindle:gallery   # every screen from live data → kindle/dist/gallery/index.html
+npm run kindle:build     # Tempelhof pieces + fallbacks + layout.env → kindle/dist
+npm run lint             # typecheck the Worker and kindle/lib/*.ts
 npx tsc --noEmit -p src/client   # typecheck the admin page
-npm run glyphs         # regenerate kindle/lib/glyphs.ts from assets/fonts/Arimo.ttf
+npm run glyphs           # regenerate kindle/lib/glyphs.ts from assets/fonts/Arimo.ttf
 ```
 
 For local development, `.dev.vars` points the Worker at the local renderer:
-`KINO_URL=http://localhost:3999`, `KINO_TOKEN=local-kino-token`, plus an
-`ADMIN_TOKEN` and `DEVICE_TOKEN_KINDLE_01` of your choice.
+`RENDERER_URL=http://localhost:3999`, `RENDERER_TOKEN=local-renderer-token`,
+plus an `ADMIN_TOKEN` and `DEVICE_TOKEN_KINDLE_01` of your choice.
+
+To add a screen, compose existing modules in `kindle/lib/screens.mjs` and add
+its id to `SCREENS` in `src/routes/kindle.ts`; check it with
+`npm run kindle:gallery`.
 
 ## Project structure
 
 ```
 bildergram/
-├── src/                     # Cloudflare Worker hub
-│   ├── worker.ts            # Routing: /api/kindle/*, /api/admin/kindle*, admin page
-│   ├── routes/kindle.ts     # Check-in, listing images, admin API, R2 state
-│   ├── devices.ts           # Kindle token + MAC authentication
+├── src/                       # Cloudflare Worker hub
+│   ├── worker.ts              # Routing: /api/kindle/*, /api/admin/kindle*, admin page
+│   ├── routes/kindle.ts       # Check-in, screen images, admin API, R2 state
+│   ├── devices.ts             # Kindle token + MAC authentication
 │   ├── types.ts
-│   └── client/              # Admin page (vanilla TS, built by Vite)
-├── api/kino.mjs             # Vercel function: Yorck listing → PNG
+│   └── client/                # Admin page (vanilla TS, built by Vite)
+├── api/screen.mjs             # Vercel function: screen → PNG
 ├── kindle/
-│   ├── build.mjs            # Tempelhof schedule + images → kindle/dist
-│   ├── install.sh           # Copies kindle/dist to the Kindle over SSH
-│   ├── device/dashboard.sh  # The loop that runs on the Kindle
-│   ├── scriptlets/          # Library books: Dashboard, test, log
-│   ├── lib/
-│   │   ├── eink.mjs         # SVG → 16-gray, rotated, 8-bit PNG for eips
-│   │   ├── kino.mjs         # yorck.de parsing + IM KINO layout
-│   │   ├── templehof.ts     # Tempelhof opening hours (ported from openfeld)
-│   │   └── glyphs.ts        # Arimo metrics, used to measure text (generated)
-│   ├── kino-preview.mjs
-│   └── kino-dev-server.mjs
-├── assets/fonts/            # Arimo.ttf (+ OFL license)
-├── tools/gen-glyphs.mjs     # Font → kindle/lib/glyphs.ts
-├── wrangler.jsonc           # Worker config (R2, KINO_URL, assets; no crons)
-└── vercel.json              # Vercel config for api/kino.mjs
+│   ├── build.mjs              # Tempelhof pieces, fallbacks, layout.env → kindle/dist
+│   ├── gallery.mjs            # Design review page from live data
+│   ├── install.sh             # Copies kindle/dist to the Kindle over SSH
+│   ├── renderer-dev-server.mjs
+│   ├── device/dashboard.sh    # The loop that runs on the Kindle
+│   ├── scriptlets/            # Library books: Dashboard, test, log
+│   ├── data/ausdruecke.json   # Ausdruck des Tages, one per day
+│   └── lib/
+│       ├── design.mjs         # Design system: tokens, primitives, icons, German formatting
+│       ├── screens.mjs        # The screens: frame + boxes → modules
+│       ├── modules/           # tempelhof, wetter, kino, ausdruck
+│       ├── render.mjs         # Load a screen's data and render it
+│       ├── eink.mjs           # SVG → 16-gray, rotated, 8-bit PNG for eips
+│       ├── kino.mjs           # yorck.de fetching and parsing
+│       ├── schedule.mjs       # Tempelhof open/close schedule
+│       ├── templehof.ts       # Tempelhof opening hours (ported from openfeld)
+│       └── glyphs.ts          # Arimo metrics, used to measure text (generated)
+├── assets/fonts/              # Arimo.ttf, Arimo-Bold.ttf (+ OFL license)
+├── tools/gen-glyphs.mjs       # Font → kindle/lib/glyphs.ts
+├── wrangler.jsonc             # Worker config (R2, RENDERER_URL, assets; no crons)
+└── vercel.json                # Vercel config for api/screen.mjs
 ```
 
 ## Implementation phases
@@ -172,3 +197,6 @@ bildergram/
 - [x] **Phase 5**: Metric widget — weather or Tempelhof Field status
 - [x] **Phase 6**: Kindle #1 standalone Tempelhof dashboard — prebuilt schedule and images, per-minute RTC wake + `eips` on a Paperwhite 3, Wi-Fi off, power-button exit
 - [x] **Phase 7**: Screens on a schedule — Tempelhof by day, IM KINO (Yorck listing rendered on Vercel) in the evening; Worker becomes the hub (check-ins, admin page); the TRMNL render pipeline, weather/calendar/tasks and Kindle #2 were removed
+- [x] **Phase 8**: Design system and German screens — `design.mjs` tokens and primitives, Arimo Bold, modules (tempelhof, wetter, kino, ausdruck), four screens (Morgen, Tag, Abend, Nacht), a live-data gallery
+- [x] **Phase 9**: Screens on the device — server-rendered screen bases with the Tempelhof box drawn on the Kindle, hourly check-ins while weather shows, battery history and per-screen previews on the admin page, 365 B2 expressions
+- [ ] **Next**: Kindle #2 (a Paperwhite 2: 1024 × 758 landscape at 212 ppi, same aspect ratio) on the same hub, with screens rendered per device size; hide films already seen on Letterboxd from IM KINO

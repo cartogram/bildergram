@@ -1,112 +1,54 @@
 #!/usr/bin/env node
 // ============================================================
-// kindle/build.mjs — builds the on-device Tempelhof dashboard
-// for a jailbroken Kindle Paperwhite 3 (`npm run kindle:build`).
+// kindle/build.mjs — builds the Kindle bundle (Phase 9)
+// (`npm run kindle:build`).
 //
-// Everything the Kindle needs is computed here, so the device
-// never needs Wi-Fi: the open/close schedule for the next few
-// years (from kindle/lib/templehof.ts), one full-screen background
-// per state, and one countdown image per minute value. The
-// device script (kindle/device/dashboard.sh) just looks up the
-// next event and pastes images with `eips`.
+// The server renders each screen's "base" (top bar, weather, cinema,
+// phrase) at check-in; the Kindle only draws what changes every
+// minute: the Tempelhof panel and countdown, pasted into the Tag
+// screen's box. This build prepares everything the Kindle draws by
+// itself, so it works offline:
+//   - the Tempelhof open/close schedule for the next 3 years
+//     (kindle/lib/templehof.ts), checked against getTemplehofStatus;
+//   - one Tempelhof panel per state and one countdown image per
+//     minute value, sized for the box the screens use;
+//   - a fallback base per screen ("Keine Verbindung") for when no
+//     screen has been downloaded;
+//   - the "Aktualisiere …" piece shown during a check-in;
+//   - layout.env with the eips paste positions (from screens.mjs).
 //
 // Output: kindle/dist/
 //   dashboard/   → copied to /mnt/us/dashboard on the Kindle
 //   documents/   → scriptlets, copied to /mnt/us/documents
-//   preview/     → composited frames to review in a browser
 // ============================================================
 
 import { execFileSync } from "node:child_process";
 import { copyFileSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { HOURS, getCloseTime, getTemplehofStatus, formatCountdown } from "./lib/templehof.ts";
-import {
-  H, ROTATE, W, bold, encodePng, initRenderer, paste, rasterize, rotate, rotatedOrigin, svgOpen, unrotate,
-} from "./lib/eink.mjs";
-import { TITLE as KINO_TITLE } from "./lib/kino.mjs";
+import { INK, TOPBAR, MARGIN, text } from "./lib/design.mjs";
+import { H, ROTATE, W, encodePng, initRenderer, paste, rasterize, rotate, rotatedOrigin, svgOpen } from "./lib/eink.mjs";
+import * as tempelhof from "./lib/modules/tempelhof.mjs";
+import { buildSchedule, nextEvent } from "./lib/schedule.mjs";
+import { HOURLY_SCREENS, SCREENS, deviceBoxes, screenSvg } from "./lib/screens.mjs";
+import { getTemplehofStatus } from "./lib/templehof.ts";
 
 const REPO = fileURLToPath(new URL("..", import.meta.url));
 const OUT = `${REPO}/kindle/dist`;
-
-// ------------------------------------------------------------------
-// Panel: Paperwhite 3 framebuffer is 1072×1448 portrait, 8-bit gray
-// (`eips -i`). We lay out in landscape and rotate before writing,
-// because `eips -g` pastes pixels as-is. ROTATE picks which way the
-// landscape image is turned; build with KINDLE_ROTATE=cw if the
-// dashboard shows upside down on the mounted Kindle.
-// ------------------------------------------------------------------
 const YEARS = 3; // schedule length — reinstall before it runs out
 
-// Landscape layout (px at 300 ppi)
-const M = 80; // side margin
-const COUNTDOWN = { x: M, y: 520, w: W - 2 * M, h: 250 };
-const DATE = { x: W - M - 640, y: 80, w: 640, h: 70 };
-const BATTERY = { x: W - M - 360, y: 930, w: 360, h: 70 };
+/** Default screen schedule until the first check-in (HHMM:screen). */
+const DEFAULT_SCHEDULE = "0600:morgen 0900:tag 1815:abend 2300:nacht";
 
-// ------------------------------------------------------------------
-// Schedule
-// ------------------------------------------------------------------
+/** Where "Aktualisiere …" covers the battery reading in the top bar. */
+const UPDATING = { x: W - MARGIN.x - 420, y: TOPBAR.baseline - 44, w: 420, h: 60 };
 
-const berlin = new Intl.DateTimeFormat("en-GB", {
-  timeZone: "Europe/Berlin",
-  hourCycle: "h23",
-  year: "numeric", month: "2-digit", day: "2-digit",
-  hour: "2-digit", minute: "2-digit",
-});
-
-function berlinParts(ms) {
-  const p = Object.fromEntries(berlin.formatToParts(new Date(ms)).map((x) => [x.type, x.value]));
-  return { y: +p.year, m: +p.month, d: +p.day, h: +p.hour, mi: +p.minute };
-}
-
-/** UTC epoch ms for a Berlin wall-clock time (opening hours never fall in a DST gap). */
-function berlinToUtc(y, m, d, h, mi) {
-  const want = Date.UTC(y, m - 1, d, h, mi);
-  let t = want;
-  for (let i = 0; i < 3; i++) {
-    const p = berlinParts(t);
-    t += want - Date.UTC(p.y, p.m - 1, p.d, p.h, p.mi);
+function version() {
+  try {
+    return execFileSync("git", ["describe", "--always", "--dirty"], { cwd: REPO, encoding: "utf8" }).trim();
+  } catch {
+    return "dev";
   }
-  return t;
 }
-
-const hhmm = (s) => s.replace(":", "");
-
-/**
- * Every open/close event from yesterday until YEARS from now. Each
- * event carries the background to show *before* it: while the next
- * event is a closing, the field is open, and vice versa.
- */
-function buildSchedule(fromMs) {
-  const events = [];
-  const first = berlinParts(fromMs - 86_400_000);
-  const day0 = Date.UTC(first.y, first.m - 1, first.d);
-  for (let i = 0; i < YEARS * 366; i++) {
-    const day = new Date(day0 + i * 86_400_000);
-    const y = day.getUTCFullYear(), m = day.getUTCMonth() + 1, d = day.getUTCDate();
-    const entry = HOURS[m - 1];
-    const open = entry.open;
-    const close = getCloseTime(entry, d);
-    const hours = `${hhmm(open)}-${hhmm(close)}`;
-    const [oh, om] = open.split(":").map(Number);
-    const [ch, cm] = close.split(":").map(Number);
-    events.push({ t: berlinToUtc(y, m, d, oh, om), kind: "open", label: open, bg: `closed_${hours}` });
-    events.push({ t: berlinToUtc(y, m, d, ch, cm), kind: "close", label: close, bg: `open_${hours}` });
-  }
-  return events.sort((a, b) => a.t - b.t);
-}
-
-function nextEvent(events, ms) {
-  let lo = 0, hi = events.length - 1;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (events[mid].t > ms) hi = mid; else lo = mid + 1;
-  }
-  return events[lo].t > ms ? events[lo] : null;
-}
-
-/** The device's countdown: minutes to the next event, rounded up. */
-const minutesLeft = (ev, ms) => Math.ceil((ev.t - ms) / 60_000);
 
 /**
  * Cross-check the schedule against the existing status logic
@@ -121,152 +63,88 @@ function verifySchedule(events, fromMs) {
     const open = ev.kind === "close";
     const target = open ? status.closesAt : status.opensAt;
     if (open !== status.open || ev.label !== target) {
-      throw new Error(
-        `schedule mismatch at ${new Date(t).toISOString()}: schedule says ${open ? "open" : "closed"} → ${ev.label}, ` +
-          `getTemplehofStatus says ${status.open ? "open" : "closed"} → ${target}`,
-      );
+      throw new Error(`schedule mismatch at ${new Date(t).toISOString()}: ${open ? "open" : "closed"} → ${ev.label} vs ${status.open ? "open" : "closed"} → ${target}`);
     }
     checked++;
   }
   return checked;
 }
 
-// ------------------------------------------------------------------
-// Screens
-// ------------------------------------------------------------------
-
-/** Full-screen background for one state; the countdown area is left blank. */
-function backgroundSvg(key) {
-  const [state, hours] = key.split("_");
-  const [open, close] = hours.split("-").map((s) => `${s.slice(0, 2)}:${s.slice(2)}`);
-  const isOpen = state === "open";
-  const target = isOpen ? `closes at ${close}` : `opens at ${open}`;
-  const until = isOpen ? "until it closes" : "until it opens";
-  return `${svgOpen(W, H)}
-    <text x="${M}" y="130" font-size="46" letter-spacing="6" fill="#444">TEMPELHOFER FELD</text>
-    <text x="${M}" y="365" font-size="210" ${bold(210)}>${isOpen ? "OPEN" : "CLOSED"}</text>
-    <text x="${M}" y="470" font-size="72" fill="#222">${target}</text>
-    <text x="${M}" y="850" font-size="60" fill="#444">${until}</text>
-    <rect x="${M}" y="905" width="${W - 2 * M}" height="4" fill="#000"/>
-    <text x="${M}" y="985" font-size="46" fill="#444">Opening hours ${open} – ${close}</text>
-  </svg>`;
+/** Tempelhof state for a schedule background key such as "open_0700-1800". */
+function stateForKey(key, minutes = 0) {
+  const [kind, hours] = key.split("_");
+  const [o, c] = hours.split("-").map((x) => `${x.slice(0, 2)}:${x.slice(2)}`);
+  return { open: kind === "open", target: kind === "open" ? c : o, minutes, hours: [o, c] };
 }
 
-/** One countdown value, sized to exactly the COUNTDOWN rect so it overwrites the previous one. */
-function countdownSvg(minutes) {
-  const text = formatCountdown(minutes * 60_000);
-  return `${svgOpen(COUNTDOWN.w, COUNTDOWN.h)}
-    <text x="0" y="${COUNTDOWN.h - 40}" font-size="230" ${bold(230)}>${text}</text>
-  </svg>`;
-}
-
-/** Today's date, right-aligned in the header — one image per Berlin day. */
-function dateSvg(y, m, d) {
-  const text = new Date(Date.UTC(y, m - 1, d, 12)).toLocaleDateString("en-GB", {
-    timeZone: "UTC", weekday: "long", day: "numeric", month: "long",
-  });
-  return `${svgOpen(DATE.w, DATE.h)}
-    <text x="${DATE.w}" y="${DATE.h - 20}" font-size="46" text-anchor="end" fill="#222">${text}</text>
-  </svg>`;
-}
-
-const dateKey = (p) => `${p.y}-${String(p.m).padStart(2, "0")}-${String(p.d).padStart(2, "0")}`;
-
-/** Shown in the bottom-right corner while the Kindle checks in over Wi-Fi. */
-function updatingSvg() {
-  return `${svgOpen(BATTERY.w, BATTERY.h)}
-    <text x="${BATTERY.w}" y="${BATTERY.h - 18}" font-size="46" text-anchor="end" fill="#222">Updating…</text>
-  </svg>`;
-}
-
-/** Full screen for the cinema slot when no listing has been downloaded yet. */
-function kinoMissingSvg() {
-  return `${svgOpen(W, H)}
-    <text x="${M}" y="118" font-size="46" letter-spacing="6" fill="#444">${KINO_TITLE}</text>
-    <text x="${M}" y="${H / 2}" font-size="72" fill="#222">No cinema listing yet</text>
-    <text x="${M}" y="${H / 2 + 90}" font-size="46" fill="#444">Press the power button to update over Wi-Fi.</text>
-  </svg>`;
-}
-
-function batterySvg() {
-  return `${svgOpen(BATTERY.w, BATTERY.h)}
-    <text x="${BATTERY.w}" y="${BATTERY.h - 18}" font-size="46" text-anchor="end" ${bold(46)}>Battery low</text>
-  </svg>`;
-}
+const boxSvg = (w, h, inner) => `${svgOpen(w, h)}${inner}</svg>`;
+const png = (img) => encodePng(rotate(img));
 
 // ------------------------------------------------------------------
 // Build
 // ------------------------------------------------------------------
 
-/** Short git hash (+ "-dirty") so check-ins report what is installed. */
-function version() {
-  try {
-    return execFileSync("git", ["describe", "--always", "--dirty"], { cwd: REPO, encoding: "utf8" }).trim();
-  } catch {
-    return "dev";
-  }
-}
-
 const t0 = performance.now();
 await initRenderer();
 const now = Date.now();
-const events = buildSchedule(now);
+const events = buildSchedule(now, YEARS);
 const checked = verifySchedule(events, now);
+const bgKeys = [...new Set(events.map((e) => e.bg))];
+let maxMinutes = 0;
+for (let i = 1; i < events.length; i++) maxMinutes = Math.max(maxMinutes, Math.ceil((events[i].t - events[i - 1].t) / 60_000));
 
 rmSync(OUT, { recursive: true, force: true });
-for (const dir of ["dashboard/bin", "dashboard/img/bg", "dashboard/img/cd", "dashboard/img/date", "documents", "preview"]) {
-  mkdirSync(`${OUT}/${dir}`, { recursive: true });
+for (const dir of ["dashboard/bin", "dashboard/fallback", "dashboard/img", "documents"]) mkdirSync(`${OUT}/${dir}`, { recursive: true });
+
+writeFileSync(`${OUT}/dashboard/schedule.txt`, events.map((e) => `${Math.round(e.t / 1000)} ${e.kind} ${e.bg}`).join("\n") + "\n");
+
+const env = [
+  `# Generated by kindle/build.mjs (rotation: ${ROTATE}) — eips paste positions are portrait framebuffer coordinates`,
+  `VERSION=${version()}`,
+  `SCREENS="${Object.keys(SCREENS).join(" ")}"`,
+  `HOURLY_SCREENS="${HOURLY_SCREENS.join(" ")}"`,
+  `DEFAULT_SCHEDULE="${DEFAULT_SCHEDULE}"`,
+];
+
+// Kindle-drawn boxes: Tempelhof panels + countdowns, once per box variant.
+const built = new Set();
+let pieces = 0;
+for (const id of Object.keys(SCREENS)) {
+  for (const b of deviceBoxes(id)) {
+    const box = { w: b.w, h: b.h, variant: b.variant };
+    const cb = tempelhof.countdownBox(box);
+    const dir = `${OUT}/dashboard/tempelhof/${b.variant}`;
+    if (!built.has(b.variant)) {
+      built.add(b.variant);
+      mkdirSync(`${dir}/panel`, { recursive: true });
+      mkdirSync(`${dir}/cd`, { recursive: true });
+      for (const key of bgKeys) {
+        const svg = boxSvg(box.w, box.h, tempelhof.render(box, stateForKey(key), { withCountdown: false }));
+        writeFileSync(`${dir}/panel/${key}.png`, png(rasterize(svg)));
+        pieces++;
+      }
+      for (let m = 0; m <= maxMinutes; m++) {
+        writeFileSync(`${dir}/cd/${m}.png`, png(rasterize(boxSvg(cb.w, cb.h, tempelhof.countdownSvg(box, m)))));
+        pieces++;
+      }
+    }
+    const tp = rotatedOrigin({ x: b.x, y: b.y, w: b.w, h: b.h });
+    const cd = rotatedOrigin({ x: b.x + cb.x, y: b.y + cb.y, w: cb.w, h: cb.h });
+    env.push(`DEVICE_${id}="tempelhof:${b.variant}"`, `TP_${id}_X=${tp.x}`, `TP_${id}_Y=${tp.y}`, `CD_${id}_X=${cd.x}`, `CD_${id}_Y=${cd.y}`);
+  }
 }
 
-// Schedule: "<epoch-seconds> <open|close> <background-key>"
-writeFileSync(
-  `${OUT}/dashboard/schedule.txt`,
-  events.map((e) => `${Math.round(e.t / 1000)} ${e.kind} ${e.bg}`).join("\n") + "\n",
-);
-
-// Backgrounds
-const bgs = new Map();
-for (const key of new Set(events.map((e) => e.bg))) {
-  const img = rotate(rasterize(backgroundSvg(key)));
-  bgs.set(key, img);
-  writeFileSync(`${OUT}/dashboard/img/bg/${key}.png`, encodePng(img));
+// Fallback bases (no connection yet) for every screen.
+for (const id of Object.keys(SCREENS)) {
+  writeFileSync(`${OUT}/dashboard/fallback/${id}.png`, png(rasterize(screenSvg(id, {}, "fallback"))));
 }
 
-// Countdown images: 1 … longest gap between events, in minutes
-let maxMinutes = 0;
-for (let i = 1; i < events.length; i++) {
-  maxMinutes = Math.max(maxMinutes, Math.ceil((events[i].t - events[i - 1].t) / 60_000));
-}
-const cds = new Map();
-for (let m = 0; m <= maxMinutes; m++) {
-  const img = rotate(rasterize(countdownSvg(m)));
-  cds.set(m, img);
-  writeFileSync(`${OUT}/dashboard/img/cd/${m}.png`, encodePng(img));
-}
-const battery = rotate(rasterize(batterySvg()));
-writeFileSync(`${OUT}/dashboard/img/battery-low.png`, encodePng(battery));
-writeFileSync(`${OUT}/dashboard/img/updating.png`, encodePng(rotate(rasterize(updatingSvg()))));
-writeFileSync(`${OUT}/dashboard/img/kino-missing.png`, encodePng(rotate(rasterize(kinoMissingSvg()))));
-
-// Date images: every Berlin day the schedule covers (img/date/YYYY-MM-DD.png)
-const dates = new Map();
-for (const key of new Set(events.map((e) => dateKey(berlinParts(e.t))))) {
-  const [y, m, d] = key.split("-").map(Number);
-  const img = rotate(rasterize(dateSvg(y, m, d)));
-  dates.set(key, img);
-  writeFileSync(`${OUT}/dashboard/img/date/${key}.png`, encodePng(img));
-}
-
-// Paste positions for eips (portrait framebuffer coordinates)
-const cd = rotatedOrigin(COUNTDOWN);
-const dt = rotatedOrigin(DATE);
-const bat = rotatedOrigin(BATTERY);
-writeFileSync(
-  `${OUT}/dashboard/layout.env`,
-  `# Generated by kindle/build.mjs (rotation: ${ROTATE}) — eips paste positions\n` +
-    `CD_X=${cd.x}\nCD_Y=${cd.y}\nDATE_X=${dt.x}\nDATE_Y=${dt.y}\nBAT_X=${bat.x}\nBAT_Y=${bat.y}\n` +
-    `VERSION=${version()}\n`,
-);
+// "Aktualisiere …" over the battery reading during a check-in.
+const upd = boxSvg(UPDATING.w, UPDATING.h, text(UPDATING.w, 44, "Aktualisiere …", { size: 30, ink: INK.secondary }, { anchor: "end" }));
+writeFileSync(`${OUT}/dashboard/img/updating.png`, png(rasterize(upd)));
+const up = rotatedOrigin(UPDATING);
+env.push(`UPD_X=${up.x}`, `UPD_Y=${up.y}`);
+writeFileSync(`${OUT}/dashboard/layout.env`, env.join("\n") + "\n");
 
 // Device script + scriptlets
 copyFileSync(`${REPO}/kindle/device/dashboard.sh`, `${OUT}/dashboard/bin/dashboard.sh`);
@@ -275,64 +153,43 @@ for (const name of ["Dashboard.sh", "Dashboard test.sh", "Dashboard log.sh"]) {
 }
 
 // ------------------------------------------------------------------
-// Preview: composite frames exactly as the device would (paste the
-// rotated images at the eips offsets), then rotate back to landscape.
+// Paste check: the server's base + the Kindle's panel and countdown,
+// pasted at the layout positions, must reproduce the full design
+// pixel for pixel (both drawn here in landscape from fixture data).
 // ------------------------------------------------------------------
 
-const today = berlinParts(now);
-const todaysEvent = (kind) =>
-  events.find((e) => {
-    const p = berlinParts(e.t);
-    return e.kind === kind && p.y === today.y && p.m === today.m && p.d === today.d;
-  });
-const samples = [
-  ["Now", now],
-  ["10 min before opening", todaysEvent("open").t - 10 * 60_000],
-  ["Afternoon", berlinToUtc(today.y, today.m, today.d, 14, 5)],
-  ["1 min before closing", todaysEvent("close").t - 60_000],
-  ["Mid-June 12:00", berlinToUtc(today.y + 1, 6, 15, 12, 0)],
-  ["Low battery", now],
-];
-const previews = samples.map(([label, ms], i) => {
-  const ev = nextEvent(events, ms);
-  const mins = minutesLeft(ev, ms);
-  const frame = { w: H, h: W, px: new Uint8Array(bgs.get(ev.bg).px) };
-  paste(frame, cds.get(mins), cd);
-  paste(frame, dates.get(dateKey(berlinParts(ms))), dt);
-  if (label === "Low battery") paste(frame, battery, bat);
-  const file = `frame-${i}.png`;
-  writeFileSync(`${OUT}/preview/${file}`, encodePng(unrotate(frame)));
-  const when = new Date(ms).toLocaleString("en-GB", { timeZone: "Europe/Berlin", dateStyle: "medium", timeStyle: "short" });
-  return { label, when, file, bg: ev.bg, mins };
-});
-writeFileSync(
-  `${OUT}/preview/index.html`,
-  `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tempelhof Preview</title>
-<style>
-  :root { --bg: #e9e7e3; --ink: #1b1a18; --muted: #6a675f; --card: #fff; --line: #d4d1ca; }
-  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #1b1b1d; --ink: #ecebe8; --muted: #a09d97; --card: #26262a; --line: #3a3a3f; } }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 -apple-system, BlinkMacSystemFont, sans-serif; }
-  main { max-width: 1500px; margin: 0 auto; padding: 24px 16px; }
-  h1 { font-size: 22px; margin: 0 0 4px; } p { color: var(--muted); margin: 0 0 20px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 640px), 1fr)); gap: 18px; }
-  figure { margin: 0; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
-  figcaption { font-size: 13px; margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
-  figcaption span { color: var(--muted); }
-  img { display: block; width: 100%; height: auto; border: 1px solid var(--line); background: #fff; }
-</style>
-<main>
-  <h1>Tempelhof dashboard — Kindle Paperwhite 3 preview</h1>
-  <p>Composited from the exact files the Kindle will paste (rotation: ${ROTATE}), rotated back to landscape. 1448 × 1072, 16 gray levels.</p>
-  <div class="grid">
-  ${previews.map((p) => `<figure><figcaption><b>${p.label}</b><span>${p.when} · bg ${p.bg} · ${p.mins} min</span></figcaption><img src="${p.file}" alt="${p.label}"></figure>`).join("\n  ")}
-  </div>
-</main>`,
-);
+const fixture = {
+  date: "2026-11-23",
+  battery: 84,
+  wetter: {
+    now: { temp: 2, code: 71, wind: 19 }, sunset: "16:03",
+    days: [{ date: "2026-11-23", code: 80, max: 3, min: 0, pop: 60, mm: 0.8 }, { date: "2026-11-24", code: 71, max: 3, min: 0, pop: 3, mm: 0 }, { date: "2026-11-25", code: 3, max: 2, min: -1, pop: 0, mm: 0 }],
+  },
+  updated: { wetter: "14:00" },
+};
+let compared = 0;
+for (const id of Object.keys(SCREENS)) {
+  for (const b of deviceBoxes(id)) {
+    const box = { w: b.w, h: b.h, variant: b.variant };
+    const cb = tempelhof.countdownBox(box);
+    for (const [key, minutes] of [["open_0700-1800", 135], ["closed_0700-1800", 775]]) {
+      const state = stateForKey(key, minutes);
+      const data = { ...fixture, tempelhof: state };
+      const full = rasterize(screenSvg(id, data, "full"));
+      const composed = rasterize(screenSvg(id, data, "base"));
+      paste(composed, rasterize(boxSvg(box.w, box.h, tempelhof.render(box, state, { withCountdown: false }))), { x: b.x, y: b.y });
+      paste(composed, rasterize(boxSvg(cb.w, cb.h, tempelhof.countdownSvg(box, minutes))), { x: b.x + cb.x, y: b.y + cb.y });
+      let diff = 0;
+      for (let i = 0; i < full.px.length; i++) if (full.px[i] !== composed.px[i]) diff++;
+      if (diff > 0) throw new Error(`paste check failed for ${id} (${key}): ${diff} pixels differ from the full render`);
+      compared++;
+    }
+  }
+}
 
 console.log(
-  `kindle/dist: ${events.length} events (${YEARS}y, verified at ${checked} instants), ` +
-    `${bgs.size} backgrounds, ${cds.size} countdown images (max ${formatCountdown(maxMinutes * 60_000)}), ` +
-    `${dates.size} date images, ` +
-    `rotation ${ROTATE}, countdown at eips -x ${cd.x} -y ${cd.y} — ${((performance.now() - t0) / 1000).toFixed(1)}s`,
+  `kindle/dist: ${events.length} Tempelhof events (${YEARS}y, verified at ${checked} instants), ` +
+    `${pieces} Tempelhof pieces (${bgKeys.length} panels/variant, countdown to ${maxMinutes} min), ` +
+    `${Object.keys(SCREENS).length} fallback screens, paste check ${compared}/${compared} identical — ` +
+    `${((performance.now() - t0) / 1000).toFixed(1)}s`,
 );

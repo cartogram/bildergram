@@ -1,21 +1,47 @@
 #!/bin/sh
-# Copies kindle/dist to the Kindle over SSH (KOReader → Network → SSH server).
+# Copies kindle/dist to the Kindle, either over SSH (KOReader → Network →
+# SSH server) or onto its USB drive when it is mounted on this Mac:
 #   KINDLE_HOST=192.168.0.93 npm run kindle:install
+#   KINDLE_VOLUME=/Volumes/Kindle npm run kindle:install
 # Optional, to (re)write the hub settings on the device:
 #   KINDLE_HUB_URL=https://<worker>.workers.dev KINDLE_HUB_TOKEN=<DEVICE_TOKEN_KINDLE_01>
-# Downloaded listings, state.env, hub.env and the log are kept across installs.
+#   (over USB also KINDLE_HUB_MAC=<Wi-Fi MAC>, since it can't be read from the drive)
+# Downloaded screens, state.env, hub.env and the log are kept across installs.
 set -e
-HOST=${KINDLE_HOST:?set KINDLE_HOST to the Kindle IP shown by KOReader SSH server}
-PORT=${KINDLE_PORT:-2222}
 cd "$(dirname "$0")/dist"
 [ -f dashboard/schedule.txt ] || { echo "kindle/dist is empty: run npm run kindle:build first" >&2; exit 1; }
+
+# What an install removes before copying: old bundle parts and Phase 6/7 leftovers.
+OLD="dashboard/img dashboard/bin dashboard/tempelhof dashboard/fallback dashboard/kino tempelhof documents/Tempelhof.sh"
+
+if [ -n "$KINDLE_VOLUME" ]; then
+  V=${KINDLE_VOLUME%/}
+  [ -d "$V/documents" ] || { echo "$V doesn't look like a Kindle drive (no documents/)" >&2; exit 1; }
+  for p in $OLD "documents/Tempelhof test.sh" "documents/Tempelhof log.sh"; do rm -rf "$V/$p"; done
+  mkdir -p "$V/dashboard"
+  # -X: no extended attributes, so macOS writes no ._ files onto the FAT drive.
+  cp -RX dashboard/. "$V/dashboard/"
+  cp -X documents/*.sh "$V/documents/"
+  if [ -n "$KINDLE_HUB_URL" ] && [ -n "$KINDLE_HUB_TOKEN" ]; then
+    : "${KINDLE_HUB_MAC:?over USB, set KINDLE_HUB_MAC too (the Kindle's Wi-Fi MAC)}"
+    printf 'HUB_URL=%s\nHUB_TOKEN=%s\nHUB_MAC=%s\n' "$KINDLE_HUB_URL" "$KINDLE_HUB_TOKEN" "$KINDLE_HUB_MAC" > "$V/dashboard/hub.env"
+    echo "hub.env written (MAC $KINDLE_HUB_MAC)"
+  fi
+  [ -f "$V/dashboard/hub.env" ] || echo "note: no hub.env yet; pass KINDLE_HUB_URL, KINDLE_HUB_TOKEN and KINDLE_HUB_MAC to enable check-ins"
+  sync
+  echo "installed to $V: $(ls "$V"/dashboard/tempelhof/*/cd | wc -l | tr -d ' ') countdown images, $(ls "$V/dashboard/fallback" | wc -l | tr -d ' ') fallback screens, $(wc -l < "$V/dashboard/schedule.txt" | tr -d ' ') Tempelhof events. Eject the drive before unplugging."
+  exit 0
+fi
+
+HOST=${KINDLE_HOST:?set KINDLE_HOST (SSH) or KINDLE_VOLUME (USB drive)}
+PORT=${KINDLE_PORT:-2222}
 case "$KINDLE_HUB_URL$KINDLE_HUB_TOKEN" in *\'*) echo "hub settings must not contain single quotes" >&2; exit 1 ;; esac
 
 # Runs on the Kindle; the archive arrives on stdin. (No single quotes inside.)
 REMOTE='set -e
-rm -rf /mnt/us/dashboard/img /mnt/us/dashboard/bin
-rm -rf /mnt/us/tempelhof "/mnt/us/documents/Tempelhof.sh" "/mnt/us/documents/Tempelhof test.sh" "/mnt/us/documents/Tempelhof log.sh"
-cd /mnt/us && tar -xf -
+cd /mnt/us
+for p in '"$OLD"' "documents/Tempelhof test.sh" "documents/Tempelhof log.sh"; do rm -rf "/mnt/us/$p"; done
+tar -xf -
 chmod +x /mnt/us/dashboard/bin/dashboard.sh
 if [ -n "$HUB_URL" ] && [ -n "$HUB_TOKEN" ]; then
   MAC=$(tr a-f A-F < /sys/class/net/wlan0/address)
@@ -24,7 +50,7 @@ if [ -n "$HUB_URL" ] && [ -n "$HUB_TOKEN" ]; then
 fi
 [ -f /mnt/us/dashboard/hub.env ] || echo "note: no hub.env yet; pass KINDLE_HUB_URL and KINDLE_HUB_TOKEN to enable check-ins"
 lipc-set-prop com.lab126.scanner doFullScan 1 >/dev/null 2>&1 || true
-echo "installed: $(ls /mnt/us/dashboard/img/cd | wc -l) countdown images, $(wc -l < /mnt/us/dashboard/schedule.txt) Tempelhof events"'
+echo "installed: $(ls /mnt/us/dashboard/tempelhof/*/cd | wc -l) countdown images, $(ls /mnt/us/dashboard/fallback | wc -l) fallback screens, $(wc -l < /mnt/us/dashboard/schedule.txt) Tempelhof events"'
 
 # COPYFILE_DISABLE keeps macOS ._ metadata files out of the archive.
 COPYFILE_DISABLE=1 tar -cf - dashboard documents |

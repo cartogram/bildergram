@@ -21,15 +21,15 @@ export const H = 1072; // landscape height
 /** Which way landscape is turned into the portrait framebuffer ("ccw" or "cw"). */
 export const ROTATE = process.env.KINDLE_ROTATE ?? "ccw";
 
-let font;
+let fonts;
 let ready;
 
-/** Load resvg's WASM and the Arimo font once per process. */
+/** Load resvg's WASM and the Arimo fonts (regular + bold) once per process. */
 export function initRenderer() {
   ready ??= (async () => {
     const require = createRequire(import.meta.url);
     await initWasm(readFileSync(require.resolve("@resvg/resvg-wasm/index_bg.wasm")));
-    font = readFileSync(new URL("../../assets/fonts/Arimo.ttf", import.meta.url));
+    fonts = ["Arimo.ttf", "Arimo-Bold.ttf"].map((f) => readFileSync(new URL(`../../assets/fonts/${f}`, import.meta.url)));
   })();
   return ready;
 }
@@ -40,10 +40,6 @@ export function initRenderer() {
 
 export const svgOpen = (w, h) =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><rect width="${w}" height="${h}" fill="#fff"/>`;
-
-/** Faux bold: resvg can't pick a weight from the variable font, so stroke the outline. */
-export const bold = (size) =>
-  `stroke="#000" stroke-width="${(size * 0.035).toFixed(1)}" stroke-linejoin="round"`;
 
 export const escapeXml = (s) =>
   String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]);
@@ -88,7 +84,7 @@ export function wrap(text, size, width, maxLines) {
 // ------------------------------------------------------------------
 
 export function rasterize(svg) {
-  const img = new Resvg(svg, { font: { fontBuffers: [font], loadSystemFonts: false, defaultFontFamily: "Arimo" } }).render();
+  const img = new Resvg(svg, { font: { fontBuffers: fonts, loadSystemFonts: false, defaultFontFamily: "Arimo" } }).render();
   const rgba = img.pixels; // a getter that copies out of WASM memory — read it once
   const gray = new Uint8Array(img.width * img.height);
   for (let i = 0; i < gray.length; i++) {

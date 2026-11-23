@@ -1,20 +1,20 @@
 #!/bin/sh
 # ============================================================
-# Kindle dashboard (Phase 7) — runs on a jailbroken Kindle
+# Kindle dashboard (Phase 9) — runs on a jailbroken Kindle
 # Paperwhite 3, installed to /mnt/us/dashboard/bin/.
 #
-# Shows screens on a daily schedule (SCHEDULE, from the hub):
-#   tempelhof  open/closed + countdown, updated every minute
-#              (all images prebuilt by kindle/build.mjs)
-#   kino       the evening's Yorck listing for the slot's date,
-#              downloaded from the hub; one draw, then sleep
+# Shows screens on a daily schedule (SCHEDULE from the hub, e.g.
+# "0600:morgen 0900:tag 1815:abend 2300:nacht"). Each screen is a
+# base image rendered by the server (top bar, weather, cinema,
+# phrase) and downloaded at check-in; the Tag screen also has a
+# Tempelhof box that the Kindle draws itself from prebuilt images,
+# with a new countdown every minute.
 #
-# Between updates the Kindle suspends to RAM with Wi-Fi off and
-# wakes on the RTC alarm. Wi-Fi is only used to check in with the
-# hub: at the first wake after 06:00 when the cinema listing for
-# today or tomorrow is missing, and whenever the power button is
-# pressed. Plugging in USB (or the admin page's "exit") returns to
-# the normal Kindle UI.
+# Between updates the Kindle suspends to RAM with Wi-Fi off and wakes
+# on the RTC alarm. It checks in with the hub when the current
+# screen's base is missing, every CHECKIN_MINUTES while a weather
+# screen is showing, and when the power button is pressed. Plugging
+# in USB (or the admin page's "exit") returns to the normal Kindle UI.
 #
 #   dashboard.sh start [TEST_MINUTES]  run (TEST_MINUTES > 0 stops after that long)
 #   dashboard.sh once [EPOCH]          draw the current screen once, no suspend
@@ -27,15 +27,13 @@ LOG=$DIR/dashboard.log
 PIDFILE=/tmp/dashboard.pid
 RTC=${DASHBOARD_RTC:-/sys/class/rtc/rtc1/wakealarm}
 EIPS=${EIPS:-/usr/sbin/eips}
-FULL_EVERY=15         # full refresh every N Tempelhof minutes (clears ghosting)
-LOW_BATTERY=15        # show "Battery low" at or below this %
-CHECK_HHMM=0600       # daily listing check: first wake at or after this time
-DEFAULT_SCHEDULE="0600:tempelhof 1815:kino"
+FULL_EVERY=15    # full refresh every N Tempelhof minutes (clears ghosting)
+RETRY_SECS=900   # after a failed check-in, try again at most every 15 minutes
 # Europe/Berlin as a POSIX rule: the Kindle's own zone setting is unreliable.
 BERLIN_TZ='CET-1CEST,M3.5.0,M10.5.0/3'
 
-. "$DIR/layout.env"   # CD_*/DATE_*/BAT_* paste positions, VERSION (from kindle/build.mjs)
-[ -f "$DIR/hub.env" ] && . "$DIR/hub.env"   # HUB_URL HUB_TOKEN HUB_MAC (from kindle/install.sh)
+. "$DIR/layout.env"   # VERSION SCREENS HOURLY_SCREENS DEFAULT_SCHEDULE, DEVICE_*/TP_*/CD_*/UPD_* (kindle/build.mjs)
+[ -f "$DIR/hub.env" ] && . "$DIR/hub.env"   # HUB_URL HUB_TOKEN HUB_MAC (kindle/install.sh)
 
 log() {
   echo "$(date -u '+%Y-%m-%d %H:%M:%S') $*" >> "$LOG"
@@ -57,7 +55,13 @@ day_offset() {  # $1 YYYY-MM-DD, $2 days → YYYY-MM-DD (anchored at noon, DST-s
   berlin $(($(berlin_epoch "$1" 12:00) + $2 * 86400)) %Y-%m-%d
 }
 
-ymd_num() { echo "$1" | tr -d '-'; }
+in_list() { case " $2 " in *" $1 "*) return 0 ;; esac; return 1; }
+
+# Value of a generated per-screen variable, e.g. `var TP tag X` → $TP_tag_X.
+# Screen ids are checked against $SCREENS before they get here.
+var() {
+  eval "echo \"\${$1_$2${3:+_$3}}\""
+}
 
 # ------------------------------------------------------------------
 # Device helpers
@@ -94,13 +98,24 @@ restore_ui() {
 }
 
 # ------------------------------------------------------------------
-# Schedule
+# State and schedule
 # ------------------------------------------------------------------
 
 load_state() {
   SCHEDULE=$DEFAULT_SCHEDULE
-  KINO_DAYS=""
+  CHECKIN_MINUTES=60
+  LAST_OK=0
   [ -f "$DIR/state.env" ] && . "$DIR/state.env"
+  # Phase 7 screen names (tempelhof/kino) map to the new screens.
+  SCHEDULE=$(echo "$SCHEDULE" | sed 's/:tempelhof/:tag/g; s/:kino/:abend/g')
+}
+
+save_state() {
+  printf 'SCHEDULE="%s"\nCHECKIN_MINUTES=%s\nLAST_OK=%s\n' "$SCHEDULE" "$CHECKIN_MINUTES" "$LAST_OK" > "$DIR/state.env"
+}
+
+schedule_screens() {
+  echo "$SCHEDULE" | tr ' ' '\n' | sed -n 's/^[0-9]*://p' | sort -u
 }
 
 # Sets SCREEN, SLOT_DAY (date the current slot started) and NEXT_SWITCH
@@ -127,6 +142,7 @@ resolve_slot() {
     SCREEN=${_last#*:}
     SLOT_DAY=$(day_offset "$_today" -1)
   fi
+  in_list "$SCREEN" "$SCREENS" || SCREEN=tag
   if [ -n "$_next" ]; then
     NEXT_SWITCH=$(berlin_epoch "$_today" "$(echo "$_next" | sed 's/../&:/')")
   else
@@ -135,25 +151,26 @@ resolve_slot() {
   fi
 }
 
-# Next epoch at which the daily listing check is due (today or tomorrow at CHECK_HHMM).
-next_check() {
-  _today=$(berlin "$1" %Y-%m-%d)
-  _at=$(berlin_epoch "$_today" "$(echo "$CHECK_HHMM" | sed 's/../&:/')")
-  [ "$_at" -le "$1" ] && _at=$(berlin_epoch "$(day_offset "$_today" 1)" "$(echo "$CHECK_HHMM" | sed 's/../&:/')")
-  echo "$_at"
+# The downloaded base for screen $1 exists and is for day $2.
+have_base() {
+  [ -f "$DIR/screens/$1.png" ] && [ "$(cat "$DIR/screens/$1.day" 2>/dev/null)" = "$2" ]
 }
 
-schedule_has() { echo " $SCHEDULE " | grep -q ":$1 "; }
+base_image() {  # $1 screen, $2 day
+  if have_base "$1" "$2"; then echo "$DIR/screens/$1.png"; else echo "$DIR/fallback/$1.png"; fi
+}
 
-# The listing for today or tomorrow is missing on disk.
-kino_needed() {
-  schedule_has kino || return 1
-  [ -f "$DIR/kino/$1.png" ] && [ -f "$DIR/kino/$(day_offset "$1" 1).png" ] && return 1
-  return 0
+# A check-in is due: the current base is missing, or a weather screen is
+# older than CHECKIN_MINUTES.
+checkin_due() {  # $1 now
+  [ -n "$HUB_URL" ] || return 1
+  have_base "$SCREEN" "$SLOT_DAY" || return 0
+  in_list "$SCREEN" "$HOURLY_SCREENS" && [ $(($1 - LAST_OK)) -ge $((CHECKIN_MINUTES * 60)) ] && return 0
+  return 1
 }
 
 # ------------------------------------------------------------------
-# Tempelhof screen (prebuilt images)
+# Tempelhof box (prebuilt images)
 # ------------------------------------------------------------------
 
 # "<event-epoch> <background-key> <minutes-left, rounded up>" for epoch $1
@@ -162,16 +179,6 @@ tempelhof_lookup() {
     $1 > now { print $1, $3, int(($1 - now + 59) / 60); found = 1; exit }
     END { if (!found) exit 1 }
   ' "$DIR/schedule.txt"
-}
-
-draw_tempelhof() {  # $1 bg key, $2 minutes left, $3 = 1 for a full redraw, $4 date to paste (or empty)
-  [ "$3" = 1 ] && full_png "$DIR/img/bg/$1.png"
-  paste_png "$DIR/img/cd/$2.png" "$CD_X" "$CD_Y"
-  [ -n "$4" ] && paste_png "$DIR/img/date/$4.png" "$DATE_X" "$DATE_Y"
-}
-
-kino_image() {  # $1 slot day
-  if [ -f "$DIR/kino/$1.png" ]; then echo "$DIR/kino/$1.png"; else echo "$DIR/img/kino-missing.png"; fi
 }
 
 # ------------------------------------------------------------------
@@ -199,13 +206,17 @@ wifi_restore() {
   [ "$_wifi_before" = 1 ] || wifi_down
 }
 
+hub_get() {  # $1 path, $2 output file
+  curl -fsS -m 60 -H "Access-Token: $HUB_TOKEN" -H "ID: $HUB_MAC" -o "$2" "$HUB_URL$1" 2>>"$LOG"
+}
+
 # Returns 0 on success, 2 when the hub says to exit, 1 on failure.
 checkin() {  # $1 reason
   if [ -z "$HUB_URL" ] || [ -z "$HUB_TOKEN" ]; then
     log "check-in skipped ($1): no hub.env"
     return 1
   fi
-  paste_png "$DIR/img/updating.png" "$BAT_X" "$BAT_Y"
+  paste_png "$DIR/img/updating.png" "$UPD_X" "$UPD_Y"
   _wifi_before=$(lipc-get-prop com.lab126.wifid enable 2>/dev/null)
   if ! wifi_up; then
     log "check-in failed ($1): Wi-Fi did not connect"
@@ -213,9 +224,9 @@ checkin() {  # $1 reason
     return 1
   fi
 
-  _have=$(ls "$DIR/kino" 2>/dev/null | sed -n 's/\.png$//p' | tr '\n' ',')
+  _bat=$(battery)
   tail -n 40 "$LOG" > /tmp/dashboard-log.txt 2>/dev/null
-  _q="battery=$(battery)&charging=$(charging)&screen=$SCREEN&version=$VERSION&reason=$1&have=$_have"
+  _q="battery=$_bat&charging=$(charging)&screen=$SCREEN&version=$VERSION&reason=$1"
   if ! curl -fsS -m 40 -X POST -H "Access-Token: $HUB_TOKEN" -H "ID: $HUB_MAC" \
       --data-binary @/tmp/dashboard-log.txt "$HUB_URL/api/kindle/checkin?$_q" > /tmp/dashboard-reply.env 2>>"$LOG"; then
     log "check-in failed ($1): hub request failed"
@@ -229,7 +240,6 @@ checkin() {  # $1 reason
     return 1
   fi
   . /tmp/dashboard-reply.env
-  printf 'SCHEDULE="%s"\nKINO_DAYS="%s"\n' "$SCHEDULE" "$KINO_DAYS" > "$DIR/state.env"
 
   # With Wi-Fi off most of the time the Kindle never syncs its clock; use
   # the hub's time (accurate to about a second) when it is off by > 10 s.
@@ -241,32 +251,77 @@ checkin() {  # $1 reason
       _now=$(date +%s)
     fi
   fi
+
+  # Download the base of every screen in the schedule: the current one
+  # for its slot's date, the others for today.
+  resolve_slot "$_now"
   _today=$(berlin "$_now" %Y-%m-%d)
-  mkdir -p "$DIR/kino"
-  _got=0
-  for _d in $KINO_DAYS; do
-    [ "$(ymd_num "$_d")" -lt "$(ymd_num "$_today")" ] && continue
-    if curl -fsS -m 60 -H "Access-Token: $HUB_TOKEN" -H "ID: $HUB_MAC" \
-        -o "$DIR/kino/$_d.png.part" "$HUB_URL/api/kindle/kino/$_d.png" 2>>"$LOG"; then
-      mv "$DIR/kino/$_d.png.part" "$DIR/kino/$_d.png"
-      _got=$((_got + 1))
+  mkdir -p "$DIR/screens"
+  _got=""
+  _failed=""
+  for _s in $(schedule_screens); do
+    in_list "$_s" "$SCREENS" || continue
+    _d=$_today
+    [ "$_s" = "$SCREEN" ] && _d=$SLOT_DAY
+    if hub_get "/api/kindle/screen/$_s.png?day=$_d&battery=$_bat" "$DIR/screens/$_s.png.part"; then
+      mv "$DIR/screens/$_s.png.part" "$DIR/screens/$_s.png"
+      echo "$_d" > "$DIR/screens/$_s.day"
+      _got="$_got $_s"
     else
-      rm -f "$DIR/kino/$_d.png.part"
+      rm -f "$DIR/screens/$_s.png.part"
+      _failed="$_failed $_s"
     fi
   done
   wifi_restore
 
-  # Drop listings older than yesterday.
-  _keep=$(ymd_num "$(day_offset "$_today" -1)")
-  for _f in "$DIR"/kino/*.png; do
-    [ -f "$_f" ] || continue
-    _d=$(basename "$_f" .png)
-    [ "$(ymd_num "$_d")" -lt "$_keep" ] && rm -f "$_f"
-  done
-
-  log "check-in ($1): schedule '$SCHEDULE', listings $_got/$(echo $KINO_DAYS | wc -w) [$KINO_DAYS]${KINO_ERROR:+ kino error: $KINO_ERROR}, clock drift ${_drift}s, battery $(battery)%"
+  have_base "$SCREEN" "$SLOT_DAY" && LAST_OK=$_now
+  save_state
+  log "check-in ($1): schedule '$SCHEDULE', every ${CHECKIN_MINUTES} min, screens:${_got:- none}${_failed:+, failed:$_failed}, clock drift ${_drift}s, battery ${_bat}%"
   [ "$EXIT" = 1 ] && return 2
+  [ -z "$_failed" ] || return 1
   return 0
+}
+
+# ------------------------------------------------------------------
+# Drawing
+# ------------------------------------------------------------------
+
+# Draw the current screen. Sets WAKE_AT to the next minute when a
+# Tempelhof box is showing. Uses and updates $shown and $since_full.
+draw_screen() {  # $1 now
+  _base=$(base_image "$SCREEN" "$SLOT_DAY")
+  _dev=$(var DEVICE "$SCREEN")
+  WAKE_AT=""
+  if [ -z "$_dev" ]; then
+    if [ "$shown" != "$SCREEN:$_base" ]; then
+      full_png "$_base"
+      shown="$SCREEN:$_base"
+      log "showing $SCREEN ($SLOT_DAY) from $(basename "$(dirname "$_base")")"
+      sleep 2
+    fi
+    return
+  fi
+
+  # Tempelhof box: a panel per state, a countdown per minute.
+  _variant=${_dev#*:}
+  set -- $(tempelhof_lookup "$1")
+  if [ $# -ne 3 ]; then
+    log "Tempelhof schedule exhausted: rebuild and reinstall (npm run kindle:build)"
+    return
+  fi
+  _full=0
+  if [ "$shown" != "$SCREEN:$_base:$2" ] || [ "$since_full" -ge "$FULL_EVERY" ]; then
+    full_png "$_base"
+    paste_png "$DIR/tempelhof/$_variant/panel/$2.png" "$(var TP "$SCREEN" X)" "$(var TP "$SCREEN" Y)"
+    shown="$SCREEN:$_base:$2"
+    since_full=0
+    _full=1
+  fi
+  paste_png "$DIR/tempelhof/$_variant/cd/$3.png" "$(var CD "$SCREEN" X)" "$(var CD "$SCREEN" Y)"
+  since_full=$((since_full + 1))
+  # Give the e-ink update time to finish before the CPU stops.
+  if [ "$_full" = 1 ]; then sleep 2; else sleep 1; fi
+  WAKE_AT=$(( $(date +%s) / 60 * 60 + 60 ))
 }
 
 # ------------------------------------------------------------------
@@ -300,11 +355,10 @@ run() {
 
   load_state
   started=$(date +%s)
-  shown=""          # what's on screen: "tempelhof:<bg>" or "kino:<day>"
-  last_day=""
+  shown=""
   since_full=$FULL_EVERY
   last_battery_log=0
-  checked_day=""
+  last_attempt=0
 
   while :; do
     now=$(date +%s)
@@ -313,68 +367,38 @@ run() {
       break
     fi
 
-    today=$(berlin "$now" %Y-%m-%d)
-    if [ "$checked_day" != "$today" ] && [ "$(berlin "$now" %H%M)" -ge "$CHECK_HHMM" ]; then
-      checked_day=$today
-      if kino_needed "$today"; then
-        checkin daily
-        [ $? = 2 ] && { log "hub asked to exit"; break; }
-        shown=""
-      fi
+    resolve_slot "$now"
+    if checkin_due "$now" && [ $((now - last_attempt)) -ge "$RETRY_SECS" ]; then
+      last_attempt=$now
+      checkin scheduled
+      [ $? = 2 ] && { log "hub asked to exit"; break; }
+      shown=""
+      now=$(date +%s)
+      resolve_slot "$now"
     fi
 
-    resolve_slot "$now"
     take_screen
-    wake=$NEXT_SWITCH
+    draw_screen "$now"
 
-    case "$SCREEN" in
-      kino)
-        if [ "$shown" != "kino:$SLOT_DAY" ]; then
-          full_png "$(kino_image "$SLOT_DAY")"
-          shown="kino:$SLOT_DAY"
-          log "showing kino for $SLOT_DAY until $(berlin "$NEXT_SWITCH" %H:%M)"
-          sleep 2
-        fi
-        ;;
-      *)
-        set -- $(tempelhof_lookup "$now")
-        if [ $# -ne 3 ]; then
-          log "Tempelhof schedule exhausted: rebuild and reinstall (npm run kindle:build)"
-          break
-        fi
-        full=0
-        if [ "$shown" != "tempelhof:$2" ] || [ "$since_full" -ge "$FULL_EVERY" ]; then
-          full=1
-          shown="tempelhof:$2"
-          since_full=0
-        fi
-        date_to_draw=""
-        if [ "$full" = 1 ] || [ "$today" != "$last_day" ]; then
-          date_to_draw=$today
-          last_day=$today
-        fi
-        draw_tempelhof "$2" "$3" "$full" "$date_to_draw"
-        since_full=$((since_full + 1))
-        level=$(battery)
-        if [ "$full" = 1 ] && [ -n "$level" ] && [ "$level" -le "$LOW_BATTERY" ]; then
-          paste_png "$DIR/img/battery-low.png" "$BAT_X" "$BAT_Y"
-        fi
-        # Give the e-ink update time to finish before the CPU stops.
-        if [ "$full" = 1 ]; then sleep 2; else sleep 1; fi
-        minute=$(( $(date +%s) / 60 * 60 + 60 ))
-        [ "$minute" -lt "$wake" ] && wake=$minute
-        ;;
-    esac
+    # Next wake: the next switch, the next minute (Tempelhof), or the next
+    # check-in (weather screens on the interval, or retrying a missing base).
+    wake=$NEXT_SWITCH
+    [ -n "$WAKE_AT" ] && [ "$WAKE_AT" -lt "$wake" ] && wake=$WAKE_AT
+    if [ -n "$HUB_URL" ]; then
+      due=""
+      if ! have_base "$SCREEN" "$SLOT_DAY"; then
+        due=$((last_attempt + RETRY_SECS))
+      elif in_list "$SCREEN" "$HOURLY_SCREENS"; then
+        due=$((LAST_OK + CHECKIN_MINUTES * 60))
+        # After a failed attempt, wait out the retry delay first.
+        [ "$last_attempt" -gt "$LAST_OK" ] && [ "$due" -lt $((last_attempt + RETRY_SECS)) ] && due=$((last_attempt + RETRY_SECS))
+      fi
+      [ -n "$due" ] && [ "$due" -lt "$wake" ] && wake=$due
+    fi
 
     if [ $((now - last_battery_log)) -ge 3600 ]; then
       log "battery $(battery)% (screen $SCREEN)"
       last_battery_log=$now
-    fi
-
-    # The daily listing check may be due before the next switch.
-    if kino_needed "$today" || [ "$checked_day" != "$today" ]; then
-      check_at=$(next_check "$now")
-      [ "$check_at" -lt "$wake" ] && wake=$check_at
     fi
 
     now=$(date +%s)
@@ -399,6 +423,7 @@ run() {
         break
       fi
       log "woke early (power button): checking in"
+      last_attempt=$(date +%s)
       checkin button
       [ $? = 2 ] && { log "hub asked to exit"; break; }
       shown=""
@@ -423,19 +448,20 @@ case "$1" in
     at=${2:-$(date +%s)}
     load_state
     resolve_slot "$at"
-    day=$(berlin "$at" %Y-%m-%d)
-    echo "at $(berlin "$at" '%a %Y-%m-%d %H:%M') Berlin: screen $SCREEN (slot day $SLOT_DAY), next switch $(berlin "$NEXT_SWITCH" '%a %H:%M'), listing check due $(berlin "$(next_check "$at")" '%a %H:%M')$(kino_needed "$day" && echo ' [listing missing]')"
-    case "$SCREEN" in
-      kino)
-        echo "  kino image: $(kino_image "$SLOT_DAY")"
-        [ "$1" = once ] && full_png "$(kino_image "$SLOT_DAY")"
-        ;;
-      *)
-        set -- "$1" $(tempelhof_lookup "$at")
-        echo "  tempelhof: background $3, $4 min left, date $day"
-        [ "$1" = once ] && draw_tempelhof "$3" "$4" 1 "$day"
-        ;;
-    esac
+    _dev=$(var DEVICE "$SCREEN")
+    due="no"
+    checkin_due "$at" && due="yes"
+    echo "at $(berlin "$at" '%a %Y-%m-%d %H:%M') Berlin: screen $SCREEN (slot day $SLOT_DAY), next switch $(berlin "$NEXT_SWITCH" '%a %H:%M'), check-in due: $due"
+    echo "  base: $(base_image "$SCREEN" "$SLOT_DAY")"
+    if [ -n "$_dev" ]; then
+      set -- $(tempelhof_lookup "$at")
+      echo "  tempelhof (${_dev#*:}): panel $2, countdown $3 min, at TP $(var TP "$SCREEN" X),$(var TP "$SCREEN" Y) / CD $(var CD "$SCREEN" X),$(var CD "$SCREEN" Y)"
+    fi
+    if [ "$1" = once ]; then
+      shown=""
+      since_full=$FULL_EVERY
+      draw_screen "$at"
+    fi
     ;;
   *)
     echo "usage: $0 start [TEST_MINUTES] | once [EPOCH] | plan [EPOCH] | checkin" >&2

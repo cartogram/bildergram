@@ -13,10 +13,10 @@
     }
   ],
 
-  // Vercel cinema renderer (api/kino.mjs). Secrets: ADMIN_TOKEN, KINO_TOKEN,
-  // DEVICE_TOKEN_KINDLE_01 (wrangler secret put).
+  // Vercel screen renderer (api/screen.mjs). Secrets: ADMIN_TOKEN,
+  // RENDERER_TOKEN, DEVICE_TOKEN_KINDLE_01 (wrangler secret put).
   "vars": {
-    "KINO_URL": "https://bildergram-kino.vercel.app"
+    "RENDERER_URL": "https://bildergram-kino.vercel.app"
   },
 
   // No cron triggers: the Kindle checks in when it needs data. The explicit

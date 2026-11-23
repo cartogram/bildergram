@@ -1,33 +1,42 @@
 // ============================================================
-// Kindle hub (Phase 7) — schedule, status and cinema listings
-// for the standalone Kindle dashboard (kindle/device/dashboard.sh).
+// Kindle hub (Phase 9) — schedule, status and screen images for
+// the Kindle dashboard (kindle/device/dashboard.sh).
 //
 // Device endpoints (Access-Token = DEVICE_TOKEN_KINDLE_01):
-//   POST /api/kindle/checkin          body: log tail; query: battery, charging,
-//                                     screen, version, have, reason
-//                                     → shell-safe env (SCHEDULE, KINO_DAYS, …)
-//   GET  /api/kindle/kino/<date>.png  rotated listing image for eips
+//   POST /api/kindle/checkin               body: log tail; query: battery, charging,
+//                                          screen, version, reason
+//                                          → shell-safe env (SCHEDULE, CHECKIN_MINUTES, …)
+//   GET  /api/kindle/screen/<id>.png?day=&battery=
+//                                          the screen's base (rotated, for eips)
 //
 // Admin endpoints (Authorization: Bearer ADMIN_TOKEN):
-//   GET  /api/admin/kindle            { config, status, cinemas }
-//   PUT  /api/admin/kindle/config     replace the config
-//   GET  /api/admin/kindle/kino?date= unrotated listing preview (PNG), or
-//                                     the published days (JSON) without date
+//   GET  /api/admin/kindle                 { config, status, cinemas, screens }
+//   PUT  /api/admin/kindle/config          replace the config
+//   GET  /api/admin/kindle/screen?screen=  full preview of a screen (PNG)
 //
-// Cinema listings are rendered by the Vercel function (KINO_URL);
-// the Worker only passes bytes through, which keeps it far under the
-// free plan's CPU limit. State lives in R2 as small JSON objects.
+// Screens are rendered by the Vercel function (RENDERER_URL); the
+// Worker only passes bytes through, which keeps it far under the free
+// plan's CPU limit. State lives in R2 as small JSON objects.
 // ============================================================
 
 import { authenticateDevice } from "../devices";
 import type { AppEnv } from "../types";
 
-export type Screen = "tempelhof" | "kino";
+/** The screens kindle/lib/screens.mjs defines (ids, German names, what they show). */
+export const SCREENS = {
+  morgen: { name: "Morgen", shows: "Weather (wide) + expression of the day" },
+  tag: { name: "Tag", shows: "Tempelhof countdown + weather" },
+  abend: { name: "Abend", shows: "Yorck cinema listing" },
+  nacht: { name: "Nacht", shows: "Expression of the day" },
+} as const;
+export type Screen = keyof typeof SCREENS;
 
 export interface KindleConfig {
   /** Daily timetable: from `at` (Berlin HH:MM) until the next entry, show `screen`. */
   schedule: { at: string; screen: Screen }[];
   kino: { cinemas: string[]; from: string };
+  /** How often the Kindle checks in while a weather screen is showing. */
+  checkinMinutes: number;
   /** One-shot: the next check-in tells the Kindle to return to its normal UI. */
   exit: boolean;
 }
@@ -39,20 +48,25 @@ export interface KindleStatus {
   charging: boolean;
   screen: string;
   version: string;
-  have: string[];
   log: string;
+  /** Battery readings from check-ins over the last week: [epoch seconds, %]. */
+  history: [number, number][];
 }
 
 const DEVICE_ID = "kindle_01";
 const CONFIG_KEY = `kindle/${DEVICE_ID}/config.json`;
 const STATUS_KEY = `kindle/${DEVICE_ID}/status.json`;
+const HISTORY_SECONDS = 7 * 86_400;
 
 export const DEFAULT_CONFIG: KindleConfig = {
   schedule: [
-    { at: "06:00", screen: "tempelhof" },
-    { at: "18:15", screen: "kino" },
+    { at: "06:00", screen: "morgen" },
+    { at: "09:00", screen: "tag" },
+    { at: "18:15", screen: "abend" },
+    { at: "23:00", screen: "nacht" },
   ],
   kino: { cinemas: ["rollberg", "passage", "neues-off"], from: "18:00" },
+  checkinMinutes: 60,
   exit: false,
 };
 
@@ -74,8 +88,9 @@ export const YORCK_CINEMAS: Record<string, string> = {
   yorck: "Yorck",
 };
 
-const SCREENS: Screen[] = ["tempelhof", "kino"];
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+const isScreen = (s: unknown): s is Screen => typeof s === "string" && Object.hasOwn(SCREENS, s);
 
 // ------------------------------------------------------------------
 // State
@@ -97,8 +112,20 @@ async function writeJson(env: AppEnv, key: string, value: unknown): Promise<void
   });
 }
 
+/** Phase 7 configs used "tempelhof"/"kino" and had no interval; map them. */
+function migrate(c: Partial<KindleConfig> & { schedule?: { at: string; screen: string }[] }): KindleConfig {
+  const old: Record<string, Screen> = { tempelhof: "tag", kino: "abend" };
+  const parsed = parseConfig({
+    ...DEFAULT_CONFIG,
+    ...c,
+    schedule: (c.schedule ?? DEFAULT_CONFIG.schedule).map((e) => ({ ...e, screen: old[e.screen] ?? e.screen })),
+  });
+  return typeof parsed === "string" ? DEFAULT_CONFIG : parsed;
+}
+
 async function readConfig(env: AppEnv): Promise<KindleConfig> {
-  return (await readJson<KindleConfig>(env, CONFIG_KEY)) ?? DEFAULT_CONFIG;
+  const stored = await readJson<KindleConfig>(env, CONFIG_KEY);
+  return stored ? migrate(stored) : DEFAULT_CONFIG;
 }
 
 /** Validate an admin-supplied config; returns an error message or the clean config. */
@@ -108,8 +135,8 @@ export function parseConfig(input: unknown): KindleConfig | string {
   const schedule: KindleConfig["schedule"] = [];
   for (const e of c.schedule) {
     if (!e || typeof e.at !== "string" || !HHMM.test(e.at)) return `bad time: ${JSON.stringify(e?.at)}`;
-    if (!SCREENS.includes(e.screen as Screen)) return `bad screen: ${JSON.stringify(e?.screen)}`;
-    schedule.push({ at: e.at, screen: e.screen as Screen });
+    if (!isScreen(e.screen)) return `unknown screen: ${JSON.stringify(e?.screen)}`;
+    schedule.push({ at: e.at, screen: e.screen });
   }
   schedule.sort((a, b) => a.at.localeCompare(b.at));
   if (new Set(schedule.map((e) => e.at)).size !== schedule.length) return "two entries share a time";
@@ -117,28 +144,30 @@ export function parseConfig(input: unknown): KindleConfig | string {
   const cinemas = Array.isArray(c.kino?.cinemas) ? c.kino.cinemas.filter((s) => s in YORCK_CINEMAS) : [];
   if (cinemas.length === 0) return "choose at least one cinema";
   const from = typeof c.kino?.from === "string" && HHMM.test(c.kino.from) ? c.kino.from : "18:00";
-  return { schedule, kino: { cinemas, from }, exit: c.exit === true };
+  const minutes = Number(c.checkinMinutes ?? DEFAULT_CONFIG.checkinMinutes);
+  if (!Number.isInteger(minutes) || minutes < 15 || minutes > 360) return "check-in interval must be 15–360 minutes";
+  return { schedule, kino: { cinemas, from }, checkinMinutes: minutes, exit: c.exit === true };
 }
 
 // ------------------------------------------------------------------
 // Vercel renderer
 // ------------------------------------------------------------------
 
-async function kino(env: AppEnv, config: KindleConfig, params: Record<string, string>): Promise<Response> {
-  if (!env.KINO_URL) return new Response("KINO_URL is not configured", { status: 503 });
-  const url = new URL("/api/kino", env.KINO_URL);
+async function renderScreen(env: AppEnv, config: KindleConfig, params: Record<string, string>): Promise<Response> {
+  if (!env.RENDERER_URL) return new Response("RENDERER_URL is not configured", { status: 503 });
+  const url = new URL("/api/screen", env.RENDERER_URL);
   url.searchParams.set("cinemas", config.kino.cinemas.join(","));
   url.searchParams.set("from", config.kino.from);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  return fetch(url, { headers: env.KINO_TOKEN ? { "x-kino-token": env.KINO_TOKEN } : {} });
+  const res = await fetch(url, { headers: env.RENDERER_TOKEN ? { "x-renderer-token": env.RENDERER_TOKEN } : {} });
+  return new Response(res.body, {
+    status: res.status,
+    headers: { "content-type": res.headers.get("content-type") ?? "image/png", "cache-control": "no-store" },
+  });
 }
 
-async function publishedDays(env: AppEnv, config: KindleConfig): Promise<string[]> {
-  const res = await kino(env, config, {});
-  if (!res.ok) throw new Error(`kino renderer returned ${res.status}`);
-  const body = (await res.json()) as { days?: string[] };
-  return (body.days ?? []).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d));
-}
+/** Berlin calendar date (YYYY-MM-DD) now. */
+const berlinToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
 
 // ------------------------------------------------------------------
 // Device endpoints
@@ -148,29 +177,26 @@ export async function handleKindleDevice(request: Request, env: AppEnv): Promise
   const device = authenticateDevice(request, env);
   if (!device || device.id !== DEVICE_ID) return new Response("unauthorized", { status: 401 });
   const url = new URL(request.url);
+  const q = url.searchParams;
 
   if (url.pathname === "/api/kindle/checkin" && request.method === "POST") {
-    const q = url.searchParams;
     const config = await readConfig(env);
+    const previous = await readJson<KindleStatus>(env, STATUS_KEY);
+    const nowSec = Math.floor(Date.now() / 1000);
+    const battery = q.has("battery") && /^\d{1,3}$/.test(q.get("battery")!) ? Number(q.get("battery")) : null;
+    const history = (previous?.history ?? []).filter(([t]) => t > nowSec - HISTORY_SECONDS);
+    if (battery !== null) history.push([nowSec, battery]);
     const status: KindleStatus = {
       checkedInAt: new Date().toISOString(),
       reason: (q.get("reason") ?? "").slice(0, 40),
-      battery: q.has("battery") ? Number(q.get("battery")) : null,
+      battery,
       charging: q.get("charging") === "1",
       screen: (q.get("screen") ?? "").slice(0, 20),
       version: (q.get("version") ?? "").slice(0, 40),
-      have: (q.get("have") ?? "").split(/[ ,]+/).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)),
       log: (await request.text()).slice(-4000),
+      history: history.slice(-500),
     };
     await writeJson(env, STATUS_KEY, status);
-
-    let days: string[] = [];
-    let kinoError = "";
-    try {
-      days = await publishedDays(env, config);
-    } catch (err) {
-      kinoError = err instanceof Error ? err.message : String(err);
-    }
 
     // The exit flag is one-shot, so the next start from the library isn't
     // sent straight back out.
@@ -179,23 +205,22 @@ export async function handleKindleDevice(request: Request, env: AppEnv): Promise
     // Shell-safe KEY="value" lines; the Kindle validates them before use.
     const lines = [
       `SCHEDULE="${config.schedule.map((e) => `${e.at.replace(":", "")}:${e.screen}`).join(" ")}"`,
-      `KINO_DAYS="${days.join(" ")}"`,
+      `CHECKIN_MINUTES=${config.checkinMinutes}`,
       `EXIT=${config.exit ? 1 : 0}`,
-      `SERVER_TIME=${Math.floor(Date.now() / 1000)}`,
-      `KINO_ERROR="${kinoError.replace(/[^\w .:-]/g, "").slice(0, 80)}"`,
+      `SERVER_TIME=${nowSec}`,
     ];
     return new Response(lines.join("\n") + "\n", {
       headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
     });
   }
 
-  const png = url.pathname.match(/^\/api\/kindle\/kino\/(\d{4}-\d{2}-\d{2})\.png$/);
-  if (png && request.method === "GET") {
-    const res = await kino(env, await readConfig(env), { date: png[1] });
-    return new Response(res.body, {
-      status: res.status,
-      headers: { "content-type": res.headers.get("content-type") ?? "image/png", "cache-control": "no-store" },
-    });
+  const m = url.pathname.match(/^\/api\/kindle\/screen\/([a-z]+)\.png$/);
+  if (m && request.method === "GET") {
+    if (!isScreen(m[1])) return new Response("unknown screen", { status: 404 });
+    const day = DAY.test(q.get("day") ?? "") ? q.get("day")! : berlinToday();
+    const params: Record<string, string> = { screen: m[1], date: day };
+    if (/^\d{1,3}$/.test(q.get("battery") ?? "")) params.battery = q.get("battery")!;
+    return renderScreen(env, await readConfig(env), params);
   }
 
   return new Response("not found", { status: 404 });
@@ -219,7 +244,12 @@ export async function handleKindleAdmin(request: Request, env: AppEnv): Promise<
 
   if (url.pathname === "/api/admin/kindle" && request.method === "GET") {
     return Response.json(
-      { config: await readConfig(env), status: await readJson<KindleStatus>(env, STATUS_KEY), cinemas: YORCK_CINEMAS },
+      {
+        config: await readConfig(env),
+        status: await readJson<KindleStatus>(env, STATUS_KEY),
+        cinemas: YORCK_CINEMAS,
+        screens: SCREENS,
+      },
       { headers: { "cache-control": "no-store" } },
     );
   }
@@ -237,22 +267,13 @@ export async function handleKindleAdmin(request: Request, env: AppEnv): Promise<
     return Response.json({ config: parsed });
   }
 
-  if (url.pathname === "/api/admin/kindle/kino" && request.method === "GET") {
-    const date = url.searchParams.get("date");
-    const config = await readConfig(env);
-    if (!date) {
-      try {
-        return Response.json({ days: await publishedDays(env, config) });
-      } catch (err) {
-        return Response.json({ error: err instanceof Error ? err.message : String(err) }, { status: 502 });
-      }
-    }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return Response.json({ error: "bad date" }, { status: 400 });
-    const res = await kino(env, config, { date, preview: "1" });
-    return new Response(res.body, {
-      status: res.status,
-      headers: { "content-type": res.headers.get("content-type") ?? "image/png", "cache-control": "no-store" },
-    });
+  if (url.pathname === "/api/admin/kindle/screen" && request.method === "GET") {
+    const screen = url.searchParams.get("screen");
+    if (!isScreen(screen)) return Response.json({ error: "unknown screen" }, { status: 400 });
+    const status = await readJson<KindleStatus>(env, STATUS_KEY);
+    const params: Record<string, string> = { screen, preview: "1", date: berlinToday() };
+    if (status?.battery != null) params.battery = String(status.battery);
+    return renderScreen(env, await readConfig(env), params);
   }
 
   return Response.json({ error: "not found" }, { status: 404 });

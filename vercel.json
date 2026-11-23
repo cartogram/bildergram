@@ -5,8 +5,8 @@
   "buildCommand": "",
   "outputDirectory": "kindle/vercel-public",
   "functions": {
-    "api/kino.mjs": {
-      "includeFiles": "{assets/fonts/Arimo.ttf,kindle/lib/glyphs.ts,kindle/lib/*.mjs,node_modules/@resvg/resvg-wasm/index_bg.wasm}",
+    "api/screen.mjs": {
+      "includeFiles": "{assets/fonts/Arimo.ttf,assets/fonts/Arimo-Bold.ttf,kindle/lib/*.ts,kindle/lib/*.mjs,kindle/lib/modules/*.mjs,kindle/data/*.json,node_modules/@resvg/resvg-wasm/index_bg.wasm}",
       "maxDuration": 30
     }
   }

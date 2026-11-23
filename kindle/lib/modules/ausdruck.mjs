@@ -1,0 +1,63 @@
+// ============================================================
+// Module: Ausdruck des Tages (Phase 8)
+// One German expression a day (B2): the expression, its English
+// meaning, and an example sentence. Entries live in
+// kindle/data/ausdruecke.json and rotate in order, one per day.
+//
+// Cadence: daily (deterministic, no network needed).
+// Variants: "wide" (a band across the screen), "full" (whole screen).
+// ============================================================
+
+import { readFileSync } from "node:fs";
+import { INK, TYPE, label, text } from "../design.mjs";
+import { wrap } from "../eink.mjs";
+
+export const id = "ausdruck";
+export const cadence = "daily";
+
+export function loadEntries() {
+  return JSON.parse(readFileSync(new URL("../../data/ausdruecke.json", import.meta.url), "utf8"));
+}
+
+/** The entry for a Berlin date (YYYY-MM-DD): days since 2026-01-01, modulo the list. */
+export function entryFor(date, entries = loadEntries()) {
+  const [y, m, d] = date.split("-").map(Number);
+  const days = Math.floor((Date.UTC(y, m - 1, d) - Date.UTC(2026, 0, 1)) / 86_400_000);
+  return entries[((days % entries.length) + entries.length) % entries.length];
+}
+
+const quoted = (s) => `„${s}“`;
+
+/** Lines of `str` at `size`, stacked from baseline y; returns { svg, y } with y after the last line. */
+function block(str, x, y, size, maxW, maxLines, opts = {}) {
+  const lines = wrap(str, size * (opts.weight === "bold" ? 1.07 : 1), maxW, maxLines);
+  const lead = Math.round(size * 1.18);
+  let svg = "";
+  lines.forEach((l, i) => {
+    svg += text(x, y + i * lead, l, { size, weight: opts.weight }, { ink: opts.ink });
+  });
+  return { svg, y: y + (lines.length - 1) * lead };
+}
+
+export function render(box, entry) {
+  const full = box.variant === "full";
+  const S = full
+    ? { head: 96, mean: TYPE.title.size, ex: 44, headLines: 3, gapMean: 92, gapEx: 140 }
+    : { head: TYPE.headline.size, mean: TYPE.body.size, ex: 34, headLines: 2, gapMean: 62, gapEx: 70 };
+
+  // Stack the parts from a first baseline of 0, then position the stack.
+  const head = block(quoted(entry.ausdruck), 0, 0, S.head, box.w, S.headLines, { weight: "bold" });
+  const mean = block(entry.bedeutung, 0, head.y + S.gapMean, S.mean, box.w, 2, { ink: INK.secondary });
+  const exY = mean.y + S.gapEx;
+  const ex = block(entry.beispiel, 0, exY, S.ex, box.w, full ? 3 : 2, { ink: INK.secondary });
+  let stack = head.svg + mean.svg + ex.svg;
+  if (full) stack += label(0, exY - 64, "Beispiel");
+
+  // Full screen: centre the stack under the label; a band: just below the label.
+  const top = 72;
+  const height = ex.y + Math.round(S.ex * 0.3) + Math.round(S.head * 0.8);
+  const firstBaseline = full
+    ? top + Math.max(0, Math.round((box.h - top - height) / 2)) + Math.round(S.head * 0.8)
+    : 112;
+  return label(0, 30, "Ausdruck des Tages") + `<g transform="translate(0 ${firstBaseline})">${stack}</g>`;
+}
