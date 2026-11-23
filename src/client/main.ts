@@ -15,7 +15,7 @@ interface ScreenInfo {
 
 interface KindleConfig {
   schedule: { at: string; screen: string }[];
-  kino: { cinemas: string[]; from: string };
+  kino: { cinemas: string[]; from: string; letterboxdUser: string; hideSeen: boolean; hiddenFilms: string[] };
   checkinMinutes: number;
   exit: boolean;
 }
@@ -29,6 +29,14 @@ interface KindleStatus {
   version: string;
   log: string;
   history?: [number, number][];
+}
+
+interface FilmInfo {
+  slug: string;
+  title: string;
+  dates: string[];
+  tmdbId: string | null;
+  seen: boolean;
 }
 
 interface AdminState {
@@ -225,7 +233,42 @@ function cinemasHtml(c: KindleConfig, cinemas: Record<string, string>): string {
       ([slug, name]) => `<label class="check"><input type="checkbox" value="${slug}" ${c.kino.cinemas.includes(slug) ? "checked" : ""}> ${escapeHtml(name)}</label>`,
     )
     .join("")}</div>
-    <label class="inline">List screenings from <input type="time" id="kino-from" value="${c.kino.from}"></label>`;
+    <label class="inline">List screenings from <input type="time" id="kino-from" value="${c.kino.from}"></label>
+
+    <h2>Films</h2>
+    <label class="inline">Letterboxd username <input type="text" id="lbx-user" value="${escapeHtml(c.kino.letterboxdUser)}" placeholder="optional" autocomplete="off" spellcheck="false"></label>
+    <label class="check"><input type="checkbox" id="lbx-hide" ${c.kino.hideSeen ? "checked" : ""}> Leave out films I've logged on Letterboxd</label>
+    <p class="muted">Matched by TMDB id from your public Letterboxd feed (your recent diary). Tick a film below to hide it by hand.</p>
+    <div id="films" class="films"><p class="muted">Loading films…</p></div>`;
+}
+
+/** Short German-style date list: "24.11., 25.11., 26.11. … (9 days)". */
+function filmDates(dates: string[]): string {
+  const fmt = (d: string) => `${Number(d.slice(8, 10))}.${Number(d.slice(5, 7))}.`;
+  return dates.length <= 3 ? dates.map(fmt).join(", ") : `${dates.slice(0, 2).map(fmt).join(", ")} … ${fmt(dates[dates.length - 1])} (${dates.length} days)`;
+}
+
+async function loadFilms(): Promise<void> {
+  const box = document.getElementById("films");
+  if (!box || !draft) return;
+  try {
+    const res = await api(withDevice("/api/admin/kindle/films"));
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 120)}`);
+    const body = (await res.json()) as { films: FilmInfo[]; watched: number | null };
+    const hidden = new Set(draft.kino.hiddenFilms);
+    const note = body.watched === null
+      ? "Add a Letterboxd username (and save) to mark films you've seen."
+      : `${body.watched} films in the Letterboxd feed; ${body.films.filter((f) => f.seen).length} of these are among them.`;
+    box.innerHTML = `<p class="muted">${escapeHtml(note)}</p><ul class="film-list">${body.films
+      .map((f) => `<li><label class="check"><input type="checkbox" data-film="${escapeHtml(f.slug)}" ${hidden.has(f.slug) ? "checked" : ""}>
+          <span class="film-title">${escapeHtml(f.title)}</span></label>
+          <span class="muted">${escapeHtml(filmDates(f.dates))}</span>
+          ${f.seen ? `<span class="badge">seen</span>` : ""}${f.tmdbId ? "" : `<span class="muted">special</span>`}</li>`)
+      .join("")}</ul>`;
+  } catch (err) {
+    if ((err as Error).message === "unauthorized") return;
+    box.innerHTML = `<p class="error">Films unavailable: ${escapeHtml((err as Error).message)}</p>`;
+  }
 }
 
 function render(state: AdminState): void {
@@ -291,6 +334,7 @@ function render(state: AdminState): void {
     });
   }
   void loadPreview(state);
+  void loadFilms();
 }
 
 function bindForm(state: AdminState): void {
@@ -309,6 +353,16 @@ function bindForm(state: AdminState): void {
       if (el.dataset.field === "screen") entry.screen = el.value;
     } else if (el.id === "kino-from") {
       c.kino.from = el.value;
+    } else if (el.id === "lbx-user") {
+      c.kino.letterboxdUser = el.value.trim();
+    } else if (el.id === "lbx-hide") {
+      c.kino.hideSeen = (el as HTMLInputElement).checked;
+    } else if (el.dataset.film) {
+      const slug = el.dataset.film;
+      const set = new Set(c.kino.hiddenFilms);
+      if ((el as HTMLInputElement).checked) set.add(slug);
+      else set.delete(slug);
+      c.kino.hiddenFilms = [...set];
     } else if (el.id === "interval") {
       c.checkinMinutes = Number(el.value);
     } else if (el.id === "exit") {

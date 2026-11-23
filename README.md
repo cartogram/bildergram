@@ -8,7 +8,7 @@ its own daily schedule:
 |---|---|---|
 | 06:00 | **Morgen** | Weather (now, 3-day high/low and precipitation, wind, sunset) and the *Ausdruck des Tages* |
 | 09:00 | **Tag** | Tempelhofer Feld (open/closed, countdown updated every minute) and the weather |
-| 18:15 | **Abend** | IM KINO: the evening's screenings at your chosen [Yorck](https://www.yorck.de) cinemas |
+| 18:15 | **Abend** | IM KINO: the evening's screenings at your chosen [Yorck](https://www.yorck.de) cinemas, without films you've already logged on Letterboxd |
 | 23:00 | **Nacht** | The *Ausdruck des Tages* (B2: expression, English meaning, example sentence) |
 
 The Kindle sleeps between updates with Wi-Fi off. It goes online on an
@@ -138,6 +138,9 @@ each it shows:
   battery chart for the last week;
 - the schedule (which screen from which time) and the check-in interval;
 - the cinemas for IM KINO and the first screening time to list;
+- a Letterboxd username and a switch to leave out films you've logged there (matched by
+  TMDB id from your public feed), plus the coming days' films with a manual hide
+  checkbox each;
 - a one-shot **Return to the normal Kindle UI** switch;
 - a live preview of each screen, at that Kindle's size.
 
@@ -176,6 +179,7 @@ bildergram/
 │   ├── types.ts
 │   └── client/                # Admin page (vanilla TS, built by Vite)
 ├── api/screen.mjs             # Vercel function: screen → PNG
+├── api/films.mjs              # Vercel function: coming films, marked seen (Letterboxd)
 ├── kindle/
 │   ├── build.mjs              # Tempelhof pieces, fallbacks, layout.env → kindle/dist
 │   ├── gallery.mjs            # Design review page from live data
@@ -191,7 +195,7 @@ bildergram/
 │       ├── modules/           # tempelhof, wetter, kino, ausdruck
 │       ├── render.mjs         # Load a screen's data and render it
 │       ├── eink.mjs           # SVG → 16-gray, rotated, 8-bit PNG for eips
-│       ├── kino.mjs           # yorck.de fetching and parsing
+│       ├── kino.mjs           # yorck.de fetching and parsing, Letterboxd seen-film filter
 │       ├── schedule.mjs       # Tempelhof open/close schedule
 │       ├── templehof.ts       # Tempelhof opening hours (ported from openfeld)
 │       └── glyphs.ts          # Arimo metrics, used to measure text (generated)
@@ -213,4 +217,5 @@ bildergram/
 - [x] **Phase 8**: Design system and German screens — `design.mjs` tokens and primitives, Arimo Bold, modules (tempelhof, wetter, kino, ausdruck), four screens (Morgen, Tag, Abend, Nacht), a live-data gallery
 - [x] **Phase 9**: Screens on the device — server-rendered screen bases with the Tempelhof box drawn on the Kindle, hourly check-ins while weather shows, battery history and per-screen previews on the admin page, 365 B2 expressions
 - [x] **Phase 10**: Two Kindles — screens rendered per device size (Paperwhite 3 at 1448 × 1072, Paperwhite 2 at 1024 × 758), a bundle and paste check per device, per-device config, status and previews on the hub, a device switcher on the admin page
-- [ ] **Next**: install on Kindle 2 once it is jailbroken; hide films already seen on Letterboxd from IM KINO
+- [x] **Phase 11**: Letterboxd filter — IM KINO leaves out films in the user's public Letterboxd feed (matched by TMDB id via the Yorck film pages) and films hidden by hand on the admin page
+- [ ] **Next**: install on Kindle 2 once it is jailbroken

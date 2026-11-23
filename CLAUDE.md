@@ -82,7 +82,7 @@ There is no test runner. Verify changes with:
   - Other `/api/*` paths return 404; everything else is the SPA.
   - There are no cron triggers: the explicit empty `crons` list in `wrangler.jsonc` also clears old schedules on deploy.
 - **`routes/kindle.ts`**:
-  - **Config**: `{schedule:[{at,screen}], kino:{cinemas,from}, checkinMinutes (15–360), exit}`. Phase 7 configs (screens `tempelhof`/`kino`) are migrated on read.
+  - **Config**: `{schedule:[{at,screen}], kino:{cinemas,from,letterboxdUser,hideSeen,hiddenFilms}, checkinMinutes (15–360), exit}`. `hiddenFilms` holds Yorck film slugs. Phase 7 configs (screens `tempelhof`/`kino`) are migrated on read.
   - **Check-in** (`POST /api/kindle/checkin`): the body is the device's log tail. The reply is shell-safe `KEY="value"` lines (`SCHEDULE="0600:morgen 0900:tag …"`, `CHECKIN_MINUTES`, `EXIT`, `SERVER_TIME`). The Kindle validates them with a regex before sourcing, so keep values within `[A-Za-z0-9 :._-]`.
   - The `exit` flag is one-shot: it is cleared once sent.
   - **Status** keeps a week of `[epoch, battery]` history.
@@ -92,12 +92,12 @@ There is no test runner. Verify changes with:
 
 ## Renderer and data sources
 
-- **Endpoint**: `api/screen.mjs`, `GET ?screen=&device=&date=&battery=&cinemas=&from=[&preview=1]`, protected by `x-renderer-token` = `RENDERER_TOKEN`. Failures are logged with `console.error`.
+- **Endpoints**: `api/screen.mjs`, `GET ?screen=&device=&date=&battery=&cinemas=&from=[&letterboxd=&hide=][&preview=1]`, and `api/films.mjs` (the coming days' films marked `seen`, for the admin page), protected by `x-renderer-token` = `RENDERER_TOKEN`. Failures are logged with `console.error`.
 - **Bundling**: `vercel.json` sets `framework: null`, skips the Vite build, runs `npm install --omit=dev`, and lists fonts, WASM, `kindle/lib/**` and `kindle/data/*.json` under `includeFiles`. `.vercelignore` must keep `.dev.vars` and `.env*` out of uploads.
 - **yorck.de**:
   - Each `/kinos/<slug>` page embeds its programme (~100 KB) in `__NEXT_DATA__` (`pageProps.filmsSpecials[].fields.sessions[]`, where `startTime` carries the Berlin offset).
   - The site stops listing a screening once it has started.
-  - A planned Letterboxd "already seen" filter matches films by TMDB id from the `/filme/<slug>` pages.
+  - **Letterboxd filter** (`withoutSeen` in `kino.mjs`): `letterboxd.com/<user>/rss/` (public, recent diary only) lists logged films with `<tmdb:movieId>`, and each Yorck `/filme/<slug>` page has `film.fields.tmdbId`. Films match by id, because Yorck uses German titles; specials without an id are never hidden. A render looks up only that evening's films. TMDB ids are cached for the life of the process, and the feed for 10 minutes. The screen never shows how many films were hidden.
 - **Open-Meteo**: `fetchWeather` asks for the current values plus 3 days of daily data for Tempelhofer Feld.
 
 ## Device loop (`kindle/device/dashboard.sh`, installed to `/mnt/us/dashboard`)

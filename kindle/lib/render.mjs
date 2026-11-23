@@ -8,7 +8,7 @@
 import { deTime } from "./design.mjs";
 import { encodePng, initRenderer, rasterize, rotate } from "./eink.mjs";
 import { device } from "./devices.mjs";
-import { DEFAULT_CINEMAS, fetchProgramme } from "./kino.mjs";
+import { DEFAULT_CINEMAS, fetchProgramme, withoutSeen } from "./kino.mjs";
 import { entryFor } from "./modules/ausdruck.mjs";
 import { fetchWeather } from "./modules/wetter.mjs";
 import { buildSchedule, tempelhofState } from "./schedule.mjs";
@@ -23,7 +23,9 @@ export function berlinDate(ms = Date.now()) {
  * Data for the modules on screen `id`. Only what the screen shows is
  * fetched. `now` (ms) drives the Tempelhof state for full renders.
  */
-export async function screenData(id, { date = berlinDate(), battery = null, cinemas = DEFAULT_CINEMAS, from = "18:00", now = Date.now() } = {}) {
+export async function screenData(id, {
+  date = berlinDate(), battery = null, cinemas = DEFAULT_CINEMAS, from = "18:00", letterboxd = null, hidden = [], now = Date.now(),
+} = {}) {
   const modules = new Set(SCREENS[id].boxes.map((b) => b.module));
   const data = { date, battery };
   const jobs = [];
@@ -34,9 +36,13 @@ export async function screenData(id, { date = berlinDate(), battery = null, cine
     }));
   }
   if (modules.has("kino")) {
-    jobs.push(fetchProgramme(cinemas).then((p) => {
-      data.kino = { programme: p, from, updated: deTime(p.fetchedAt) };
-    }));
+    // Drop films already seen on Letterboxd or hidden by hand; only this
+    // listing's films (that date, from `from`) are looked up.
+    jobs.push(fetchProgramme(cinemas)
+      .then((p) => withoutSeen(p, { letterboxd, hidden, keep: (s) => s.date === date && s.time >= from }))
+      .then((p) => {
+        data.kino = { programme: p, from, updated: deTime(p.fetchedAt) };
+      }));
   }
   if (modules.has("ausdruck")) data.ausdruck = entryFor(date);
   if (modules.has("tempelhof")) data.tempelhof = tempelhofState(buildSchedule(now, 1), now);

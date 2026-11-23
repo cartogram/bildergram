@@ -14,6 +14,7 @@
 //   GET  /api/admin/kindle                 { device, devices, config, status, cinemas, screens }
 //   PUT  /api/admin/kindle/config          replace the device's config
 //   GET  /api/admin/kindle/screen?screen=  full preview of a screen (PNG) at the device's size
+//   GET  /api/admin/kindle/films           films at the device's cinemas, marked seen (Letterboxd)
 //
 // Screens are rendered by the Vercel function (RENDERER_URL); the
 // Worker only passes bytes through, which keeps it far under the free
@@ -35,7 +36,16 @@ export type Screen = keyof typeof SCREENS;
 export interface KindleConfig {
   /** Daily timetable: from `at` (Berlin HH:MM) until the next entry, show `screen`. */
   schedule: { at: string; screen: Screen }[];
-  kino: { cinemas: string[]; from: string };
+  kino: {
+    cinemas: string[];
+    from: string;
+    /** Public Letterboxd account whose logged films can be left out of IM KINO. */
+    letterboxdUser: string;
+    /** Leave out films in that account's feed (matched by TMDB id). */
+    hideSeen: boolean;
+    /** Yorck film slugs hidden by hand. */
+    hiddenFilms: string[];
+  };
   /** How often the Kindle checks in while a weather screen is showing. */
   checkinMinutes: number;
   /** One-shot: the next check-in tells the Kindle to return to its normal UI. */
@@ -65,7 +75,7 @@ export const DEFAULT_CONFIG: KindleConfig = {
     { at: "18:15", screen: "abend" },
     { at: "23:00", screen: "nacht" },
   ],
-  kino: { cinemas: ["rollberg", "passage", "neues-off"], from: "18:00" },
+  kino: { cinemas: ["rollberg", "passage", "neues-off"], from: "18:00", letterboxdUser: "", hideSeen: false, hiddenFilms: [] },
   checkinMinutes: 60,
   exit: false,
 };
@@ -144,9 +154,19 @@ export function parseConfig(input: unknown): KindleConfig | string {
   const cinemas = Array.isArray(c.kino?.cinemas) ? c.kino.cinemas.filter((s) => s in YORCK_CINEMAS) : [];
   if (cinemas.length === 0) return "choose at least one cinema";
   const from = typeof c.kino?.from === "string" && HHMM.test(c.kino.from) ? c.kino.from : "18:00";
+  const letterboxdUser = typeof c.kino?.letterboxdUser === "string" ? c.kino.letterboxdUser.trim() : "";
+  if (letterboxdUser && !/^[A-Za-z0-9_]{1,40}$/.test(letterboxdUser)) return "Letterboxd username: letters, digits and _ only";
+  const hiddenFilms = Array.isArray(c.kino?.hiddenFilms)
+    ? [...new Set(c.kino.hiddenFilms.filter((s): s is string => typeof s === "string" && /^[a-z0-9-]{1,120}$/.test(s)))].slice(0, 200)
+    : [];
   const minutes = Number(c.checkinMinutes ?? DEFAULT_CONFIG.checkinMinutes);
   if (!Number.isInteger(minutes) || minutes < 15 || minutes > 360) return "check-in interval must be 15–360 minutes";
-  return { schedule, kino: { cinemas, from }, checkinMinutes: minutes, exit: c.exit === true };
+  return {
+    schedule,
+    kino: { cinemas, from, letterboxdUser, hideSeen: c.kino?.hideSeen === true && Boolean(letterboxdUser), hiddenFilms },
+    checkinMinutes: minutes,
+    exit: c.exit === true,
+  };
 }
 
 // ------------------------------------------------------------------
@@ -159,6 +179,8 @@ async function renderScreen(env: AppEnv, device: string, config: KindleConfig, p
   url.searchParams.set("device", device);
   url.searchParams.set("cinemas", config.kino.cinemas.join(","));
   url.searchParams.set("from", config.kino.from);
+  if (config.kino.hideSeen && config.kino.letterboxdUser) url.searchParams.set("letterboxd", config.kino.letterboxdUser);
+  if (config.kino.hiddenFilms.length) url.searchParams.set("hide", config.kino.hiddenFilms.join(","));
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   const res = await fetch(url, { headers: env.RENDERER_TOKEN ? { "x-renderer-token": env.RENDERER_TOKEN } : {} });
   return new Response(res.body, {
@@ -280,6 +302,20 @@ export async function handleKindleAdmin(request: Request, env: AppEnv): Promise<
     const params: Record<string, string> = { screen, preview: "1", date: berlinToday() };
     if (status?.battery != null) params.battery = String(status.battery);
     return renderScreen(env, id, await readConfig(env, id), params);
+  }
+
+  if (url.pathname === "/api/admin/kindle/films" && request.method === "GET") {
+    if (!env.RENDERER_URL) return Response.json({ error: "RENDERER_URL is not configured" }, { status: 503 });
+    const config = await readConfig(env, id);
+    const films = new URL("/api/films", env.RENDERER_URL);
+    films.searchParams.set("cinemas", config.kino.cinemas.join(","));
+    // Always mark seen films when a username is set, even if hiding is off.
+    if (config.kino.letterboxdUser) films.searchParams.set("letterboxd", config.kino.letterboxdUser);
+    const res = await fetch(films, { headers: env.RENDERER_TOKEN ? { "x-renderer-token": env.RENDERER_TOKEN } : {} });
+    return new Response(res.body, {
+      status: res.status,
+      headers: { "content-type": res.headers.get("content-type") ?? "application/json", "cache-control": "no-store" },
+    });
   }
 
   return Response.json({ error: "not found" }, { status: 404 });

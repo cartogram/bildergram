@@ -3,6 +3,7 @@
 //
 //   GET /api/screen?screen=tag&device=kindle_01&date=YYYY-MM-DD&battery=84
 //        &cinemas=rollberg,passage,neues-off&from=18:00
+//        &letterboxd=<user>&hide=<yorck film slugs>   (IM KINO: leave out seen/hidden films)
 //     → PNG of the screen's base: everything the server draws (top bar,
 //       weather, cinema listing, phrase), Kindle-drawn boxes (Tempelhof)
 //       left blank, rotated 8-bit gray for eips, at the device's size
@@ -38,9 +39,11 @@ export async function GET(request) {
     .map((s) => s.trim().toLowerCase())
     .filter((s) => /^[a-z0-9-]+$/.test(s));
   const from = /^\d{2}:\d{2}$/.test(q.get("from") ?? "") ? q.get("from") : "18:00";
+  const letterboxd = /^[A-Za-z0-9_]{1,40}$/.test(q.get("letterboxd") ?? "") ? q.get("letterboxd") : null;
+  const hidden = (q.get("hide") ?? "").split(",").filter((s) => /^[a-z0-9-]+$/.test(s));
 
   try {
-    const png = await renderScreen(screen, { date, battery, cinemas, from }, q.get("preview") ? "full" : "base", device);
+    const png = await renderScreen(screen, { date, battery, cinemas, from, letterboxd, hidden }, q.get("preview") ? "full" : "base", device);
     return new Response(png, { headers: { "content-type": "image/png", "cache-control": "no-store" } });
   } catch (err) {
     // Shows up in the Vercel function logs (e.g. Open-Meteo or yorck.de being down).

@@ -309,3 +309,43 @@ input[type="number"] {
   padding: 7px 9px;
   width: 5.5em;
 }
+
+/* Phase 11: film list */
+
+input[type="text"] {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 9px;
+  min-width: 0;
+}
+
+.film-list {
+  list-style: none;
+  display: grid;
+  gap: 4px;
+  max-height: 420px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.film-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.film-title {
+  font-weight: 500;
+}
+
+.badge {
+  font-size: 12px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+}
