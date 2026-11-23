@@ -39,25 +39,34 @@ function block(str, x, y, size, maxW, maxLines, opts = {}) {
   return { svg, y: y + (lines.length - 1) * lead };
 }
 
-export function render(box, entry) {
-  const full = box.variant === "full";
+/** The text stack at scale `k` (1 = design size); y values relative to the first baseline. */
+function stack(box, entry, full, k) {
   const S = full
     ? { head: 96, mean: TYPE.title.size, ex: 44, headLines: 3, gapMean: 92, gapEx: 140 }
     : { head: TYPE.headline.size, mean: TYPE.body.size, ex: 34, headLines: 2, gapMean: 62, gapEx: 70 };
+  const r = (n) => Math.round(n * k);
+  const head = block(quoted(entry.ausdruck), 0, 0, r(S.head), box.w, S.headLines, { weight: "bold" });
+  const mean = block(entry.bedeutung, 0, head.y + r(S.gapMean), r(S.mean), box.w, 2, { ink: INK.secondary });
+  const exY = mean.y + r(S.gapEx);
+  const ex = block(entry.beispiel, 0, exY, r(S.ex), box.w, full ? 3 : 2, { ink: INK.secondary });
+  let svg = head.svg + mean.svg + ex.svg;
+  if (full) svg += label(0, exY - r(64), "Beispiel");
+  return { svg, ascent: r(S.head * 0.8), bottom: ex.y + r(S.ex * 0.3) };
+}
 
-  // Stack the parts from a first baseline of 0, then position the stack.
-  const head = block(quoted(entry.ausdruck), 0, 0, S.head, box.w, S.headLines, { weight: "bold" });
-  const mean = block(entry.bedeutung, 0, head.y + S.gapMean, S.mean, box.w, 2, { ink: INK.secondary });
-  const exY = mean.y + S.gapEx;
-  const ex = block(entry.beispiel, 0, exY, S.ex, box.w, full ? 3 : 2, { ink: INK.secondary });
-  let stack = head.svg + mean.svg + ex.svg;
-  if (full) stack += label(0, exY - 64, "Beispiel");
+export function render(box, entry) {
+  const full = box.variant === "full";
+  const top = 72; // below the module label
 
-  // Full screen: centre the stack under the label; a band: just below the label.
-  const top = 72;
-  const height = ex.y + Math.round(S.ex * 0.3) + Math.round(S.head * 0.8);
+  // Full screen: centre the stack under the label. A band: start just below
+  // the label, shrinking the text until long entries fit the box.
+  let s;
+  for (const k of full ? [1] : [1, 0.9, 0.82, 0.75]) {
+    s = stack(box, entry, full, k);
+    if (full || 112 + s.bottom <= box.h) break;
+  }
   const firstBaseline = full
-    ? top + Math.max(0, Math.round((box.h - top - height) / 2)) + Math.round(S.head * 0.8)
+    ? top + Math.max(0, Math.round((box.h - top - s.bottom - s.ascent) / 2)) + s.ascent
     : 112;
-  return label(0, 30, "Ausdruck des Tages") + `<g transform="translate(0 ${firstBaseline})">${stack}</g>`;
+  return label(0, 30, "Ausdruck des Tages") + `<g transform="translate(0 ${firstBaseline})">${s.svg}</g>`;
 }
