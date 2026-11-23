@@ -23,11 +23,13 @@ if [ -n "$KINDLE_VOLUME" ]; then
   cp -RX dashboard/. "$V/dashboard/"
   cp -X documents/*.sh "$V/documents/"
   if [ -n "$KINDLE_HUB_URL" ] && [ -n "$KINDLE_HUB_TOKEN" ]; then
-    : "${KINDLE_HUB_MAC:?over USB, set KINDLE_HUB_MAC too (the Kindle's Wi-Fi MAC)}"
+    : "${KINDLE_HUB_MAC:?over USB, set KINDLE_HUB_MAC too, the Wi-Fi MAC of the Kindle}"
     printf 'HUB_URL=%s\nHUB_TOKEN=%s\nHUB_MAC=%s\n' "$KINDLE_HUB_URL" "$KINDLE_HUB_TOKEN" "$KINDLE_HUB_MAC" > "$V/dashboard/hub.env"
     echo "hub.env written (MAC $KINDLE_HUB_MAC)"
   fi
   [ -f "$V/dashboard/hub.env" ] || echo "note: no hub.env yet; pass KINDLE_HUB_URL, KINDLE_HUB_TOKEN and KINDLE_HUB_MAC to enable check-ins"
+  # macOS still writes ._ metadata files onto FAT drives; remove them.
+  command -v dot_clean >/dev/null && dot_clean -m "$V/dashboard" "$V/documents"
   sync
   echo "installed to $V: $(ls "$V"/dashboard/tempelhof/*/cd | wc -l | tr -d ' ') countdown images, $(ls "$V/dashboard/fallback" | wc -l | tr -d ' ') fallback screens, $(wc -l < "$V/dashboard/schedule.txt" | tr -d ' ') Tempelhof events. Eject the drive before unplugging."
   exit 0
