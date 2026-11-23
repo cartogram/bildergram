@@ -10,8 +10,8 @@
 // ============================================================
 
 export const DEVICES = {
-  kindle_01: { name: "Kindle 1 (Paperwhite 3)", width: 1448, height: 1072, rotate: "ccw" },
-  kindle_02: { name: "Kindle 2 (Paperwhite 2)", width: 1024, height: 758, rotate: "ccw" },
+  kindle_01: { name: "Matt (Paperwhite 3)", width: 1448, height: 1072, rotate: "ccw" },
+  kindle_02: { name: "Fiona (Paperwhite 2)", width: 1024, height: 758, rotate: "ccw" },
 };
 
 export const DEFAULT_DEVICE = "kindle_01";

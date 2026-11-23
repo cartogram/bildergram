@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A battery-powered e-ink dashboard on two jailbroken Kindles: `kindle_01`, a Paperwhite 3, and `kindle_02`, a Paperwhite 2. Each shows **German screens** (the admin page stays in English) on its own daily schedule: **Morgen** (weather + expression of the day), **Tag** (Tempelhof countdown + weather), **Abend** (IM KINO, the Yorck cinema listing) and **Nacht** (expression of the day).
+A battery-powered e-ink dashboard on two jailbroken Kindles: `kindle_01` (**Matt**), a Paperwhite 3, and `kindle_02` (**Fiona**), a Paperwhite 2. Each shows **German screens** (the admin page stays in English) on its own daily schedule: **Morgen** (weather + expression of the day), **Tag** (Tempelhof countdown + weather), **Abend** (IM KINO, the Yorck cinema listing) and **Nacht** (expression of the day).
 
 There are three parts:
 - **Kindle** (`kindle/device/dashboard.sh`): a busybox shell loop. It draws each screen's downloaded base image with `eips`, pastes the Tempelhof panel and countdown on Tag, and suspends to RAM with Wi-Fi off, waking on the RTC alarm.
@@ -127,8 +127,10 @@ There is no test runner. Verify changes with:
   - KOReader's SSH server listens on port 2222 as root, with keys in `koreader/settings/SSH/authorized_keys`, and keeps running after KOReader exits.
   - Kindle Wi-Fi dozes, so retry a first "No route to host".
   - While the dashboard runs, Wi-Fi is off; a check-in uploads the log tail to the hub, where the admin page shows it.
-  - `dashboard.sh once` draws the current screen without suspending.
-- **Hardware**: Kindle 1 (`kindle_01`) is a Paperwhite 3; Kindle 2 (`kindle_02`) is a Paperwhite 2 (758×1024 portrait framebuffer, 212 ppi, firmware 5.12.2.1.1). WinterBreak2 covers both. Confirm Kindle 2's framebuffer with `eips -i` after its jailbreak, and set its MAC in `src/devices.ts`.
+  - `dashboard.sh once [EPOCH]` draws the screen for that instant without suspending.
+  - To see what is on the panel, read `/dev/fb0` over SSH (`dd bs=<line_length> count=<yres>`) **right after** drawing: while KOReader is open it repaints its own UI over eips output within seconds.
+  - `dashboard.log` timestamps are UTC (`date -u`); the screens and schedule use Berlin time.
+- **Hardware**: Matt (`kindle_01`, 192.168.0.93) is a Paperwhite 3: 1072×1448 portrait framebuffer, firmware 5.13.7. Fiona (`kindle_02`, 192.168.0.198) is a Paperwhite 2: 758×1024 portrait framebuffer at 212 ppi, `line_length` 768 (padded rows, which eips handles), firmware 5.12.2.1.1. They share a case, so tell them apart by serial prefix (G090G1 = PW3, 90D4 = PW2). WinterBreak2 covers both.
 
 ## Conventions
 

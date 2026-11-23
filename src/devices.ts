@@ -20,15 +20,14 @@ export interface DeviceConfig {
 export const DEVICES: DeviceConfig[] = [
   {
     id: "kindle_01",
-    name: "Kindle 1 (Paperwhite 3)",
+    name: "Matt",
     macAddress: "74:75:48:81:93:FA",
     tokenEnvKey: "DEVICE_TOKEN_KINDLE_01",
   },
   {
-    // MAC unknown until it is jailbroken and checks in; only the token is checked meanwhile.
     id: "kindle_02",
-    name: "Kindle 2 (Paperwhite 2)",
-    macAddress: "",
+    name: "Fiona",
+    macAddress: "00:BB:3A:9A:2B:24",
     tokenEnvKey: "DEVICE_TOKEN_KINDLE_02",
   },
 ];

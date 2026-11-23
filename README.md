@@ -1,7 +1,7 @@
 # bildergram
 
-A battery-powered e-ink dashboard on jailbroken Kindles (a **Paperwhite 3** and a
-**Paperwhite 2**), in German. Each Kindle shows a few hand-designed screens on
+A battery-powered e-ink dashboard on two jailbroken Kindles, **Matt** (a
+Paperwhite 3) and **Fiona** (a Paperwhite 2), in German. Each Kindle shows a few hand-designed screens on
 its own daily schedule:
 
 | Default time | Screen | What it shows |
@@ -92,8 +92,8 @@ vercel deploy --prod
 ```bash
 npx wrangler secret put ADMIN_TOKEN             # for the admin page
 npx wrangler secret put RENDERER_TOKEN          # same value as on Vercel
-npx wrangler secret put DEVICE_TOKEN_KINDLE_01  # Kindle 1's token (goes into its hub.env)
-npx wrangler secret put DEVICE_TOKEN_KINDLE_02  # Kindle 2's token
+npx wrangler secret put DEVICE_TOKEN_KINDLE_01  # Matt's token (goes into its hub.env)
+npx wrangler secret put DEVICE_TOKEN_KINDLE_02  # Fiona's token
 npm run deploy
 ```
 
@@ -103,7 +103,7 @@ bucket `trmnl-display-assets` holds the hub state per Kindle
 
 ### 3. Kindle
 
-Requires a jailbroken Kindle (WinterBreak2: Kindle 1 is on firmware 5.13.7, Kindle 2 on 5.12.2.1.1) and
+Requires a jailbroken Kindle (WinterBreak2: Matt is on firmware 5.13.7, Fiona on 5.12.2.1.1) and
 KOReader, whose SSH server is used for installing: KOReader → gear →
 Network → tick **SSH server** (port 2222; put your public key in
 `koreader/settings/SSH/authorized_keys`).
@@ -119,7 +119,7 @@ npm run kindle:install
 
 Or, with the Kindle in USB drive mode, `KINDLE_VOLUME=/Volumes/Kindle` instead of
 `KINDLE_HOST` (then also `KINDLE_HUB_MAC`, its Wi-Fi MAC, when writing hub settings).
-Use `KINDLE_DEVICE=kindle_02` and its token for the Paperwhite 2.
+Use `KINDLE_DEVICE=kindle_02` and its token for Fiona, the Paperwhite 2.
 
 The hub settings are written to `/mnt/us/dashboard/hub.env` and kept across
 later installs, so `KINDLE_HOST=… npm run kindle:install` is enough after the
@@ -218,4 +218,4 @@ bildergram/
 - [x] **Phase 9**: Screens on the device — server-rendered screen bases with the Tempelhof box drawn on the Kindle, hourly check-ins while weather shows, battery history and per-screen previews on the admin page, 365 B2 expressions
 - [x] **Phase 10**: Two Kindles — screens rendered per device size (Paperwhite 3 at 1448 × 1072, Paperwhite 2 at 1024 × 758), a bundle and paste check per device, per-device config, status and previews on the hub, a device switcher on the admin page
 - [x] **Phase 11**: Letterboxd filter — IM KINO leaves out films in the user's public Letterboxd feed (matched by TMDB id via the Yorck film pages) and films hidden by hand on the admin page
-- [ ] **Next**: install on Kindle 2 once it is jailbroken
+- [x] Fiona (`kindle_02`, Paperwhite 2) jailbroken and installed: screens downloaded at 758 × 1024, base and Tempelhof pastes verified pixel-exact on the panel's framebuffer
