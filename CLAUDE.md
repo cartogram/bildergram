@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A battery-powered e-ink dashboard on a jailbroken Kindle Paperwhite 3. It shows **German screens** (the admin page stays in English) on a daily schedule: **Morgen** (weather + expression of the day), **Tag** (Tempelhof countdown + weather), **Abend** (IM KINO, the Yorck cinema listing) and **Nacht** (expression of the day).
+A battery-powered e-ink dashboard on two jailbroken Kindles: `kindle_01`, a Paperwhite 3, and `kindle_02`, a Paperwhite 2. Each shows **German screens** (the admin page stays in English) on its own daily schedule: **Morgen** (weather + expression of the day), **Tag** (Tempelhof countdown + weather), **Abend** (IM KINO, the Yorck cinema listing) and **Nacht** (expression of the day).
 
 There are three parts:
 - **Kindle** (`kindle/device/dashboard.sh`): a busybox shell loop. It draws each screen's downloaded base image with `eips`, pastes the Tempelhof panel and countdown on Tag, and suspends to RAM with Wi-Fi off, waking on the RTC alarm.
@@ -19,8 +19,8 @@ Screens are **bespoke layouts built from shared modules**, not a generic layout 
 npm run dev              # Worker + admin SPA in workerd (secrets from .dev.vars)
 npm run renderer:dev     # local stand-in for the Vercel function on :3999 (.dev.vars points RENDERER_URL here)
 npm run kindle:gallery   # all screens from live data → kindle/dist/gallery/index.html (design review)
-npm run kindle:build     # Tempelhof pieces, fallbacks, layout.env, paste check → kindle/dist (~10 s)
-KINDLE_HOST=<ip> npm run kindle:install   # copy kindle/dist to the Kindle (add KINDLE_HUB_URL/KINDLE_HUB_TOKEN to (re)write hub.env)
+npm run kindle:build     # per device: Tempelhof pieces, fallbacks, layout.env, paste check → kindle/dist/<device> (~25 s)
+KINDLE_DEVICE=kindle_01 KINDLE_HOST=<ip> npm run kindle:install   # or KINDLE_VOLUME=/Volumes/Kindle (USB drive); add KINDLE_HUB_URL/KINDLE_HUB_TOKEN(/KINDLE_HUB_MAC over USB) to (re)write hub.env
 npm run lint             # tsc for src/ and kindle/lib/*.ts
 npx tsc --noEmit -p src/client   # the admin SPA (DOM lib), not covered by lint
 npm run deploy           # vite build + wrangler deploy (the Worker; NOT deployed by git push)
@@ -61,11 +61,15 @@ There is no test runner. Verify changes with:
   `DEVICE_MODULES` (tempelhof) and `HOURLY_SCREENS` (screens containing `wetter`) are derived from the screens. To add a screen, edit `SCREENS` here **and** in `src/routes/kindle.ts`.
 - **`render.mjs`**: `screenData` fetches only what a screen's modules need; `renderScreen` produces the PNG.
 
-## Images for the Paperwhite 3
+## Devices and images
+
+- **Devices**: `kindle/lib/devices.mjs` holds each panel's landscape size and rotation (`kindle_01`: 1448×1072, `kindle_02`: 1024×758). `src/devices.ts` holds tokens and MACs; keep the ids in sync. Screens are designed on the 1448×1072 canvas and rasterized at the device width (`rasterize(svg, { width })` uses resvg's `fitTo`).
+- **Tempelhof pieces at a fractional scale**: pieces are **cropped from full-canvas renders** at the device width. Rendering only a region through a shifted viewBox anti-aliases differently at fractional scales (up to 119 gray levels off), which broke the pixel-exact paste check. `pixelRect` rounds box rects outward to whole device pixels.
 
 - **Format**: the framebuffer is 1072×1448 **portrait**, 8 bpp gray (`eips -i`). `eips -g` pastes pixels as-is, with no scaling, rotation or depth conversion. So everything is drawn as a 1448×1072 landscape SVG, quantized to 16 grays, rotated counter-clockwise (`KINDLE_ROTATE=cw` flips it), and written as an 8-bit grayscale PNG; 1-bit PNGs display wrongly. The paste positions in the generated `layout.env` are portrait coordinates (`TP_<screen>_X`, `CD_<screen>_X`, `UPD_X`, …).
 - **resvg-wasm gotchas**:
   - `img.pixels` is a getter that copies out of WASM memory on every read, so read it once; reading it per pixel made builds take over 10 minutes.
+  - Call `img.free()` and `resvg.free()` after each render. Without that, a build of about 1,000 full renders crashed WASM (`RuntimeError: unreachable`), and long-lived Vercel instances would leak memory.
   - resvg can't pick weights from the variable `Arimo.ttf`, which is why `Arimo-Bold.ttf` is loaded alongside it.
 - **Measuring text**: wrapping measures widths from the advance table in `kindle/lib/glyphs.ts`, which is generated from Arimo at 26 px.
 - **Imports**: `eink.mjs` and the build import `glyphs.ts` and `templehof.ts` through Node's native type stripping, both on Vercel and locally. Keep those files free of imports and of non-erasable TS syntax.
@@ -73,8 +77,8 @@ There is no test runner. Verify changes with:
 ## Hub (`src/`)
 
 - **Routing** (`worker.ts`): only `/api/kindle/*` and `/api/admin/kindle*` are handled.
-  - Device requests use `Access-Token` = `DEVICE_TOKEN_KINDLE_01`, with an optional `ID` header carrying the MAC.
-  - Admin requests use `Authorization: Bearer ADMIN_TOKEN`.
+  - Device requests use `Access-Token` = the device's `DEVICE_TOKEN_KINDLE_0x`, with an optional `ID` header carrying the MAC (not checked while a device's MAC is still `""`).
+  - Admin requests use `Authorization: Bearer ADMIN_TOKEN`, with `?device=` defaulting to `kindle_01`.
   - Other `/api/*` paths return 404; everything else is the SPA.
   - There are no cron triggers: the explicit empty `crons` list in `wrangler.jsonc` also clears old schedules on deploy.
 - **`routes/kindle.ts`**:
@@ -83,12 +87,12 @@ There is no test runner. Verify changes with:
   - The `exit` flag is one-shot: it is cleared once sent.
   - **Status** keeps a week of `[epoch, battery]` history.
   - **Screen images**: `GET /api/kindle/screen/<id>.png?day=&battery=` → renderer. The admin preview (`/api/admin/kindle/screen?screen=`) is the full render.
-- **Environment**: `RENDERER_URL` is a var in `wrangler.jsonc`. `ADMIN_TOKEN`, `RENDERER_TOKEN` and `DEVICE_TOKEN_KINDLE_01` are secrets. `AppEnv` types the hub secrets as optional regardless of `.dev.vars`. State lives in R2 (`kindle/kindle_01/*.json`, in the bucket still named `trmnl-display-assets`).
+- **Environment**: `RENDERER_URL` is a var in `wrangler.jsonc`. `ADMIN_TOKEN`, `RENDERER_TOKEN`, `DEVICE_TOKEN_KINDLE_01` and `DEVICE_TOKEN_KINDLE_02` are secrets. `AppEnv` types the hub secrets as optional regardless of `.dev.vars`. State lives in R2 per device (`kindle/<device>/*.json`, in the bucket still named `trmnl-display-assets`). The renderer gets `device=` so each Kindle downloads screens at its size.
 - **Admin SPA** (`src/client/main.ts`): keeps the token in localStorage and loads images with `fetch` and object URLs, because they need the auth header.
 
 ## Renderer and data sources
 
-- **Endpoint**: `api/screen.mjs`, `GET ?screen=&date=&battery=&cinemas=&from=[&preview=1]`, protected by `x-renderer-token` = `RENDERER_TOKEN`. Failures are logged with `console.error`.
+- **Endpoint**: `api/screen.mjs`, `GET ?screen=&device=&date=&battery=&cinemas=&from=[&preview=1]`, protected by `x-renderer-token` = `RENDERER_TOKEN`. Failures are logged with `console.error`.
 - **Bundling**: `vercel.json` sets `framework: null`, skips the Vite build, runs `npm install --omit=dev`, and lists fonts, WASM, `kindle/lib/**` and `kindle/data/*.json` under `includeFiles`. `.vercelignore` must keep `.dev.vars` and `.env*` out of uploads.
 - **yorck.de**:
   - Each `/kinos/<slug>` page embeds its programme (~100 KB) in `__NEXT_DATA__` (`pageProps.filmsSpecials[].fields.sessions[]`, where `startTime` carries the Berlin offset).
@@ -124,7 +128,7 @@ There is no test runner. Verify changes with:
   - Kindle Wi-Fi dozes, so retry a first "No route to host".
   - While the dashboard runs, Wi-Fi is off; a check-in uploads the log tail to the hub, where the admin page shows it.
   - `dashboard.sh once` draws the current screen without suspending.
-- **Hardware**: Kindle #1 is a Paperwhite 3 (1448×1072). Kindle #2 is a **Paperwhite 2** (758×1024 portrait framebuffer, 212 ppi, firmware 5.12.2.1.1; confirmed by the user). WinterBreak2 covers both. Everything here assumes 1448×1072; the PW2 has the same aspect ratio, so the same SVG can be rendered at 1024×758 (scaled viewBox), but paste positions and Tempelhof pieces must be computed per device size. Multi-device support in the hub and admin page is the next step.
+- **Hardware**: Kindle 1 (`kindle_01`) is a Paperwhite 3; Kindle 2 (`kindle_02`) is a Paperwhite 2 (758×1024 portrait framebuffer, 212 ppi, firmware 5.12.2.1.1). WinterBreak2 covers both. Confirm Kindle 2's framebuffer with `eips -i` after its jailbreak, and set its MAC in `src/devices.ts`.
 
 ## Conventions
 

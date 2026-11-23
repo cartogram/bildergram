@@ -1,8 +1,8 @@
 // ============================================================
-// Admin SPA — Kindle dashboard (Phase 9)
-// Shows the Kindle's last check-in and battery history, edits its
-// screen schedule, check-in interval and cinemas, and previews each
-// screen. Talks to /api/admin/kindle* with the admin token (asked for
+// Admin SPA — Kindle dashboards (Phase 9–10)
+// For each Kindle: shows its last check-in and battery history, edits
+// its screen schedule, check-in interval and cinemas, and previews each
+// screen at its size. Talks to /api/admin/kindle* with the admin token (asked for
 // once and kept in this browser's localStorage).
 // ============================================================
 
@@ -32,6 +32,8 @@ interface KindleStatus {
 }
 
 interface AdminState {
+  device: string;
+  devices: { id: string; name: string }[];
   config: KindleConfig;
   status: KindleStatus | null;
   cinemas: Record<string, string>;
@@ -39,6 +41,7 @@ interface AdminState {
 }
 
 const TOKEN_KEY = "bildergram-admin-token";
+const DEVICE_KEY = "bildergram-admin-device";
 const app = document.getElementById("app")!;
 let draft: KindleConfig | null = null;
 let previewUrl: string | null = null;
@@ -71,6 +74,28 @@ function setToken(token: string | null): void {
 }
 
 let sessionToken = getToken();
+
+function getDevice(): string {
+  try {
+    return localStorage.getItem(DEVICE_KEY) ?? "kindle_01";
+  } catch {
+    return "kindle_01";
+  }
+}
+
+let currentDevice = getDevice();
+
+function setDevice(id: string): void {
+  currentDevice = id;
+  try {
+    localStorage.setItem(DEVICE_KEY, id);
+  } catch {
+    // Remembering the device is only a convenience.
+  }
+}
+
+/** Admin API path with the selected device. */
+const withDevice = (path: string) => `${path}${path.includes("?") ? "&" : "?"}device=${encodeURIComponent(currentDevice)}`;
 
 async function api(path: string, init: RequestInit = {}): Promise<Response> {
   const res = await fetch(path, {
@@ -211,6 +236,9 @@ function render(state: AdminState): void {
     <main>
       <header class="top">
         <h1>Kindle dashboard</h1>
+        <div class="tabs" role="tablist" aria-label="Kindle">
+          ${state.devices.map((d) => `<button type="button" role="tab" class="tab device-tab" data-device="${d.id}" aria-selected="${d.id === state.device}">${escapeHtml(d.name)}</button>`).join("")}
+        </div>
         <button type="button" class="ghost" id="logout">Forget token</button>
       </header>
 
@@ -247,10 +275,18 @@ function render(state: AdminState): void {
     </main>`;
 
   bindForm(state);
-  for (const t of document.querySelectorAll<HTMLButtonElement>(".tab")) {
+  for (const t of document.querySelectorAll<HTMLButtonElement>(".device-tab")) {
+    t.addEventListener("click", () => {
+      if (t.dataset.device === currentDevice) return;
+      setDevice(t.dataset.device!);
+      previewScreen = null;
+      void load();
+    });
+  }
+  for (const t of document.querySelectorAll<HTMLButtonElement>(".tab:not(.device-tab)")) {
     t.addEventListener("click", () => {
       previewScreen = t.dataset.screen!;
-      for (const x of document.querySelectorAll(".tab")) x.setAttribute("aria-selected", String(x === t));
+      for (const x of document.querySelectorAll(".tab:not(.device-tab)")) x.setAttribute("aria-selected", String(x === t));
       void loadPreview(state);
     });
   }
@@ -296,7 +332,7 @@ function bindForm(state: AdminState): void {
     const msg = document.getElementById("save-msg")!;
     msg.className = "muted";
     msg.textContent = "Saving…";
-    const res = await api("/api/admin/kindle/config", {
+    const res = await api(withDevice("/api/admin/kindle/config"), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(c),
@@ -322,7 +358,7 @@ async function loadPreview(state: AdminState): Promise<void> {
   const screen = previewScreen;
   box.innerHTML = `<p class="muted">Rendering ${escapeHtml(state.screens[screen]?.name ?? screen)}…</p>`;
   try {
-    const res = await api(`/api/admin/kindle/screen?screen=${encodeURIComponent(screen)}`);
+    const res = await api(withDevice(`/api/admin/kindle/screen?screen=${encodeURIComponent(screen)}`));
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 120)}`);
     if (screen !== previewScreen) return; // another tab was picked meanwhile
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -341,7 +377,12 @@ async function load(): Promise<void> {
   }
   app.innerHTML = `<main><p class="muted">Loading…</p></main>`;
   try {
-    const res = await api("/api/admin/kindle");
+    const res = await api(withDevice("/api/admin/kindle"));
+    if (res.status === 400) {
+      // A remembered device that no longer exists: fall back to the first one.
+      setDevice("kindle_01");
+      return load();
+    }
     if (!res.ok) {
       const body = (await res.json().catch(() => ({}))) as { error?: string };
       app.innerHTML = `<main><p class="error">${escapeHtml(body.error ?? `HTTP ${res.status}`)}</p></main>`;

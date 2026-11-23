@@ -83,16 +83,31 @@ export function wrap(text, size, width, maxLines) {
 // Raster: SVG → 16-level gray → rotated → PNG
 // ------------------------------------------------------------------
 
-export function rasterize(svg) {
-  const img = new Resvg(svg, { font: { fontBuffers: fonts, loadSystemFonts: false, defaultFontFamily: "Arimo" } }).render();
+/**
+ * Render SVG to 16-level gray. `width` scales the drawing to that many
+ * pixels wide (e.g. a Paperwhite 2's 1024 for the 1448-wide design).
+ */
+export function rasterize(svg, { width } = {}) {
+  const resvg = new Resvg(svg, {
+    font: { fontBuffers: fonts, loadSystemFonts: false, defaultFontFamily: "Arimo" },
+    ...(width ? { fitTo: { mode: "width", value: width } } : {}),
+  });
+  const img = resvg.render();
   const rgba = img.pixels; // a getter that copies out of WASM memory — read it once
-  const gray = new Uint8Array(img.width * img.height);
+  const w = img.width;
+  const h = img.height;
+  // Free the WASM-side objects now: garbage collection is too late for a
+  // build of ~1000 full renders (WASM runs out of memory) or a long-lived
+  // Vercel instance.
+  img.free();
+  resvg.free();
+  const gray = new Uint8Array(w * h);
   for (let i = 0; i < gray.length; i++) {
     // Black-on-white art: any channel is the gray value. Quantize to
     // the panel's 16 levels so eips doesn't dither.
     gray[i] = Math.round(rgba[i * 4] / 17) * 17;
   }
-  return { w: img.width, h: img.height, px: gray };
+  return { w, h, px: gray };
 }
 
 /** Rotate 90°: "ccw" maps landscape (x, y) → portrait (y, w-1-x). */
@@ -125,9 +140,12 @@ export function unrotate(img, dir = ROTATE) {
   return { w: h, h: w, px: out };
 }
 
-/** Where a landscape rect lands in the portrait framebuffer after rotation. */
-export function rotatedOrigin(r, dir = ROTATE) {
-  return dir === "ccw" ? { x: r.y, y: W - r.x - r.w } : { x: H - r.y - r.h, y: r.x };
+/**
+ * Where a landscape rect (pixels on a `canvas` of w × h) lands in the
+ * portrait framebuffer after rotation.
+ */
+export function rotatedOrigin(r, dir = ROTATE, canvas = { w: W, h: H }) {
+  return dir === "ccw" ? { x: r.y, y: canvas.w - r.x - r.w } : { x: canvas.h - r.y - r.h, y: r.x };
 }
 
 /** Copy `src` into `dst` at `at` (both gray images of the same orientation). */

@@ -1,11 +1,12 @@
 // ============================================================
 // Vercel function: Kindle screen renderer (Phase 9)
 //
-//   GET /api/screen?screen=tag&date=YYYY-MM-DD&battery=84
+//   GET /api/screen?screen=tag&device=kindle_01&date=YYYY-MM-DD&battery=84
 //        &cinemas=rollberg,passage,neues-off&from=18:00
 //     → PNG of the screen's base: everything the server draws (top bar,
 //       weather, cinema listing, phrase), Kindle-drawn boxes (Tempelhof)
-//       left blank, rotated 8-bit gray for eips.
+//       left blank, rotated 8-bit gray for eips, at the device's size
+//       (kindle/lib/devices.mjs).
 //   &preview=1 → the full screen (Tempelhof included), landscape, for
 //                the admin page.
 //
@@ -16,6 +17,7 @@
 // ============================================================
 
 import { berlinDate, renderScreen } from "../kindle/lib/render.mjs";
+import { DEFAULT_DEVICE, DEVICES } from "../kindle/lib/devices.mjs";
 import { SCREENS } from "../kindle/lib/screens.mjs";
 
 export async function GET(request) {
@@ -27,6 +29,8 @@ export async function GET(request) {
   const q = new URL(request.url).searchParams;
   const screen = q.get("screen") ?? "";
   if (!Object.hasOwn(SCREENS, screen)) return new Response(`unknown screen: ${screen}`, { status: 400 });
+  const device = q.get("device") ?? DEFAULT_DEVICE;
+  if (!Object.hasOwn(DEVICES, device)) return new Response(`unknown device: ${device}`, { status: 400 });
   const date = /^\d{4}-\d{2}-\d{2}$/.test(q.get("date") ?? "") ? q.get("date") : berlinDate();
   const battery = /^\d{1,3}$/.test(q.get("battery") ?? "") ? Math.min(100, Number(q.get("battery"))) : null;
   const cinemas = (q.get("cinemas") ?? "rollberg,passage,neues-off")
@@ -36,11 +40,11 @@ export async function GET(request) {
   const from = /^\d{2}:\d{2}$/.test(q.get("from") ?? "") ? q.get("from") : "18:00";
 
   try {
-    const png = await renderScreen(screen, { date, battery, cinemas, from }, q.get("preview") ? "full" : "base");
+    const png = await renderScreen(screen, { date, battery, cinemas, from }, q.get("preview") ? "full" : "base", device);
     return new Response(png, { headers: { "content-type": "image/png", "cache-control": "no-store" } });
   } catch (err) {
     // Shows up in the Vercel function logs (e.g. Open-Meteo or yorck.de being down).
-    console.error(`[screen] ${screen} ${date} failed:`, err);
+    console.error(`[screen] ${device} ${screen} ${date} failed:`, err);
     return new Response(`render failed: ${err instanceof Error ? err.message : String(err)}`, { status: 502 });
   }
 }

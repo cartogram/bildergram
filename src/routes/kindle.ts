@@ -1,25 +1,26 @@
 // ============================================================
-// Kindle hub (Phase 9) — schedule, status and screen images for
-// the Kindle dashboard (kindle/device/dashboard.sh).
+// Kindle hub (Phase 9–10) — schedule, status and screen images for
+// the Kindle dashboards (kindle/device/dashboard.sh), per device.
 //
-// Device endpoints (Access-Token = DEVICE_TOKEN_KINDLE_01):
+// Device endpoints (Access-Token = the device's DEVICE_TOKEN_KINDLE_0x):
 //   POST /api/kindle/checkin               body: log tail; query: battery, charging,
 //                                          screen, version, reason
 //                                          → shell-safe env (SCHEDULE, CHECKIN_MINUTES, …)
 //   GET  /api/kindle/screen/<id>.png?day=&battery=
 //                                          the screen's base (rotated, for eips)
 //
-// Admin endpoints (Authorization: Bearer ADMIN_TOKEN):
-//   GET  /api/admin/kindle                 { config, status, cinemas, screens }
-//   PUT  /api/admin/kindle/config          replace the config
-//   GET  /api/admin/kindle/screen?screen=  full preview of a screen (PNG)
+// Admin endpoints (Authorization: Bearer ADMIN_TOKEN; ?device=kindle_0x,
+// default kindle_01):
+//   GET  /api/admin/kindle                 { device, devices, config, status, cinemas, screens }
+//   PUT  /api/admin/kindle/config          replace the device's config
+//   GET  /api/admin/kindle/screen?screen=  full preview of a screen (PNG) at the device's size
 //
 // Screens are rendered by the Vercel function (RENDERER_URL); the
 // Worker only passes bytes through, which keeps it far under the free
 // plan's CPU limit. State lives in R2 as small JSON objects.
 // ============================================================
 
-import { authenticateDevice } from "../devices";
+import { DEVICES, authenticateDevice, deviceById } from "../devices";
 import type { AppEnv } from "../types";
 
 /** The screens kindle/lib/screens.mjs defines (ids, German names, what they show). */
@@ -53,9 +54,8 @@ export interface KindleStatus {
   history: [number, number][];
 }
 
-const DEVICE_ID = "kindle_01";
-const CONFIG_KEY = `kindle/${DEVICE_ID}/config.json`;
-const STATUS_KEY = `kindle/${DEVICE_ID}/status.json`;
+const configKey = (device: string) => `kindle/${device}/config.json`;
+const statusKey = (device: string) => `kindle/${device}/status.json`;
 const HISTORY_SECONDS = 7 * 86_400;
 
 export const DEFAULT_CONFIG: KindleConfig = {
@@ -123,8 +123,8 @@ function migrate(c: Partial<KindleConfig> & { schedule?: { at: string; screen: s
   return typeof parsed === "string" ? DEFAULT_CONFIG : parsed;
 }
 
-async function readConfig(env: AppEnv): Promise<KindleConfig> {
-  const stored = await readJson<KindleConfig>(env, CONFIG_KEY);
+async function readConfig(env: AppEnv, device: string): Promise<KindleConfig> {
+  const stored = await readJson<KindleConfig>(env, configKey(device));
   return stored ? migrate(stored) : DEFAULT_CONFIG;
 }
 
@@ -153,9 +153,10 @@ export function parseConfig(input: unknown): KindleConfig | string {
 // Vercel renderer
 // ------------------------------------------------------------------
 
-async function renderScreen(env: AppEnv, config: KindleConfig, params: Record<string, string>): Promise<Response> {
+async function renderScreen(env: AppEnv, device: string, config: KindleConfig, params: Record<string, string>): Promise<Response> {
   if (!env.RENDERER_URL) return new Response("RENDERER_URL is not configured", { status: 503 });
   const url = new URL("/api/screen", env.RENDERER_URL);
+  url.searchParams.set("device", device);
   url.searchParams.set("cinemas", config.kino.cinemas.join(","));
   url.searchParams.set("from", config.kino.from);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
@@ -175,13 +176,14 @@ const berlinToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "Eu
 
 export async function handleKindleDevice(request: Request, env: AppEnv): Promise<Response> {
   const device = authenticateDevice(request, env);
-  if (!device || device.id !== DEVICE_ID) return new Response("unauthorized", { status: 401 });
+  if (!device) return new Response("unauthorized", { status: 401 });
+  const id = device.id;
   const url = new URL(request.url);
   const q = url.searchParams;
 
   if (url.pathname === "/api/kindle/checkin" && request.method === "POST") {
-    const config = await readConfig(env);
-    const previous = await readJson<KindleStatus>(env, STATUS_KEY);
+    const config = await readConfig(env, id);
+    const previous = await readJson<KindleStatus>(env, statusKey(id));
     const nowSec = Math.floor(Date.now() / 1000);
     const battery = q.has("battery") && /^\d{1,3}$/.test(q.get("battery")!) ? Number(q.get("battery")) : null;
     const history = (previous?.history ?? []).filter(([t]) => t > nowSec - HISTORY_SECONDS);
@@ -196,11 +198,11 @@ export async function handleKindleDevice(request: Request, env: AppEnv): Promise
       log: (await request.text()).slice(-4000),
       history: history.slice(-500),
     };
-    await writeJson(env, STATUS_KEY, status);
+    await writeJson(env, statusKey(id), status);
 
     // The exit flag is one-shot, so the next start from the library isn't
     // sent straight back out.
-    if (config.exit) await writeJson(env, CONFIG_KEY, { ...config, exit: false });
+    if (config.exit) await writeJson(env, configKey(id), { ...config, exit: false });
 
     // Shell-safe KEY="value" lines; the Kindle validates them before use.
     const lines = [
@@ -220,7 +222,7 @@ export async function handleKindleDevice(request: Request, env: AppEnv): Promise
     const day = DAY.test(q.get("day") ?? "") ? q.get("day")! : berlinToday();
     const params: Record<string, string> = { screen: m[1], date: day };
     if (/^\d{1,3}$/.test(q.get("battery") ?? "")) params.battery = q.get("battery")!;
-    return renderScreen(env, await readConfig(env), params);
+    return renderScreen(env, id, await readConfig(env, id), params);
   }
 
   return new Response("not found", { status: 404 });
@@ -241,12 +243,16 @@ export async function handleKindleAdmin(request: Request, env: AppEnv): Promise<
   const denied = adminAuthorized(request, env);
   if (denied) return denied;
   const url = new URL(request.url);
+  const id = url.searchParams.get("device") ?? "kindle_01";
+  if (!deviceById(id)) return Response.json({ error: `unknown device: ${id}` }, { status: 400 });
 
   if (url.pathname === "/api/admin/kindle" && request.method === "GET") {
     return Response.json(
       {
-        config: await readConfig(env),
-        status: await readJson<KindleStatus>(env, STATUS_KEY),
+        device: id,
+        devices: DEVICES.map((d) => ({ id: d.id, name: d.name })),
+        config: await readConfig(env, id),
+        status: await readJson<KindleStatus>(env, statusKey(id)),
         cinemas: YORCK_CINEMAS,
         screens: SCREENS,
       },
@@ -263,17 +269,17 @@ export async function handleKindleAdmin(request: Request, env: AppEnv): Promise<
     }
     const parsed = parseConfig(body);
     if (typeof parsed === "string") return Response.json({ error: parsed }, { status: 400 });
-    await writeJson(env, CONFIG_KEY, parsed);
+    await writeJson(env, configKey(id), parsed);
     return Response.json({ config: parsed });
   }
 
   if (url.pathname === "/api/admin/kindle/screen" && request.method === "GET") {
     const screen = url.searchParams.get("screen");
     if (!isScreen(screen)) return Response.json({ error: "unknown screen" }, { status: 400 });
-    const status = await readJson<KindleStatus>(env, STATUS_KEY);
+    const status = await readJson<KindleStatus>(env, statusKey(id));
     const params: Record<string, string> = { screen, preview: "1", date: berlinToday() };
     if (status?.battery != null) params.battery = String(status.battery);
-    return renderScreen(env, await readConfig(env), params);
+    return renderScreen(env, id, await readConfig(env, id), params);
   }
 
   return Response.json({ error: "not found" }, { status: 404 });

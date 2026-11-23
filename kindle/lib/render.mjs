@@ -7,6 +7,7 @@
 
 import { deTime } from "./design.mjs";
 import { encodePng, initRenderer, rasterize, rotate } from "./eink.mjs";
+import { device } from "./devices.mjs";
 import { DEFAULT_CINEMAS, fetchProgramme } from "./kino.mjs";
 import { entryFor } from "./modules/ausdruck.mjs";
 import { fetchWeather } from "./modules/wetter.mjs";
@@ -44,12 +45,14 @@ export async function screenData(id, { date = berlinDate(), battery = null, cine
 }
 
 /**
- * PNG of screen `id`. mode "base" (Kindle-drawn boxes blank, rotated for
+ * PNG of screen `id` for a device (kindle/lib/devices.mjs): drawn at the
+ * device's width. mode "base" (Kindle-drawn boxes blank, rotated for
  * eips), "full" (everything, landscape: previews) or "fallback".
  */
-export async function renderScreen(id, opts = {}, mode = "base") {
+export async function renderScreen(id, opts = {}, mode = "base", deviceId) {
   await initRenderer();
+  const dev = device(deviceId);
   const data = mode === "fallback" ? {} : await screenData(id, opts);
-  const img = rasterize(screenSvg(id, data, mode));
-  return encodePng(mode === "full" ? img : rotate(img));
+  const img = rasterize(screenSvg(id, data, mode), { width: dev.width });
+  return encodePng(mode === "full" ? img : rotate(img, dev.rotate));
 }

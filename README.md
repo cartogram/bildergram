@@ -1,7 +1,8 @@
 # bildergram
 
-A battery-powered e-ink dashboard on a jailbroken **Kindle Paperwhite 3**, in
-German. It shows a few hand-designed screens on a daily schedule:
+A battery-powered e-ink dashboard on jailbroken Kindles (a **Paperwhite 3** and a
+**Paperwhite 2**), in German. Each Kindle shows a few hand-designed screens on
+its own daily schedule:
 
 | Default time | Screen | What it shows |
 |---|---|---|
@@ -45,9 +46,13 @@ Vercel function (api/screen.mjs) ── Open-Meteo, yorck.de, phrase list → sc
   prebuilt: `npm run kindle:build` writes the schedule for 3 years, a panel
   per state and a countdown per minute, and checks that the pasted pieces
   reproduce the design pixel for pixel.
-- **The Worker is the hub.** It stores the config and the last check-in
+- **One design, every device.** Screens are designed on a 1448 × 1072 canvas and
+  rendered at each Kindle's size (`kindle/lib/devices.mjs`): the Paperwhite 2's
+  1024 × 758 has the same shape, so the same SVG scales down. The build makes a
+  bundle per device, and its paste check runs at each size.
+- **The Worker is the hub.** It stores each Kindle's config and last check-in
   (with a week of battery readings) in R2 and serves the admin page. The
-  Kindle only ever talks to the Worker.
+  Kindles only ever talk to the Worker.
 
 ### On the Kindle
 
@@ -87,28 +92,34 @@ vercel deploy --prod
 ```bash
 npx wrangler secret put ADMIN_TOKEN             # for the admin page
 npx wrangler secret put RENDERER_TOKEN          # same value as on Vercel
-npx wrangler secret put DEVICE_TOKEN_KINDLE_01  # the Kindle's token (goes into hub.env)
+npx wrangler secret put DEVICE_TOKEN_KINDLE_01  # Kindle 1's token (goes into its hub.env)
+npx wrangler secret put DEVICE_TOKEN_KINDLE_02  # Kindle 2's token
 npm run deploy
 ```
 
 `RENDERER_URL` (the Vercel URL) is a plain var in `wrangler.jsonc`. The R2
-bucket `trmnl-display-assets` holds the hub state (`kindle/kindle_01/config.json`,
-`status.json`).
+bucket `trmnl-display-assets` holds the hub state per Kindle
+(`kindle/<device>/config.json`, `status.json`).
 
 ### 3. Kindle
 
-Requires a jailbroken Kindle (WinterBreak2; firmware 5.13.7 here) and
+Requires a jailbroken Kindle (WinterBreak2: Kindle 1 is on firmware 5.13.7, Kindle 2 on 5.12.2.1.1) and
 KOReader, whose SSH server is used for installing: KOReader → gear →
 Network → tick **SSH server** (port 2222; put your public key in
 `koreader/settings/SSH/authorized_keys`).
 
 ```bash
-npm run kindle:build
+npm run kindle:build                      # bundles for every device in kindle/dist/<device>
+KINDLE_DEVICE=kindle_01 \
 KINDLE_HOST=192.168.0.93 \
 KINDLE_HUB_URL=https://bildergram.distance.workers.dev \
 KINDLE_HUB_TOKEN=<DEVICE_TOKEN_KINDLE_01> \
 npm run kindle:install
 ```
+
+Or, with the Kindle in USB drive mode, `KINDLE_VOLUME=/Volumes/Kindle` instead of
+`KINDLE_HOST` (then also `KINDLE_HUB_MAC`, its Wi-Fi MAC, when writing hub settings).
+Use `KINDLE_DEVICE=kindle_02` and its token for the Paperwhite 2.
 
 The hub settings are written to `/mnt/us/dashboard/hub.env` and kept across
 later installs, so `KINDLE_HOST=… npm run kindle:install` is enough after the
@@ -120,14 +131,15 @@ first time. Rebuild and reinstall before the Tempelhof schedule runs out
 ## Admin page
 
 The Worker URL (https://bildergram.distance.workers.dev) serves the admin page
-(in English). It asks once for `ADMIN_TOKEN` and then shows:
+(in English). It asks once for `ADMIN_TOKEN`; a switcher picks the Kindle, and for
+each it shows:
 
 - the last check-in (time, battery, screen, version, recent log) and a
   battery chart for the last week;
 - the schedule (which screen from which time) and the check-in interval;
 - the cinemas for IM KINO and the first screening time to list;
 - a one-shot **Return to the normal Kindle UI** switch;
-- a live preview of each screen.
+- a live preview of each screen, at that Kindle's size.
 
 Changes reach the Kindle at its next check-in; press its power button to apply
 them right away.
@@ -173,6 +185,7 @@ bildergram/
 │   ├── scriptlets/            # Library books: Dashboard, test, log
 │   ├── data/ausdruecke.json   # Ausdruck des Tages, one per day
 │   └── lib/
+│       ├── devices.mjs        # The Kindles: panel size and rotation
 │       ├── design.mjs         # Design system: tokens, primitives, icons, German formatting
 │       ├── screens.mjs        # The screens: frame + boxes → modules
 │       ├── modules/           # tempelhof, wetter, kino, ausdruck
@@ -199,4 +212,5 @@ bildergram/
 - [x] **Phase 7**: Screens on a schedule — Tempelhof by day, IM KINO (Yorck listing rendered on Vercel) in the evening; Worker becomes the hub (check-ins, admin page); the TRMNL render pipeline, weather/calendar/tasks and Kindle #2 were removed
 - [x] **Phase 8**: Design system and German screens — `design.mjs` tokens and primitives, Arimo Bold, modules (tempelhof, wetter, kino, ausdruck), four screens (Morgen, Tag, Abend, Nacht), a live-data gallery
 - [x] **Phase 9**: Screens on the device — server-rendered screen bases with the Tempelhof box drawn on the Kindle, hourly check-ins while weather shows, battery history and per-screen previews on the admin page, 365 B2 expressions
-- [ ] **Next**: Kindle #2 (a Paperwhite 2: 1024 × 758 landscape at 212 ppi, same aspect ratio) on the same hub, with screens rendered per device size; hide films already seen on Letterboxd from IM KINO
+- [x] **Phase 10**: Two Kindles — screens rendered per device size (Paperwhite 3 at 1448 × 1072, Paperwhite 2 at 1024 × 758), a bundle and paste check per device, per-device config, status and previews on the hub, a device switcher on the admin page
+- [ ] **Next**: install on Kindle 2 once it is jailbroken; hide films already seen on Letterboxd from IM KINO
