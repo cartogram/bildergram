@@ -12,7 +12,7 @@
 // Variant: "wide" (a band across the screen).
 // ============================================================
 
-import { deNumber, deTime, deWeekdayShort, INK, RULE, sectionTitle, text, TYPE, underlined, vrule, width } from "../design.mjs";
+import { deNumber, deTime, deWeekdayShort, INK, RULE, sectionTitle, text, TYPE, vrule, width } from "../design.mjs";
 
 export const id = "fitness";
 export const cadence = "hourly";
@@ -61,18 +61,12 @@ function syncNote(syncedAt, date) {
 /** One person's column, `w` wide, in column-local coordinates. */
 function column(person, week, date, w) {
   const total = week.reduce((sum, d) => sum + (person.days[d] ?? 0), 0);
-  const reached = total >= person.goal;
   let svg = "";
 
-  // Name, "Ziel erreicht", and when the phone last sent data.
+  // Name, and when the phone last sent data.
   const name = TYPE.label;
   svg += text(0, 104, person.name, name);
-  let used = Math.round(width(person.name, name));
-  if (reached) {
-    const p = underlined(used + 20, 104 - 36, "Ziel erreicht");
-    svg += p.svg;
-    used += 20 + p.w;
-  }
+  const used = Math.round(width(person.name, name));
   // The sync note goes right-aligned in what's left: "Stand Mo 07:15", else "Mo 07:15", else nothing.
   const full = syncNote(person.syncedAt, date);
   const note = [full, full?.replace(/^Stand /, "")].find((n) => n && used + 24 + width(n, TYPE.caption) <= w);

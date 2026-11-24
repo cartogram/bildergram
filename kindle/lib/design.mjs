@@ -132,18 +132,6 @@ export function label(x, y, str) {
   return text(x, y, str, TYPE.label);
 }
 
-/**
- * A state word (GEÖFFNET, GESCHLOSSEN, ZIEL ERREICHT): bold, letter-spaced, black,
- * starting at x, with a thick rule under it as long as the word.
- * Its box is size × 1.55 tall; returns { svg, w, h }.
- */
-export function underlined(x, y, str) {
-  const size = TYPE.label.size;
-  const h = Math.round(size * 1.55);
-  const svg = text(x, y + Math.round(h * 0.68), str, TYPE.label);
-  return { svg, w: Math.round(exactWidth(str, TYPE.label)), h };
-}
-
 /** Top bar shared by framed screens: the battery (caption) above the German date (label style). */
 export function topbar({ date, battery }) {
   let svg = "";
