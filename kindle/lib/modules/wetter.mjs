@@ -8,7 +8,7 @@
 // Variants: "compact" (narrow column) and "wide" (full width).
 // ============================================================
 
-import { deNumber, deWeekdayShort, fitSize, hrule, INK, sectionTitle, stamp, text, TYPE, weatherIcon, weatherText } from "../design.mjs";
+import { deNumber, detailIcon, deWeekdayShort, fitSize, hrule, INK, sectionTitle, stamp, text, TYPE, weatherIcon, weatherText } from "../design.mjs";
 
 export const id = "wetter";
 export const cadence = "hourly";
@@ -77,10 +77,9 @@ function renderCompact(box, w, updated) {
   const cond = weatherText(w.now.code);
   svg += text(0, y, cond, { ...TYPE.body, size: fitSize(cond, TYPE.body, box.w) });
   y += 56;
-  svg += text(0, y, `Wind ${deNumber(Math.round(w.now.wind))} km/h`, TYPE.body);
+  svg += detail("wind", 0, y, `${deNumber(Math.round(w.now.wind))} km/h`);
   y += 52;
-  const sunset = `Sonnenuntergang ${w.sunset}`;
-  svg += text(0, y, sunset, { ...TYPE.body, size: fitSize(sunset, TYPE.body, box.w) });
+  svg += detail("sunset", 0, y, w.sunset);
   y += 44;
   svg += hrule(0, y, box.w);
   y += 72;
@@ -96,6 +95,12 @@ function renderCompact(box, w, updated) {
   return svg;
 }
 
+/** A detail line: a small icon, then the value in body text. */
+function detail(kind, x, y, value) {
+  const size = 44;
+  return detailIcon(kind, x, y - 36, size) + text(x + size + 16, y, value, TYPE.body);
+}
+
 /** Full width: now on the left, three day columns on the right. */
 function renderWide(box, w, updated) {
   let svg = sectionTitle("Wetter");
@@ -106,9 +111,11 @@ function renderWide(box, w, updated) {
   const cond = weatherText(w.now.code);
   svg += text(0, y, cond, { ...TYPE.body, size: fitSize(cond, TYPE.body, leftW) });
   y += 58;
-  svg += text(0, y, `Wind ${deNumber(Math.round(w.now.wind))} km/h`, TYPE.body);
+  svg += detail("wind", 0, y, `${deNumber(Math.round(w.now.wind))} km/h`);
   y += 52;
-  svg += text(0, y, `Sonnenuntergang ${w.sunset}`, TYPE.body);
+  svg += detail("sunset", 0, y, w.sunset);
+  // The timestamp: far right, on the sunset line.
+  if (updated) svg += stamp(box.w, y, `Stand ${updated}`, { anchor: "end" }).svg;
 
   const colX = leftW + 56;
   const colW = (box.w - colX) / 3;
@@ -126,8 +133,6 @@ function renderWide(box, w, updated) {
     svg += text(x, 338, `${d.pop ?? 0} %`, TYPE.body);
     if (d.mm >= 0.1) svg += text(x, 388, `${deNumber(d.mm, d.mm < 10 ? 1 : 0)} mm`, TYPE.body);
   });
-  // The timestamp sits under the forecast it dates.
-  if (updated) svg += stamp(colX, 446, `Stand ${updated}`).svg;
   svg += "</g>";
   return svg;
 }

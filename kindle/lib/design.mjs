@@ -230,6 +230,28 @@ export function iconKind(code) {
   return "cloud";
 }
 
+/**
+ * Small line icons for weather details ("wind", "sunset"), drawn like the
+ * weather icons on the 100-unit grid with a heavier stroke so they hold up
+ * at text size. `size` px square, top-left at (x, y).
+ */
+export function detailIcon(kind, x, y, size) {
+  const k = size / 100;
+  const stroke = `fill="none" stroke="${INK.primary}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"`;
+  const body = {
+    wind:
+      `<path d="M8 36 H60 A13 13 0 1 0 47 23"/>` +
+      `<path d="M8 56 H76 A13 13 0 1 1 63 69"/>` +
+      `<path d="M8 76 H44"/>`,
+    sunset:
+      `<path d="M6 66 H94"/>` +
+      `<path d="M26 66 A24 24 0 0 1 74 66"/>` +
+      `<path d="M50 20 V30 M18 34 L25 41 M82 34 L75 41"/>` +
+      `<path d="M50 78 V96 M41 88 L50 96 L59 88"/>`,
+  }[kind];
+  return `<g transform="translate(${round(x)} ${round(y)}) scale(${round(k * 1000) / 1000})" ${stroke}>${body}</g>`;
+}
+
 /** Weather icon for a WMO code, `size` px square with its top-left at (x, y). */
 export function weatherIcon(code, x, y, size) {
   const kind = iconKind(code);
