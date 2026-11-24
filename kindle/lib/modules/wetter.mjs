@@ -108,17 +108,20 @@ function renderWide(box, w) {
   // Now: the icon with the temperature centred under it; beside them a
   // column with the conditions, wind and sunset.
   const iconSize = 150;
-  svg += weatherIcon(w.now.code, -6, 4, iconSize);
-  svg += text(iconSize / 2, 302, deg(w.now.temp), { ...TYPE.display, underline: false }, { anchor: "middle" });
+  // Baselines line up with the forecast rows: the temperature and the
+  // sunset share the "%" line (300 = 338 − the box's raise of 38).
+  const pctY = 338 - (box.raise ?? 0);
+  svg += weatherIcon(w.now.code, -6, 34, iconSize);
+  svg += text(iconSize / 2, pctY, deg(w.now.temp), { ...TYPE.display, underline: false }, { anchor: "middle" });
   // Today: conditions, high/low, wind, sunset (the forecast starts tomorrow).
   const midX = 249;
   const midW = leftW - midX;
   const cond = weatherText(w.now.code);
   const today = w.days[0];
-  svg += text(midX, 128, cond, { ...TYPE.body, size: fitSize(cond, TYPE.body, midW) });
-  svg += text(midX, 182, `${deg(today.max)} / ${deg(today.min)}`, TYPE.body);
-  svg += detail("wind", midX, 236, `${deNumber(Math.round(w.now.wind))} km/h`);
-  svg += detail("sunset", midX, 290, w.sunset);
+  svg += text(midX, pctY - 162, cond, { ...TYPE.body, size: fitSize(cond, TYPE.body, midW) });
+  svg += text(midX, pctY - 108, `${deg(today.max)} / ${deg(today.min)}`, TYPE.body);
+  svg += detail("wind", midX, pctY - 54, `${deNumber(Math.round(w.now.wind))} km/h`);
+  svg += detail("sunset", midX, pctY, w.sunset);
 
   const colX = leftW + 56;
   const colW = (box.w - colX) / 3;
@@ -126,15 +129,17 @@ function renderWide(box, w) {
   // `box.raise` lifts the forecast columns.
   svg += `<g transform="translate(0 ${-(box.raise ?? 0)})">`;
   w.days.slice(1, 4).forEach((d, i) => {
-    const x = colX + i * colW;
+    // Each day's stack is centred in its column.
+    const cx = Math.round(colX + i * colW + colW / 2);
+    const mid = { anchor: "middle" };
     const day = dayName(d.date, i + 1);
-    svg += text(x, 96, day, { ...TYPE.strong, size: fitSize(day, TYPE.strong, colText) });
-    svg += weatherIcon(d.code, x - 4, 122, 96);
+    svg += text(cx, 96, day, { ...TYPE.strong, size: fitSize(day, TYPE.strong, colText) }, mid);
+    svg += weatherIcon(d.code, cx - 48, 122, 96);
     const temps = `${deg(d.max)} / ${deg(d.min)}`;
-    svg += text(x, 284, temps, { ...TYPE.body, size: fitSize(temps, TYPE.body, colText) });
+    svg += text(cx, 284, temps, { ...TYPE.body, size: fitSize(temps, TYPE.body, colText) }, mid);
     // Chance and amount on separate lines so they never run into the next column.
-    svg += text(x, 338, `${d.pop ?? 0} %`, TYPE.body);
-    if (d.mm >= 0.1) svg += text(x, 388, `${deNumber(d.mm, d.mm < 10 ? 1 : 0)} mm`, TYPE.body);
+    svg += text(cx, 338, `${d.pop ?? 0} %`, TYPE.body, mid);
+    if (d.mm >= 0.1) svg += text(cx, 388, `${deNumber(d.mm, d.mm < 10 ? 1 : 0)} mm`, TYPE.body, mid);
   });
   svg += "</g>";
   return svg;
