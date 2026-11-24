@@ -8,7 +8,7 @@
 // Variants: "compact" (narrow column) and "wide" (full width).
 // ============================================================
 
-import { BOLD, deNumber, deWeekdayShort, fitSize, hrule, INK, sectionTitle, text, TYPE, weatherIcon, weatherText } from "../design.mjs";
+import { deNumber, deWeekdayShort, fitSize, hrule, INK, sectionTitle, text, TYPE, weatherIcon, weatherText } from "../design.mjs";
 
 export const id = "wetter";
 export const cadence = "hourly";
@@ -77,16 +77,16 @@ function renderCompact(box, w, updated) {
   const cond = weatherText(w.now.code);
   svg += text(0, y, cond, { ...TYPE.body, size: fitSize(cond, TYPE.body, box.w) });
   y += 56;
-  svg += text(0, y, `Wind ${deNumber(Math.round(w.now.wind))} km/h`, TYPE.body, { ink: INK.secondary });
+  svg += text(0, y, `Wind ${deNumber(Math.round(w.now.wind))} km/h`, TYPE.body);
   y += 52;
   const sunset = `Sonnenuntergang ${w.sunset}`;
-  svg += text(0, y, sunset, { ...TYPE.body, size: fitSize(sunset, TYPE.body, box.w) }, { ink: INK.secondary });
+  svg += text(0, y, sunset, { ...TYPE.body, size: fitSize(sunset, TYPE.body, box.w) });
   y += 44;
   svg += hrule(0, y, box.w);
   y += 72;
   // Three days
   w.days.forEach((d, i) => {
-    svg += text(0, y, dayName(d.date, i), { ...TYPE.body, weight: "bold" });
+    svg += text(0, y, dayName(d.date, i), TYPE.label);
     svg += weatherIcon(d.code, box.w - 64, y - 46, 60);
     svg += text(0, y + 50, `${deg(d.max)} / ${deg(d.min)}`, TYPE.body);
     svg += text(box.w - 76, y + 50, precip(d), TYPE.caption, { anchor: "end" });
@@ -106,9 +106,9 @@ function renderWide(box, w, updated) {
   const cond = weatherText(w.now.code);
   svg += text(0, y, cond, { ...TYPE.body, size: fitSize(cond, TYPE.body, leftW) });
   y += 58;
-  svg += text(0, y, `Wind ${deNumber(Math.round(w.now.wind))} km/h`, TYPE.body, { ink: INK.secondary });
+  svg += text(0, y, `Wind ${deNumber(Math.round(w.now.wind))} km/h`, TYPE.body);
   y += 52;
-  svg += text(0, y, `Sonnenuntergang ${w.sunset}`, TYPE.body, { ink: INK.secondary });
+  svg += text(0, y, `Sonnenuntergang ${w.sunset}`, TYPE.body);
 
   const colX = leftW + 56;
   const colW = (box.w - colX) / 3;
@@ -116,13 +116,13 @@ function renderWide(box, w, updated) {
   w.days.forEach((d, i) => {
     const x = colX + i * colW;
     const day = dayName(d.date, i);
-    svg += text(x, 96, day, { ...BOLD, size: fitSize(day, { ...BOLD, size: 48 }, colText) });
+    svg += text(x, 96, day, { ...TYPE.label, size: fitSize(day, TYPE.label, colText) });
     svg += weatherIcon(d.code, x - 4, 122, 96);
     const temps = `${deg(d.max)} / ${deg(d.min)}`;
-    svg += text(x, 284, temps, { ...TYPE.body, weight: "bold", size: fitSize(temps, { ...TYPE.body, weight: "bold" }, colText) });
+    svg += text(x, 284, temps, { ...TYPE.body, size: fitSize(temps, TYPE.body, colText) });
     // Chance and amount on separate lines so they never run into the next column.
-    svg += text(x, 338, `${d.pop ?? 0} %`, TYPE.body, { ink: INK.secondary });
-    if (d.mm >= 0.1) svg += text(x, 388, `${deNumber(d.mm, d.mm < 10 ? 1 : 0)} mm`, TYPE.body, { ink: INK.secondary });
+    svg += text(x, 338, `${d.pop ?? 0} %`, TYPE.body);
+    if (d.mm >= 0.1) svg += text(x, 388, `${deNumber(d.mm, d.mm < 10 ? 1 : 0)} mm`, TYPE.body);
   });
   if (updated) svg += text(box.w, box.h - 8, `Stand ${updated}`, TYPE.caption, { anchor: "end" });
   return svg;

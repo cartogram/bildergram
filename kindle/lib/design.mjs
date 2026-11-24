@@ -31,14 +31,11 @@ export const INK = {
 
 /** Type scale (px at 300 ppi). `caps` styles are letter-spaced capitals. */
 export const TYPE = {
-  display: { size: 132, weight: "bold" },
-  label: { size: 30, weight: "bold", spacing: 5, ink: INK.secondary },
-  body: { size: 44 },
-  caption: { size: 28, ink: INK.tertiary },
+  display: { size: 123, weight: "bold", underline: true },
+  label: { size: 40, weight: "bold", underline: true },
+  body: { size: 40 },
+  caption: { size: 26, weight: "bold", ink: INK.secondary },
 };
-
-/** Emphasis within body text (names, headings): the body size in bold. */
-export const BOLD = { ...TYPE.body, weight: "bold" };
 
 export const RULE = { hair: 3, thick: 6 };
 
@@ -72,7 +69,15 @@ export function text(x, y, str, style, opts = {}) {
     style.spacing ? `letter-spacing="${style.spacing}"` : "",
     opts.anchor ? `text-anchor="${opts.anchor}"` : "",
   ].filter(Boolean);
-  return `<text ${attrs.join(" ")}>${escapeXml(s)}</text>`;
+  let svg = `<text ${attrs.join(" ")}>${escapeXml(s)}</text>`;
+  // Underlined styles (display, label): a rule exactly as long as the text.
+  if (style.underline) {
+    const w = exactWidth(s.trimEnd(), { ...style, size });
+    const left = opts.anchor === "end" ? x - w : opts.anchor === "middle" ? x - w / 2 : x;
+    const t = Math.max(RULE.hair, Math.round(size / 20));
+    svg += `<rect x="${round(left)}" y="${round(y + size * 0.2)}" width="${round(w)}" height="${t}" fill="${opts.ink ?? style.ink ?? INK.primary}"/>`;
+  }
+  return svg;
 }
 
 /**
@@ -131,23 +136,19 @@ export function label(x, y, str) {
  * starting at x, with a thick rule under it as long as the word.
  * Its box is size × 1.55 tall; returns { svg, w, h }.
  */
-export function underlined(x, y, str, size = 44) {
-  const style = { size, weight: "bold", spacing: 4 };
+export function underlined(x, y, str) {
+  const size = TYPE.label.size;
   const h = Math.round(size * 1.55);
-  const baseline = y + Math.round(h * 0.68);
-  const w = Math.round(exactWidth(str, style));
-  const svg =
-    text(x, baseline, str, style) +
-    `<rect x="${x}" y="${baseline + Math.round(size * 0.27)}" width="${w}" height="${RULE.thick}" fill="${INK.primary}"/>`;
-  return { svg, w, h };
+  const svg = text(x, y + Math.round(h * 0.68), str, TYPE.label);
+  return { svg, w: Math.round(exactWidth(str, TYPE.label)), h };
 }
 
 /** Top bar shared by framed screens: German date left, battery right, rule below. */
 export function topbar({ date, battery }) {
   let svg = "";
-  if (date) svg += text(MARGIN.x, TOPBAR.baseline, deDateLong(date), { size: 36, weight: "bold" });
+  if (date) svg += text(MARGIN.x, TOPBAR.baseline, deDateLong(date), TYPE.body);
   if (battery != null) {
-    svg += text(W - MARGIN.x, TOPBAR.baseline, `Akku ${battery} %`, { size: 30, ink: INK.tertiary }, { anchor: "end" });
+    svg += text(W - MARGIN.x, TOPBAR.baseline, `Akku ${battery} %`, TYPE.caption, { anchor: "end" });
   }
   return svg + hrule(MARGIN.x, TOPBAR.rule, W - 2 * MARGIN.x);
 }

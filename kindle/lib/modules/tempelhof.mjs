@@ -22,22 +22,22 @@ function layout(box) {
   const heroSize = Math.min(box.variant === "full" ? TYPE.display.size : TYPE.display.size, fitSize(WIDEST, TYPE.display, box.w));
   // Pill + countdown + "bis zur …" form one group, centred between the
   // label (top) and the hours caption (bottom).
-  const groupH = 68 + 72 + Math.round(heroSize * 1.1) + 64;
+  const groupH = 68 + 72 + Math.round(heroSize * 1.18) + 64;
   const pillY = Math.max(64, Math.round(60 + (box.h - 120 - groupH) / 2));
   const heroTop = pillY + 68 + 72;
   return {
     pillY,
     heroSize,
     // The countdown sub-box: tall enough for the hero line, full box width.
-    countdownBox: { x: 0, y: heroTop, w: box.w, h: Math.round(heroSize * 1.1) },
-    untilY: heroTop + Math.round(heroSize * 1.1) + 64,
+    countdownBox: { x: 0, y: heroTop, w: box.w, h: Math.round(heroSize * 1.18) },
+    untilY: heroTop + Math.round(heroSize * 1.18) + 64,
   };
 }
 
 /** The countdown line alone, drawn into countdownBox(box) coordinates. */
 export function countdownSvg(box, minutes) {
   const l = layout(box);
-  return text(0, Math.round(l.heroSize * 0.88), deCountdown(minutes), { size: l.heroSize, weight: "bold" });
+  return text(0, Math.round(l.heroSize * 0.88), deCountdown(minutes), { ...TYPE.display, size: l.heroSize });
 }
 
 export function countdownBox(box) {
@@ -56,7 +56,7 @@ export function render(box, state, { withCountdown = true } = {}) {
   let svg =
     sectionTitle("Tempelhofer Feld") +
     p.svg +
-    text(0, l.untilY, until, { ...TYPE.body, size: untilSize }, { ink: INK.secondary }) +
+    text(0, l.untilY, until, { ...TYPE.body, size: untilSize }) +
     // Hours of the day of the next event (after closing, that is tomorrow), so no "heute".
     text(0, box.h - 8, `Öffnungszeiten ${state.hours[0]} – ${state.hours[1]}`, TYPE.caption);
   if (withCountdown) {

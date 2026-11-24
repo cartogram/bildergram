@@ -82,8 +82,8 @@ export const deviceBoxes = (id) => SCREENS[id].boxes.filter((b) => DEVICE_MODULE
 function placeholder(box, module) {
   return (
     sectionTitle(LABELS[module]) +
-    text(0, Math.min(200, box.h / 2), "Keine Verbindung", TYPE.body, { ink: INK.secondary }) +
-    text(0, Math.min(200, box.h / 2) + 56, "Power-Taste drücken, um zu aktualisieren", TYPE.body, { ink: INK.tertiary })
+    text(0, Math.min(200, box.h / 2), "Keine Verbindung", TYPE.body) +
+    text(0, Math.min(200, box.h / 2) + 56, "Power-Taste drücken, um zu aktualisieren", TYPE.caption)
   );
 }
 

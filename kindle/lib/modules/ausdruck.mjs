@@ -30,11 +30,12 @@ const quoted = (s) => `„${s}“`;
 
 /** Lines of `str` at `size`, stacked from baseline y; returns { svg, y } with y after the last line. */
 function block(str, x, y, size, maxW, maxLines, opts = {}) {
-  const lines = wrap(str, size * (opts.weight === "bold" ? 1.07 : 1), maxW, maxLines);
+  const style = { ...(opts.style ?? TYPE.body), size };
+  const lines = wrap(str, size * (style.weight === "bold" ? 1.07 : 1), maxW, maxLines);
   const lead = Math.round(size * 1.18);
   let svg = "";
   lines.forEach((l, i) => {
-    svg += text(x, y + i * lead, l, { size, weight: opts.weight }, { ink: opts.ink });
+    svg += text(x, y + i * lead, l, style);
   });
   return { svg, y: y + (lines.length - 1) * lead };
 }
@@ -42,15 +43,15 @@ function block(str, x, y, size, maxW, maxLines, opts = {}) {
 /** The text stack at scale `k` (1 = design size); y values relative to the first baseline. */
 function stack(box, entry, full, k, quote = true) {
   const S = full
-    ? { head: 96, mean: TYPE.body.size, ex: 44, headLines: 3, gapMean: 92, gapEx: 140 }
-    : { head: TYPE.body.size, mean: TYPE.body.size, ex: 34, headLines: 2, gapMean: 62, gapEx: 70 };
+    ? { head: TYPE.label.size, mean: TYPE.caption.size, ex: TYPE.body.size, headLines: 3, gapMean: 52, gapEx: 70 }
+    : { head: TYPE.label.size, mean: TYPE.caption.size, ex: TYPE.body.size, headLines: 2, gapMean: 52, gapEx: 70 };
   const r = (n) => Math.round(n * k);
-  const head = block(quote ? quoted(entry.ausdruck) : entry.ausdruck, 0, 0, r(S.head), box.w, S.headLines, { weight: "bold" });
-  const mean = block(entry.bedeutung, 0, head.y + r(S.gapMean), r(S.mean), box.w, 2, { ink: INK.secondary });
+  const head = block(quote ? quoted(entry.ausdruck) : entry.ausdruck, 0, 0, r(S.head), box.w, S.headLines, { style: TYPE.label });
+  const mean = block(entry.bedeutung, 0, head.y + r(S.gapMean), r(S.mean), box.w, 2, { style: TYPE.caption });
   const exY = mean.y + r(S.gapEx);
-  const ex = block(entry.beispiel, 0, exY, r(S.ex), box.w, full ? 3 : 2, { ink: INK.secondary });
+  const ex = block(entry.beispiel, 0, exY, r(S.ex), box.w, full ? 3 : 2);
   let svg = head.svg + mean.svg + ex.svg;
-  if (full) svg += text(0, exY - r(64), "BEISPIEL", { ...TYPE.caption, weight: "bold" });
+
   return { svg, ascent: r(S.head * 0.8), bottom: ex.y + r(S.ex * 0.3) };
 }
 

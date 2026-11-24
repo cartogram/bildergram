@@ -23,13 +23,13 @@ function section(cinema, rows, size, colW) {
   const fmtSize = Math.round(size * 0.7);
   const head = Math.round(size * 1.2);
   let y = head;
-  let svg = text(0, y, cinema.name, { size: head, weight: "bold" });
+  let svg = text(0, y, cinema.name, { ...TYPE.label, size: head });
   y += Math.round(size * 0.45);
   for (const s of rows) {
     const title = wrap(s.title, size, colW - timeW, 2);
     const fmt = (s.formats ?? []).join(" · ");
     const top = y;
-    svg += text(0, top + line, s.time, { size, weight: "bold" });
+    svg += text(0, top + line, s.time, { ...TYPE.body, size });
     title.forEach((t, i) => {
       svg += text(timeW, top + line * (i + 1), t, { size });
     });
@@ -75,7 +75,7 @@ export function render(box, programme, { date, from = "18:00", updated, titleSiz
   let svg = titleSize ? text(0, titleSize, "IM KINO", { ...TYPE.caption, size: titleSize, spacing: 6 }) : sectionTitle("Im Kino");
   const top = titleSize ? titleSize + 64 : 64;
   if (!cinemas.length) {
-    svg += text(0, top + 120, "Heute keine Vorstellungen", TYPE.body, { ink: INK.secondary });
+    svg += text(0, top + 120, "Heute keine Vorstellungen", TYPE.body);
   } else {
     let placed;
     for (const size of [40, 36, 32, 28]) {
