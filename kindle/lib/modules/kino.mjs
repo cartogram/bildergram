@@ -8,7 +8,7 @@
 // Data: kindle/lib/kino.mjs → fetchProgramme(slugs).
 // ============================================================
 
-import { INK, sectionTitle, text, TYPE, width } from "../design.mjs";
+import { sectionTitle, text, TYPE, width } from "../design.mjs";
 import { wrap } from "../eink.mjs";
 
 export const id = "kino";
@@ -20,11 +20,13 @@ const GUTTER = 64;
 function section(cinema, rows, size, colW) {
   const line = Math.round(size * 1.22);
   const timeW = width("00:00", { size, weight: "bold" }) + size * 0.55;
-  const fmtSize = Math.round(size * 0.7);
-  const head = Math.round(size * 1.2);
+  // Formats (OmU, OV) are captions, scaled with the listing.
+  const fmtSize = Math.round((size * TYPE.caption.size) / TYPE.body.size);
+  // The cinema name is a label at the listing's size.
+  const head = size;
   let y = head;
   let svg = text(0, y, cinema.name, { ...TYPE.label, size: head });
-  y += Math.round(size * 0.45);
+  y += Math.round(size * 0.6);
   for (const s of rows) {
     const title = wrap(s.title, size, colW - timeW, 2);
     const fmt = (s.formats ?? []).join(" · ");
@@ -33,7 +35,7 @@ function section(cinema, rows, size, colW) {
     title.forEach((t, i) => {
       svg += text(timeW, top + line * (i + 1), t, { size });
     });
-    if (fmt) svg += text(0, top + line * 2 - Math.round(size * 0.12), fmt, { size: fmtSize, ink: INK.tertiary });
+    if (fmt) svg += text(0, top + line * 2 - Math.round(size * 0.12), fmt, { ...TYPE.caption, size: fmtSize });
     y = top + Math.max(title.length, fmt ? 2 : 1) * line + Math.round(size * 0.32);
   }
   return { h: y, svg };

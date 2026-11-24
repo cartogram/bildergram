@@ -144,12 +144,13 @@ export function underlined(x, y, str) {
   return { svg, w: Math.round(exactWidth(str, TYPE.label)), h };
 }
 
-/** Top bar shared by framed screens: the German date (label style) left, battery right. */
+/** Top bar shared by framed screens: the battery (caption) above the German date (label style). */
 export function topbar({ date, battery }) {
   let svg = "";
   if (date) svg += text(MARGIN.x, TOPBAR.baseline, deDateLong(date), TYPE.label);
+  // Battery: a caption just above the date.
   if (battery != null) {
-    svg += text(W - MARGIN.x, TOPBAR.baseline, `Akku ${battery} %`, TYPE.caption, { anchor: "end" });
+    svg += text(MARGIN.x, TOPBAR.baseline - 56, `Akku ${battery} %`, TYPE.caption);
   }
   return svg;
 }
