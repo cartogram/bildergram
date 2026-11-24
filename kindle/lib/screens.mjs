@@ -28,7 +28,7 @@ export const SCREENS = {
     name: "Morgen",
     frame: { date: true, battery: true },
     boxes: [
-      { module: "wetter", variant: "wide", x: CONTENT.left, y: CONTENT.top, w: contentW, h: 330, raise: 38 },
+      { module: "wetter", variant: "wide", x: CONTENT.left, y: CONTENT.top, w: contentW, h: 330, raise: 8 },
       { module: "ausdruck", variant: "wide", x: CONTENT.left, y: CONTENT.top + 390, w: contentW, h: contentH - 390 },
     ],
     rules: [{ h: true, x: CONTENT.left, y: CONTENT.top + 354, len: contentW }],
@@ -103,7 +103,9 @@ export function screenSvg(id, data, mode = "full") {
     const live = mode !== "fallback";
     // The screen's "Stand": when its weather or listing was fetched.
     const updated = s.boxes.some((b) => b.module === "wetter") ? data.updated?.wetter : s.boxes.some((b) => b.module === "kino") ? data.kino?.updated : null;
-    svg += topbar({ date: s.frame.date && live ? data.date : null, battery: s.frame.battery && live ? data.battery : null, updated: live ? updated : null });
+    // "Stand" is left out of the top bar for now (pass `updated` to bring it back).
+    void updated;
+    svg += topbar({ date: s.frame.date && live ? data.date : null, battery: s.frame.battery && live ? data.battery : null });
   }
   for (const r of s.rules) svg += r.v ? vrule(r.x, r.y, r.len) : hrule(r.x, r.y, r.len);
   for (const b of s.boxes) {

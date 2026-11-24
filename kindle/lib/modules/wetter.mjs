@@ -109,9 +109,9 @@ function renderWide(box, w) {
   // column with the conditions, wind and sunset.
   const iconSize = 150;
   // Baselines line up with the forecast rows: the temperature and the
-  // sunset share the "%" line (300 = 338 − the box's raise of 38).
+  // sunset share the "%" line (338 − the box's raise).
   const pctY = 338 - (box.raise ?? 0);
-  svg += weatherIcon(w.now.code, -6, 34, iconSize);
+  svg += weatherIcon(w.now.code, -6, 64, iconSize);
   svg += text(iconSize / 2, pctY, deg(w.now.temp), { ...TYPE.display, underline: false }, { anchor: "middle" });
   // Today: conditions, high/low, wind, sunset (the forecast starts tomorrow).
   const midX = 249;
