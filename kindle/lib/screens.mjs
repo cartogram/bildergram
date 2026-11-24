@@ -29,10 +29,10 @@ export const SCREENS = {
     frame: { date: true, battery: true },
     boxes: [
       // The forecast's day names sit on the top bar's baseline, beside the date (96 = their baseline in the module).
-      { module: "wetter", variant: "wide", x: CONTENT.left, y: CONTENT.top, w: contentW, h: 470, raise: CONTENT.top - TITLE_SPACE + 96 - TOPBAR.baseline },
-      { module: "ausdruck", variant: "wide", x: CONTENT.left, y: CONTENT.top + 530, w: contentW, h: contentH - 530 },
+      { module: "wetter", variant: "wide", x: CONTENT.left, y: CONTENT.top, w: contentW, h: 260, raise: CONTENT.top - TITLE_SPACE + 96 - TOPBAR.baseline },
+      { module: "ausdruck", variant: "wide", x: CONTENT.left, y: CONTENT.top + 320, w: contentW, h: contentH - 320 },
     ],
-    rules: [{ h: true, x: CONTENT.left, y: CONTENT.top + 494, len: contentW }],
+    rules: [{ h: true, x: CONTENT.left, y: CONTENT.top + 284, len: contentW }],
   },
   tag: {
     name: "Tag",

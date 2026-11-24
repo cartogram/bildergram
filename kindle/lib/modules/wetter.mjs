@@ -105,17 +105,20 @@ function detail(kind, x, y, value) {
 function renderWide(box, w, updated) {
   let svg = sectionTitle("Wetter");
   const leftW = Math.round(box.w * 0.38);
-  svg += weatherIcon(w.now.code, -8, 64, 168);
-  svg += text(180, 210, deg(w.now.temp), { ...TYPE.display, underline: false });
-  let y = 300;
+  // Now: the icon with the temperature centred under it; beside them a
+  // column with the conditions, wind and sunset.
+  const iconSize = 150;
+  svg += weatherIcon(w.now.code, -6, 0, iconSize);
+  svg += text(iconSize / 2, 230, deg(w.now.temp), { ...TYPE.display, underline: false }, { anchor: "middle" });
+  const midX = 249;
+  const midW = leftW - midX;
   const cond = weatherText(w.now.code);
-  svg += text(0, y, cond, { ...TYPE.body, size: fitSize(cond, TYPE.body, leftW) });
-  y += 58;
-  svg += detail("wind", 0, y, `${deNumber(Math.round(w.now.wind))} km/h`);
-  y += 52;
-  svg += detail("sunset", 0, y, w.sunset);
-  // The timestamp: far right, on the sunset line.
-  if (updated) svg += stamp(box.w, y, `Stand ${updated}`, { anchor: "end" }).svg;
+  svg += text(midX, 126, cond, { ...TYPE.body, size: fitSize(cond, TYPE.body, midW) });
+  svg += detail("wind", midX, 184, `${deNumber(Math.round(w.now.wind))} km/h`);
+  svg += detail("sunset", midX, 235, w.sunset);
+  // The timestamp: top right, on the battery line above the date (the
+  // forecast's day names share the date's baseline: 96 - raise).
+  if (updated) svg += stamp(box.w, 96 - (box.raise ?? 0) - 56, `Stand ${updated}`, { anchor: "end" }).svg;
 
   const colX = leftW + 56;
   const colW = (box.w - colX) / 3;
