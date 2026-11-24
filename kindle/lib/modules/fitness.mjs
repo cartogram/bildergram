@@ -69,7 +69,7 @@ function column(person, week, date, w) {
   svg += text(0, 104, person.name, name);
   let used = Math.round(width(person.name, name));
   if (reached) {
-    const p = underlined(used + 20, 104 - 36, "ZIEL ERREICHT", 26);
+    const p = underlined(used + 20, 104 - 36, "Ziel erreicht");
     svg += p.svg;
     used += 20 + p.w;
   }

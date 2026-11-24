@@ -84,12 +84,12 @@ specimen("Spacing and rules", `MARGIN x ${MARGIN.x} / top ${MARGIN.top} / bottom
 // ---------------- Primitives ----------------
 
 specimen("Primitives", `label (section titles are ${D.SECTION_TITLES ? "on" : "off"}), underlined, fitSize`, 440, () => {
-  const p = D.underlined(X, 120, "GEÖFFNET");
-  const u = D.underlined(X + p.w + 80, 120, "GESCHLOSSEN");
+  const p = D.underlined(X, 120, "Ziel erreicht");
+  const u = { svg: text(X + p.w + 80, 166, "Geschlossen", TYPE.strong) };
   const fitted = D.fitSize("Sonnenuntergang 16:02", TYPE.body, 380);
   return (
     D.label(X, 50, "Tempelhofer Feld") + note(X + 420, 50, "label()") +
-    p.svg + u.svg + note(X, 240, "underlined() — open") + note(X + p.w + 80, 240, "closed: the rule is as long as the word") +
+    p.svg + u.svg + note(X, 240, "underlined() — label style") + note(X + p.w + 80, 240, "strong — Tempelhof state, German headings") +
     `<rect x="${X}" y="300" width="380" height="80" fill="none" stroke="#999" stroke-dasharray="6 6"/>` +
     text(X, 355, "Sonnenuntergang 16:02", { ...TYPE.body, size: fitted }) + note(X + 420, 355, `fitSize() → ${fitted} px to fit 380 px (body is ${TYPE.body.size})`)
   );

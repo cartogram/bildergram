@@ -33,6 +33,7 @@ export const INK = {
 export const TYPE = {
   display: { size: 123, weight: "bold", underline: true },
   label: { size: 40, weight: "bold", underline: true },
+  strong: { size: 40, weight: "bold" },
   body: { size: 40 },
   caption: { size: 26, weight: "bold", ink: INK.secondary },
 };
@@ -128,7 +129,7 @@ export function sectionTitle(str) {
 
 /** Module label: small letter-spaced capitals, e.g. "WETTER". Baseline at y. */
 export function label(x, y, str) {
-  return text(x, y, str.toUpperCase(), TYPE.label);
+  return text(x, y, str, TYPE.label);
 }
 
 /**

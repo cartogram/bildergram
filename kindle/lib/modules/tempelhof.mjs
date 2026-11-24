@@ -9,7 +9,7 @@
 // Data: kindle/lib/schedule.mjs → tempelhofState(events, ms).
 // ============================================================
 
-import { deCountdown, fitSize, INK, sectionTitle, text, TYPE, underlined } from "../design.mjs";
+import { deCountdown, fitSize, INK, sectionTitle, text, TYPE } from "../design.mjs";
 
 export const id = "tempelhof";
 export const cadence = "minute";
@@ -50,7 +50,7 @@ export function countdownBox(box) {
  */
 export function render(box, state, { withCountdown = true } = {}) {
   const l = layout(box);
-  const p = underlined(0, l.pillY, state.open ? "GEÖFFNET" : "GESCHLOSSEN");
+  const p = { svg: text(0, l.pillY + 46, state.open ? "Geöffnet" : "Geschlossen", TYPE.strong) };
   const until = state.open ? `bis zur Schließung um ${state.target}` : `bis zur Öffnung um ${state.target}`;
   const untilSize = fitSize(until, TYPE.body, box.w);
   let svg =

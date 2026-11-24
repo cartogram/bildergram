@@ -46,7 +46,7 @@ function stack(box, entry, full, k, quote = true) {
     ? { head: TYPE.label.size, mean: TYPE.caption.size, ex: TYPE.body.size, headLines: 3, gapMean: 52, gapEx: 70 }
     : { head: TYPE.label.size, mean: TYPE.caption.size, ex: TYPE.body.size, headLines: 2, gapMean: 52, gapEx: 70 };
   const r = (n) => Math.round(n * k);
-  const head = block(quote ? quoted(entry.ausdruck) : entry.ausdruck, 0, 0, r(S.head), box.w, S.headLines, { style: TYPE.label });
+  const head = block(quote ? quoted(entry.ausdruck) : entry.ausdruck, 0, 0, r(S.head), box.w, S.headLines, { style: TYPE.strong });
   const mean = block(entry.bedeutung, 0, head.y + r(S.gapMean), r(S.mean), box.w, 2, { style: TYPE.caption });
   const exY = mean.y + r(S.gapEx);
   const ex = block(entry.beispiel, 0, exY, r(S.ex), box.w, full ? 3 : 2);
