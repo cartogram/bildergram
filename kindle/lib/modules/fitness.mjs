@@ -12,7 +12,7 @@
 // Variant: "wide" (a band across the screen).
 // ============================================================
 
-import { deNumber, deTime, deWeekdayShort, INK, RULE, sectionTitle, text, TYPE, vrule, width } from "../design.mjs";
+import { deNumber, deTime, deWeekdayShort, INK, RULE, sectionTitle, stamp, text, TYPE, vrule, width } from "../design.mjs";
 
 export const id = "fitness";
 export const cadence = "hourly";
@@ -69,8 +69,8 @@ function column(person, week, date, w) {
   const used = Math.round(width(person.name, name));
   // The sync note goes right-aligned in what's left: "Stand Mo 07:15", else "Mo 07:15", else nothing.
   const full = syncNote(person.syncedAt, date);
-  const note = [full, full?.replace(/^Stand /, "")].find((n) => n && used + 24 + width(n, TYPE.caption) <= w);
-  if (note) svg += text(w, 104, note, TYPE.caption, { anchor: "end" });
+  const note = [full, full?.replace(/^Stand /, "")].find((n) => n && used + 24 + width(n, TYPE.caption) + 24 <= w);
+  if (note) svg += stamp(w, 100, note, { anchor: "end" }).svg;
 
   if (!person.syncedAt) {
     svg += text(0, 210, "Noch keine Daten", TYPE.body);

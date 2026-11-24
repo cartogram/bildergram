@@ -8,7 +8,7 @@
 // Data: kindle/lib/kino.mjs → fetchProgramme(slugs).
 // ============================================================
 
-import { sectionTitle, text, TYPE, width } from "../design.mjs";
+import { sectionTitle, stamp, text, TYPE, width } from "../design.mjs";
 import { wrap } from "../eink.mjs";
 
 export const id = "kino";
@@ -86,6 +86,6 @@ export function render(box, programme, { date, from = "18:00", updated, titleSiz
     }
     svg += placed.svg;
   }
-  if (updated) svg += text(0, box.h - 8, `Stand ${updated}`, TYPE.caption);
+  if (updated) svg += stamp(0, box.h - 8, `Stand ${updated}`).svg;
   return svg;
 }

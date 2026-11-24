@@ -8,7 +8,7 @@
 // Variants: "compact" (narrow column) and "wide" (full width).
 // ============================================================
 
-import { deNumber, deWeekdayShort, fitSize, hrule, INK, sectionTitle, text, TYPE, weatherIcon, weatherText } from "../design.mjs";
+import { deNumber, deWeekdayShort, fitSize, hrule, INK, sectionTitle, stamp, text, TYPE, weatherIcon, weatherText } from "../design.mjs";
 
 export const id = "wetter";
 export const cadence = "hourly";
@@ -86,13 +86,13 @@ function renderCompact(box, w, updated) {
   y += 72;
   // Three days
   w.days.forEach((d, i) => {
-    svg += text(0, y, dayName(d.date, i), TYPE.label);
+    svg += text(0, y, dayName(d.date, i), TYPE.strong);
     svg += weatherIcon(d.code, box.w - 64, y - 46, 60);
     svg += text(0, y + 50, `${deg(d.max)} / ${deg(d.min)}`, TYPE.body);
     svg += text(box.w - 76, y + 50, precip(d), TYPE.caption, { anchor: "end" });
     y += 130;
   });
-  if (updated) svg += text(0, box.h - 8, `Stand ${updated}`, TYPE.caption);
+  if (updated) svg += stamp(0, box.h - 8, `Stand ${updated}`).svg;
   return svg;
 }
 
@@ -118,7 +118,7 @@ function renderWide(box, w, updated) {
   w.days.forEach((d, i) => {
     const x = colX + i * colW;
     const day = dayName(d.date, i);
-    svg += text(x, 96, day, { ...TYPE.label, size: fitSize(day, TYPE.label, colText) });
+    svg += text(x, 96, day, { ...TYPE.strong, size: fitSize(day, TYPE.strong, colText) });
     svg += weatherIcon(d.code, x - 4, 122, 96);
     const temps = `${deg(d.max)} / ${deg(d.min)}`;
     svg += text(x, 284, temps, { ...TYPE.body, size: fitSize(temps, TYPE.body, colText) });
@@ -126,7 +126,8 @@ function renderWide(box, w, updated) {
     svg += text(x, 338, `${d.pop ?? 0} %`, TYPE.body);
     if (d.mm >= 0.1) svg += text(x, 388, `${deNumber(d.mm, d.mm < 10 ? 1 : 0)} mm`, TYPE.body);
   });
+  // The timestamp sits under the forecast it dates.
+  if (updated) svg += stamp(colX, 446, `Stand ${updated}`).svg;
   svg += "</g>";
-  if (updated) svg += text(box.w, box.h - 8, `Stand ${updated}`, TYPE.caption, { anchor: "end" });
   return svg;
 }

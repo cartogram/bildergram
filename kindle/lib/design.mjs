@@ -132,6 +132,23 @@ export function label(x, y, str) {
   return text(x, y, str, TYPE.label);
 }
 
+/**
+ * A timestamp ("Stand 19:00"): a caption in a thin outlined box, the same
+ * everywhere. (x, baseline y) is where a plain caption would sit; `anchor`
+ * "end" right-aligns the box at x. Returns { svg, w }.
+ */
+export function stamp(x, y, str, { anchor } = {}) {
+  const padX = 12;
+  const w = Math.round(exactWidth(str, TYPE.caption)) + 2 * padX;
+  const h = Math.round(TYPE.caption.size * 1.6);
+  const left = anchor === "end" ? x - w : x;
+  const top = y - Math.round(TYPE.caption.size * 1.1);
+  const svg =
+    `<rect x="${left + RULE.hair / 2}" y="${top + RULE.hair / 2}" width="${w - RULE.hair}" height="${h - RULE.hair}" rx="6" fill="none" stroke="${TYPE.caption.ink}" stroke-width="${RULE.hair}"/>` +
+    text(left + padX, y, str, TYPE.caption);
+  return { svg, w };
+}
+
 /** Top bar shared by framed screens: the battery (caption) above the German date (label style). */
 export function topbar({ date, battery }) {
   let svg = "";
