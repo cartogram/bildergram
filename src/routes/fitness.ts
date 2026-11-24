@@ -8,8 +8,8 @@
 //                            → a short German confirmation
 //
 // Admin endpoints (Authorization: Bearer ADMIN_TOKEN):
-//   GET  /api/admin/fitness  { people: [{ id, name, goal, tokenSet, syncedAt, days, … }] }
-//   PUT  /api/admin/fitness  { goals: { <person>: minutes per week } }
+//   GET  /api/admin/fitness  { people: [{ id, name, goals, totals, tokenSet, syncedAt, days, … }] }
+//   PUT  /api/admin/fitness  { goals: { <person>: { day, week, year } } } (minutes)
 //
 // iPhones only let Health data be read while unlocked; a locked read
 // comes back empty or zero. So each day keeps the highest value ever
@@ -43,12 +43,21 @@ interface FitnessRecord {
   lastResult: string;
 }
 
-interface FitnessSettings {
-  goals: Record<string, number>;
+interface Goals {
+  day: number;
+  week: number;
+  year: number;
 }
 
-const DEFAULT_GOAL = 150;
-const KEEP_DAYS = 60;
+interface FitnessSettings {
+  /** Per person; a bare number is a Phase 12 weekly goal. */
+  goals: Record<string, Goals | number>;
+}
+
+const DEFAULT_GOALS: Goals = { day: 30, week: 150, year: 7800 };
+const GOAL_LIMITS: Record<keyof Goals, [number, number]> = { day: [5, 600], week: [10, 3000], year: [100, 100_000] };
+/** Over a year, so the year bar can count from January 1. */
+const KEEP_DAYS = 400;
 const DAY_MS = 86_400_000;
 const recordKey = (id: string) => `fitness/${id}.json`;
 const SETTINGS_KEY = "fitness/settings.json";
@@ -116,11 +125,28 @@ async function readSettings(env: AppEnv): Promise<FitnessSettings> {
   return (await readJson<FitnessSettings>(env, SETTINGS_KEY)) ?? { goals: {} };
 }
 
-const goalOf = (settings: FitnessSettings, id: string) => settings.goals[id] ?? DEFAULT_GOAL;
+function goalsOf(settings: FitnessSettings, id: string): Goals {
+  const g = settings.goals[id];
+  if (typeof g === "number") return { ...DEFAULT_GOALS, week: g, year: g * 52 };
+  return { ...DEFAULT_GOALS, ...(g ?? {}) };
+}
+
+/** Minutes on `date`, in its week and in its calendar year. */
+function totals(days: Record<string, number>, date: string): Goals {
+  const week = new Set(weekOf(date));
+  let w = 0;
+  let y = 0;
+  for (const [d, v] of Object.entries(days)) {
+    if (week.has(d)) w += v;
+    if (d.slice(0, 4) === date.slice(0, 4) && d <= date) y += v;
+  }
+  return { day: days[date] ?? 0, week: w, year: y };
+}
 
 /**
  * The renderer's `fitness` parameter: everyone's minutes for the week
- * around `date`, their goals and last sync (JSON, a few hundred bytes).
+ * around `date`, their year total, goals and last sync (JSON, a few
+ * hundred bytes).
  */
 export async function fitnessParam(env: AppEnv, date: string): Promise<string> {
   const settings = await readSettings(env);
@@ -131,8 +157,9 @@ export async function fitnessParam(env: AppEnv, date: string): Promise<string> {
       const r = records[i] ?? EMPTY;
       return {
         name: p.name,
-        goal: goalOf(settings, p.id),
+        goals: goalsOf(settings, p.id),
         days: Object.fromEntries(Object.entries(r.days).filter(([d]) => week.has(d))),
+        year: totals(r.days, date).year,
         syncedAt: r.syncedAt,
       };
     }),
@@ -194,16 +221,21 @@ export async function handleFitnessAdmin(request: Request, env: AppEnv): Promise
   if (denied) return denied;
 
   if (request.method === "PUT") {
-    let body: { goals?: Record<string, unknown> };
+    let body: { goals?: Record<string, Partial<Record<keyof Goals, unknown>>> };
     try {
       body = await request.json();
     } catch {
       return Response.json({ error: "invalid JSON" }, { status: 400 });
     }
-    const goals: Record<string, number> = {};
+    const goals: Record<string, Goals> = {};
     for (const p of PEOPLE) {
-      const g = Number(body.goals?.[p.id] ?? DEFAULT_GOAL);
-      if (!Number.isInteger(g) || g < 10 || g > 3000) return Response.json({ error: `${p.name}'s goal must be 10–3000 minutes` }, { status: 400 });
+      const g = { ...DEFAULT_GOALS };
+      for (const k of Object.keys(GOAL_LIMITS) as (keyof Goals)[]) {
+        const v = Number(body.goals?.[p.id]?.[k] ?? DEFAULT_GOALS[k]);
+        const [lo, hi] = GOAL_LIMITS[k];
+        if (!Number.isInteger(v) || v < lo || v > hi) return Response.json({ error: `${p.name}'s ${k} goal must be ${lo}–${hi} minutes` }, { status: 400 });
+        g[k] = v;
+      }
       goals[p.id] = g;
     }
     await writeJson(env, SETTINGS_KEY, { goals } satisfies FitnessSettings);
@@ -224,10 +256,10 @@ export async function handleFitnessAdmin(request: Request, env: AppEnv): Promise
         return {
           id: p.id,
           name: p.name,
-          goal: goalOf(settings, p.id),
+          goals: goalsOf(settings, p.id),
+          totals: totals(r.days, today),
           tokenSet: typeof (env as unknown as Record<string, unknown>)[p.tokenEnvKey] === "string",
           days: Object.fromEntries(Object.entries(r.days).filter(([d]) => d >= shiftDate(today, -13))),
-          weekTotal: week.reduce((sum, d) => sum + (r.days[d] ?? 0), 0),
           syncedAt: r.syncedAt,
           receivedAt: r.receivedAt,
           lastPayload: r.lastPayload,

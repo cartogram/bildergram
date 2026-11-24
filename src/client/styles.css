@@ -366,3 +366,10 @@ input[type="text"] {
 .person pre.log {
   max-height: 160px;
 }
+
+.goals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+}

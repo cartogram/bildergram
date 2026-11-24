@@ -110,6 +110,7 @@ const fixture = {
     days: [{ date: "2026-11-23", code: 80, max: 3, min: 0, pop: 60, mm: 0.8 }, { date: "2026-11-24", code: 71, max: 3, min: 0, pop: 3, mm: 0 }, { date: "2026-11-25", code: 3, max: 2, min: -1, pop: 0, mm: 0 }],
   },
   updated: { wetter: "14:00" },
+  ausdruck: { ausdruck: "sein blaues Wunder erleben", bedeutung: "to be in for a nasty surprise", beispiel: "Wer an Silvester ohne Reservierung kommt, wird sein blaues Wunder erleben." },
   praeposition: { wort: "sich freuen auf", kasus: "Akk.", bedeutung: "to look forward to", beispiel: "Wir freuen uns schon auf den Sommer auf dem Tempelhofer Feld." },
 };
 
@@ -167,7 +168,11 @@ for (const deviceId of Object.keys(DEVICES)) {
         C[st] = { cb, r: pixelRect({ x: b.x + cb.x, y: top + cb.y, w: cb.w, h: cb.h }, s) };
       }
       const panelSvg = (state) => canvasSvg(`<g transform="translate(${b.x} ${top})">${tempelhof.render(box, state, { withCountdown: false })}</g>`);
-      const cdSvg = (st, m) => canvasSvg(`<g transform="translate(${b.x + C[st].cb.x} ${top + C[st].cb.y})">${tempelhof.countdownSvg(box, m)}</g>`);
+      // Countdown pieces are cropped from the whole line (the sentence before
+      // the countdown is the same for every state key of open/closed), so
+      // anti-aliasing at the piece's edge matches the full render.
+      const repKey = { open: bgKeys.find((k) => k.startsWith("open")), closed: bgKeys.find((k) => k.startsWith("closed")) };
+      const cdSvg = (st, m) => canvasSvg(`<g transform="translate(${b.x} ${top})">${tempelhof.render(box, stateForKey(repKey[st], m))}</g>`);
       const dir = `${out}/dashboard/tempelhof/${b.variant}`;
       if (!built.has(b.variant)) {
         built.add(b.variant);

@@ -26,6 +26,8 @@ export const INK = {
   primary: "#000000",
   secondary: "#333333",
   tertiary: "#666666",
+  /** Light fill behind dark text, e.g. progress bars (204 = 12 × 17, a panel level). */
+  fill: "#cccccc",
   paper: "#ffffff",
 };
 
@@ -135,17 +137,18 @@ export function label(x, y, str) {
 /**
  * A timestamp ("Stand 19:00"): a caption in a thin outlined box, the same
  * everywhere. (x, baseline y) is where a plain caption would sit; `anchor`
- * "end" right-aligns the box at x. Returns { svg, w }.
+ * "end" right-aligns the box at x; `scale` shrinks it. Returns { svg, w }.
  */
-export function stamp(x, y, str, { anchor } = {}) {
-  const padX = 12;
-  const w = Math.round(exactWidth(str, TYPE.caption)) + 2 * padX;
-  const h = Math.round(TYPE.caption.size * 1.6);
+export function stamp(x, y, str, { anchor, scale = 1 } = {}) {
+  const style = { ...TYPE.caption, size: Math.round(TYPE.caption.size * scale) };
+  const padX = Math.round(12 * scale);
+  const w = Math.round(exactWidth(str, style)) + 2 * padX;
+  const h = Math.round(style.size * 1.6);
   const left = anchor === "end" ? x - w : x;
-  const top = y - Math.round(TYPE.caption.size * 1.1);
+  const top = y - Math.round(style.size * 1.1);
   const svg =
-    `<rect x="${left + RULE.hair / 2}" y="${top + RULE.hair / 2}" width="${w - RULE.hair}" height="${h - RULE.hair}" rx="6" fill="none" stroke="${TYPE.caption.ink}" stroke-width="${RULE.hair}"/>` +
-    text(left + padX, y, str, TYPE.caption);
+    `<rect x="${left + RULE.hair / 2}" y="${top + RULE.hair / 2}" width="${w - RULE.hair}" height="${h - RULE.hair}" rx="${Math.round(6 * scale)}" fill="none" stroke="${style.ink}" stroke-width="${RULE.hair}"/>` +
+    text(left + padX, y, str, style);
   return { svg, w };
 }
 

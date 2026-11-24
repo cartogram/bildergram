@@ -37,6 +37,7 @@ const base = {
   kino: { programme, from: "18:00", updated: `${deTime(programme.fetchedAt)}` },
   ausdruck: entryFor(date),
   praeposition: praepositionFor(date),
+  tempelhof: tempelhofState(events, now),
 };
 
 // Sample exercise minutes (the real ones come from the iPhones via the hub).

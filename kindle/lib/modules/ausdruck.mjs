@@ -49,7 +49,8 @@ function stack(box, entry, full, k, quote = true) {
   const head = block(quote ? quoted(entry.ausdruck) : entry.ausdruck, 0, 0, r(S.head), box.w, S.headLines, { style: TYPE.strong });
   const mean = block(entry.bedeutung, 0, head.y + r(S.gapMean), r(S.mean), box.w, 2, { style: TYPE.caption });
   const exY = mean.y + r(S.gapEx);
-  const ex = block(entry.beispiel, 0, exY, r(S.ex), box.w, full ? 3 : 2);
+  // Up to four example lines where the column is narrow (half the screen).
+  const ex = block(entry.beispiel, 0, exY, r(S.ex), box.w, box.w < 900 ? 4 : full ? 3 : 2);
   let svg = head.svg + mean.svg + ex.svg;
 
   return { svg, ascent: r(S.head * 0.8), bottom: ex.y + r(S.ex * 0.3) };

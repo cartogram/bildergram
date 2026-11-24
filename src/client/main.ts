@@ -35,10 +35,10 @@ interface KindleStatus {
 interface FitnessPerson {
   id: string;
   name: string;
-  goal: number;
+  goals: { day: number; week: number; year: number };
+  totals: { day: number; week: number; year: number };
   tokenSet: boolean;
   days: Record<string, number>;
-  weekTotal: number;
   syncedAt: string | null;
   receivedAt: string | null;
   lastPayload: string;
@@ -368,8 +368,13 @@ function fitnessHtml(people: FitnessPerson[]): string {
       ? `<details><summary class="muted">Last post ${escapeHtml(ago(p.receivedAt))}: ${escapeHtml(p.lastResult)}</summary><pre class="log">${escapeHtml(p.lastPayload || "(empty body)")}</pre></details>`
       : "";
     return `<div class="person">
-        <div class="row"><strong>${escapeHtml(p.name)}</strong><span class="muted">this week ${p.weekTotal} / ${p.goal} min</span></div>
-        <label class="inline">Weekly goal <input type="number" min="10" max="3000" step="5" data-goal="${p.id}" value="${p.goal}"> minutes</label>
+        <div class="row"><strong>${escapeHtml(p.name)}</strong><span class="muted">today ${p.totals.day} / ${p.goals.day} · week ${p.totals.week} / ${p.goals.week} · year ${p.totals.year} / ${p.goals.year} min</span></div>
+        <div class="goals">
+          <label class="inline">Day <input type="number" min="5" max="600" step="5" data-goal="${p.id}:day" value="${p.goals.day}"></label>
+          <label class="inline">Week <input type="number" min="10" max="3000" step="5" data-goal="${p.id}:week" value="${p.goals.week}"></label>
+          <label class="inline">Year <input type="number" min="100" max="100000" step="100" data-goal="${p.id}:year" value="${p.goals.year}"></label>
+          <span class="muted">minutes</span>
+        </div>
         <p class="muted">Last sync: ${synced}${p.tokenSet ? "" : " · <strong>no token set on the Worker</strong>"}</p>
         ${last}
       </div>`;
@@ -396,8 +401,11 @@ async function loadFitness(): Promise<void> {
   form.onsubmit = async (e) => {
     e.preventDefault();
     const msg = document.getElementById("fitness-msg");
-    const goals: Record<string, number> = {};
-    for (const input of form.querySelectorAll<HTMLInputElement>("input[data-goal]")) goals[input.dataset.goal!] = Number(input.value);
+    const goals: Record<string, Record<string, number>> = {};
+    for (const input of form.querySelectorAll<HTMLInputElement>("input[data-goal]")) {
+      const [id, kind] = input.dataset.goal!.split(":");
+      (goals[id] ??= {})[kind] = Number(input.value);
+    }
     try {
       const res = await api("/api/admin/fitness", { method: "PUT", body: JSON.stringify({ goals }), headers: { "content-type": "application/json" } });
       const body = (await res.json()) as { people?: FitnessPerson[]; error?: string };

@@ -28,7 +28,7 @@ import { fitnessParam } from "./fitness";
 
 /** The screens kindle/lib/screens.mjs defines (ids, German names, what they show). */
 export const SCREENS = {
-  morgen: { name: "Morgen", shows: "Weather (wide) + expression of the day" },
+  morgen: { name: "Morgen", shows: "Weather + Tempelhof line + expression of the day" },
   tag: { name: "Tag", shows: "Tempelhof countdown + preposition of the day" },
   abend: { name: "Abend", shows: "Yorck cinema listing" },
   nacht: { name: "Nacht", shows: "Exercise this week (Matt + Fiona) + expression of the day" },

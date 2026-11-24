@@ -21,6 +21,9 @@ const contentH = CONTENT.bottom - CONTENT.top;
 
 /** Tag: Tempelhof on top, the Präposition des Tages below. */
 const TAG_TOP_H = 76;
+/** Two columns side by side, with a rule between them. */
+const GAP = 32;
+const HALF_W = Math.floor((contentW - 2 * GAP - RULE.hair) / 2);
 
 /** name (German, shown on the admin page), top bar flags, boxes and rules. */
 export const SCREENS = {
@@ -29,9 +32,18 @@ export const SCREENS = {
     frame: { date: true, battery: true },
     boxes: [
       { module: "wetter", variant: "wide", x: CONTENT.left, y: CONTENT.top, w: contentW, h: 330, raise: 8 },
-      { module: "ausdruck", variant: "wide", x: CONTENT.left, y: CONTENT.top + 390, w: contentW, h: contentH - 390 },
+      // The German, split: the Ausdruck left, the Präposition right.
+      { module: "ausdruck", variant: "wide", x: CONTENT.left, y: CONTENT.top + 370, w: HALF_W, h: 360 },
+      { module: "praeposition", variant: "wide", x: CONTENT.left + HALF_W + 2 * GAP + RULE.hair, y: CONTENT.top + 370, w: HALF_W, h: 360 },
+      // The Feld line at the bottom (Kindle-drawn; its own piece set, as its
+      // position differs from Tag's).
+      { module: "tempelhof", variant: "morgen", x: CONTENT.left, y: CONTENT.bottom - TAG_TOP_H, w: contentW, h: TAG_TOP_H },
     ],
-    rules: [{ h: true, x: CONTENT.left, y: CONTENT.top + 354, len: contentW }],
+    rules: [
+      { h: true, x: CONTENT.left, y: CONTENT.top + 334, len: contentW },
+      { v: true, x: CONTENT.left + HALF_W + GAP, y: CONTENT.top + 370, len: 340 },
+      { h: true, x: CONTENT.left, y: CONTENT.bottom - TAG_TOP_H - 24, len: contentW },
+    ],
   },
   tag: {
     name: "Tag",
