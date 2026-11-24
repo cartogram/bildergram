@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A battery-powered e-ink dashboard on two jailbroken Kindles: `kindle_01` (**Matt**), a Paperwhite 3, and `kindle_02` (**Fiona**), a Paperwhite 2. Each shows **German screens** (the admin page stays in English) on its own daily schedule: **Morgen** (weather + expression of the day), **Tag** (Tempelhof countdown + weather), **Abend** (IM KINO, the Yorck cinema listing) and **Nacht** (exercise this week for Matt and Fiona + expression of the day).
+A battery-powered e-ink dashboard on two jailbroken Kindles: `kindle_01` (**Matt**), a Paperwhite 3, and `kindle_02` (**Fiona**), a Paperwhite 2. Each shows **German screens** (the admin page stays in English) on its own daily schedule: **Morgen** (weather + expression of the day), **Tag** (Tempelhof countdown + Präposition des Tages + weather), **Abend** (IM KINO, the Yorck cinema listing) and **Nacht** (exercise this week for Matt and Fiona + expression of the day).
 
 There are three parts:
 - **Kindle** (`kindle/device/dashboard.sh`): a busybox shell loop. It draws each screen's downloaded base image with `eips`, pastes the Tempelhof panel and countdown on Tag, and suspends to RAM with Wi-Fi off, waking on the RTC alarm.
@@ -47,12 +47,15 @@ There is no test runner. Verify changes with:
   - German formatting: `deDateLong`, `deNumber` (decimal comma, typographic minus), `deCountdown`;
   - the WMO weather icons and German weather texts.
 
-  New UI should use these rather than raw sizes or colors. Bold is the real **Arimo Bold** (`assets/fonts/Arimo-Bold.ttf`), and `width()` assumes bold runs ≤ 7% wider than regular (it overestimates, by about 6% on GESCHLOSSEN). `exactWidth()` uses Arimo Bold's measured advances instead; use it only where drawing must end with the text, such as an underline, because switching layout to it would shift sizes and line breaks.
+  - **Section titles are off** (`SECTION_TITLES`): modules still lay out under a title line, so `screens.mjs` (`moduleBox`) and the build render each module `TITLE_SPACE` (64) taller and shifted up by it. Modules draw titles only through `sectionTitle()`.
+
+  New UI should use these rather than raw sizes or colors. `npm run kindle:design` renders every token, primitive, icon and module variant to `kindle/dist/gallery/design-system.html`. Bold is the real **Arimo Bold** (`assets/fonts/Arimo-Bold.ttf`), and `width()` assumes bold runs ≤ 7% wider than regular (it overestimates, by about 6% on GESCHLOSSEN). `exactWidth()` uses Arimo Bold's measured advances instead; use it only where drawing must end with the text, such as an underline, because switching layout to it would shift sizes and line breaks.
 - **`modules/*.mjs`**: each module exports `render(box, data, …)`, which returns SVG in box-local coordinates, plus its `cadence`.
   - `tempelhof` is per-minute and drawn on the device; it also exports `countdownBox` and `countdownSvg`.
   - `wetter` is hourly (Open-Meteo, no key; variants `compact` and `wide`).
   - `kino` is daily (yorck.de).
   - `ausdruck` is daily, from `kindle/data/ausdruecke.json`: 365 B2 entries `{ausdruck, bedeutung, beispiel}`, rotating by days since 2026-01-01.
+  - `praeposition` is daily, from `kindle/data/praepositionen.json`: 215 verbs with a fixed preposition `{wort, kasus, bedeutung, beispiel}`, contrasting pairs on neighbouring days; drawn with the `ausdruck` band layout.
   - `fitness` is hourly: this week's exercise minutes per person against a weekly goal. The data comes from the hub (the renderer's `fitness` param, validated by `parseFitness`), not from a fetch.
 - **`screens.mjs`**: `SCREENS` (frame flags, boxes, rules) and `screenSvg(id, data, mode)`, where `mode` is one of:
   - `full`: everything; used by the gallery and the admin preview.
@@ -83,6 +86,7 @@ There is no test runner. Verify changes with:
   - Other `/api/*` paths return 404; everything else is the SPA.
   - There are no cron triggers: the explicit empty `crons` list in `wrangler.jsonc` also clears old schedules on deploy.
 - **`routes/kindle.ts`**:
+  - **The Kindles never show the same screen at once**: saving a schedule that clashes with another Kindle's at any time is refused (`firstClash`). Defaults: Matt 06:00 morgen, 09:00 tag, 18:15 abend, 23:00 nacht; Fiona 09:00 morgen, 18:15 nacht, 23:00 tag (also in `kindle/lib/devices.mjs` for `DEFAULT_SCHEDULE`).
   - **Config**: `{schedule:[{at,screen}], kino:{cinemas,from,letterboxdUser,hideSeen,hiddenFilms}, checkinMinutes (15–360), exit}`. `hiddenFilms` holds Yorck film slugs. Phase 7 configs (screens `tempelhof`/`kino`) are migrated on read.
   - **Check-in** (`POST /api/kindle/checkin`): the body is the device's log tail. The reply is shell-safe `KEY="value"` lines (`SCHEDULE="0600:morgen 0900:tag …"`, `CHECKIN_MINUTES`, `EXIT`, `SERVER_TIME`). The Kindle validates them with a regex before sourcing, so keep values within `[A-Za-z0-9 :._-]`.
   - The `exit` flag is one-shot: it is cleared once sent.

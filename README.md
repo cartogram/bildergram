@@ -265,4 +265,5 @@ bildergram/
 - [x] **Phase 10**: Two Kindles — screens rendered per device size (Paperwhite 3 at 1448 × 1072, Paperwhite 2 at 1024 × 758), a bundle and paste check per device, per-device config, status and previews on the hub, a device switcher on the admin page
 - [x] **Phase 11**: Letterboxd filter — IM KINO leaves out films in the user's public Letterboxd feed (matched by TMDB id via the Yorck film pages) and films hidden by hand on the admin page
 - [x] **Phase 12**: Fitness on Nacht — exercise minutes from each iPhone (a Shortcut posting to `/api/fitness`, a token per person), weekly goals on the admin page, Matt and Fiona side by side with progress bars and a Monday–Sunday strip; Nacht checks in hourly
+- [x] **Phase 13**: Design round — GESCHLOSSEN underlined, section titles removed, a Präposition des Tages band on Tag (215 verbs with prepositions), the two Kindles never show the same screen at once, and a design-system page (`npm run kindle:design`)
 - [x] Fiona (`kindle_02`, Paperwhite 2) jailbroken and installed: screens downloaded at 758 × 1024, base and Tempelhof pastes verified pixel-exact on the panel's framebuffer

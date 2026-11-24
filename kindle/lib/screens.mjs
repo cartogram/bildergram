@@ -5,21 +5,24 @@
 // overlap, so on the Kindle each can be pasted on its own cadence.
 // ============================================================
 
-import { CONTENT, INK, RULE, TYPE, hrule, label, text, topbar, vrule } from "./design.mjs";
+import { CONTENT, INK, RULE, TITLE_SPACE, TYPE, hrule, sectionTitle, text, topbar, vrule } from "./design.mjs";
 import { svgOpen, W, H } from "./eink.mjs";
 import * as ausdruck from "./modules/ausdruck.mjs";
 import * as fitness from "./modules/fitness.mjs";
 import * as kino from "./modules/kino.mjs";
+import * as praeposition from "./modules/praeposition.mjs";
 import * as tempelhof from "./modules/tempelhof.mjs";
 import * as wetter from "./modules/wetter.mjs";
 
-export const MODULES = { ausdruck, fitness, kino, tempelhof, wetter };
+export const MODULES = { ausdruck, fitness, kino, praeposition, tempelhof, wetter };
 
 const contentW = CONTENT.right - CONTENT.left;
 const contentH = CONTENT.bottom - CONTENT.top;
 
 const TAG_LEFT_W = 780;
 const TAG_GAP = 32;
+/** Tag's left column: Tempelhof on top, the Präposition des Tages below. */
+const TAG_TOP_H = 470;
 
 /** name (German, shown on the admin page), top bar flags, boxes and rules. */
 export const SCREENS = {
@@ -36,14 +39,18 @@ export const SCREENS = {
     name: "Tag",
     frame: { date: true, battery: true },
     boxes: [
-      { module: "tempelhof", variant: "half", x: CONTENT.left, y: CONTENT.top, w: TAG_LEFT_W, h: contentH },
+      { module: "tempelhof", variant: "half", x: CONTENT.left, y: CONTENT.top, w: TAG_LEFT_W, h: TAG_TOP_H },
+      { module: "praeposition", variant: "wide", x: CONTENT.left, y: CONTENT.top + TAG_TOP_H + 60, w: TAG_LEFT_W, h: contentH - TAG_TOP_H - 60 },
       {
         module: "wetter", variant: "compact",
         x: CONTENT.left + TAG_LEFT_W + 2 * TAG_GAP + RULE.hair, y: CONTENT.top,
         w: contentW - TAG_LEFT_W - 2 * TAG_GAP - RULE.hair, h: contentH,
       },
     ],
-    rules: [{ v: true, x: CONTENT.left + TAG_LEFT_W + TAG_GAP, y: CONTENT.top, len: contentH }],
+    rules: [
+      { v: true, x: CONTENT.left + TAG_LEFT_W + TAG_GAP, y: CONTENT.top, len: contentH },
+      { h: true, x: CONTENT.left, y: CONTENT.top + TAG_TOP_H + 24, len: TAG_LEFT_W },
+    ],
   },
   abend: {
     name: "Abend",
@@ -65,10 +72,16 @@ export const SCREENS = {
 /** Modules the Kindle draws itself (prebuilt, updated every minute); the rest come from the server. */
 export const DEVICE_MODULES = new Set(["tempelhof"]);
 
-const LABELS = { wetter: "Wetter", kino: "Im Kino", ausdruck: "Ausdruck des Tages", tempelhof: "Tempelhofer Feld", fitness: "Bewegung diese Woche" };
+const LABELS = { wetter: "Wetter", kino: "Im Kino", ausdruck: "Ausdruck des Tages", tempelhof: "Tempelhofer Feld", fitness: "Bewegung diese Woche", praeposition: "Präposition des Tages" };
 
 /** Screens whose content goes stale within the hour (weather, fitness) — the Kindle checks in on the interval. */
 export const HOURLY_SCREENS = Object.keys(SCREENS).filter((id) => SCREENS[id].boxes.some((b) => MODULES[b.module].cadence === "hourly"));
+
+/**
+ * The box a module lays out in: TITLE_SPACE taller than its screen box,
+ * drawn shifted up by TITLE_SPACE (see design.mjs). The build uses it too.
+ */
+export const moduleBox = (b) => ({ w: b.w, h: b.h + TITLE_SPACE, variant: b.variant });
 
 /** The Kindle-drawn boxes of a screen. */
 export const deviceBoxes = (id) => SCREENS[id].boxes.filter((b) => DEVICE_MODULES.has(b.module));
@@ -76,7 +89,7 @@ export const deviceBoxes = (id) => SCREENS[id].boxes.filter((b) => DEVICE_MODULE
 /** Placeholder for a server module when the Kindle has no downloaded screen. */
 function placeholder(box, module) {
   return (
-    label(0, 30, LABELS[module]) +
+    sectionTitle(LABELS[module]) +
     text(0, Math.min(200, box.h / 2), "Keine Verbindung", TYPE.title, { ink: INK.secondary }) +
     text(0, Math.min(200, box.h / 2) + 56, "Power-Taste drücken, um zu aktualisieren", TYPE.body, { ink: INK.tertiary })
   );
@@ -100,7 +113,7 @@ export function screenSvg(id, data, mode = "full") {
   }
   for (const r of s.rules) svg += r.v ? vrule(r.x, r.y, r.len) : hrule(r.x, r.y, r.len);
   for (const b of s.boxes) {
-    const box = { w: b.w, h: b.h, variant: b.variant };
+    const box = moduleBox(b);
     const onDevice = DEVICE_MODULES.has(b.module);
     let inner = "";
     if (onDevice && mode !== "full") inner = "";
@@ -108,13 +121,14 @@ export function screenSvg(id, data, mode = "full") {
     else if (b.module === "tempelhof") inner = tempelhof.render(box, data.tempelhof);
     else if (b.module === "wetter") inner = wetter.render(box, data.wetter, { updated: data.updated?.wetter });
     else if (b.module === "ausdruck") inner = ausdruck.render(box, data.ausdruck);
+    else if (b.module === "praeposition") inner = praeposition.render(box, data.praeposition);
     else if (b.module === "fitness") inner = fitness.render(box, data.fitness, { date: data.date });
     else if (b.module === "kino") {
       inner = kino.render(box, data.kino.programme, {
         date: data.date, from: data.kino.from, updated: data.kino.updated, titleSize: s.frame ? undefined : 40,
       });
     }
-    svg += `<g transform="translate(${b.x} ${b.y})">${inner}</g>`;
+    svg += `<g transform="translate(${b.x} ${b.y - TITLE_SPACE})">${inner}</g>`;
   }
   return svg + "</svg>";
 }

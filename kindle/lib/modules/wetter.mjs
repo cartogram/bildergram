@@ -8,9 +8,7 @@
 // Variants: "compact" (narrow column) and "wide" (full width).
 // ============================================================
 
-import {
-  INK, TYPE, deNumber, deWeekdayShort, fitSize, hrule, label, text, weatherIcon, weatherText,
-} from "../design.mjs";
+import { deNumber, deWeekdayShort, fitSize, hrule, INK, sectionTitle, text, TYPE, weatherIcon, weatherText } from "../design.mjs";
 
 export const id = "wetter";
 export const cadence = "hourly";
@@ -71,7 +69,7 @@ export function render(box, w, { updated } = {}) {
 
 /** Narrow column (e.g. beside Tempelhof). */
 function renderCompact(box, w, updated) {
-  let svg = label(0, 30, "Wetter");
+  let svg = sectionTitle("Wetter");
   // Now: icon + temperature
   svg += weatherIcon(w.now.code, -6, 60, 128);
   svg += text(136, 176, deg(w.now.temp), TYPE.display);
@@ -100,7 +98,7 @@ function renderCompact(box, w, updated) {
 
 /** Full width: now on the left, three day columns on the right. */
 function renderWide(box, w, updated) {
-  let svg = label(0, 30, "Wetter");
+  let svg = sectionTitle("Wetter");
   const leftW = Math.round(box.w * 0.38);
   svg += weatherIcon(w.now.code, -8, 64, 168);
   svg += text(180, 210, deg(w.now.temp), TYPE.hero);

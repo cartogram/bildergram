@@ -31,7 +31,8 @@ import { DEVICES, device as getDevice } from "./lib/devices.mjs";
 import { W, encodePng, initRenderer, paste, rasterize, rotate, rotatedOrigin, svgOpen } from "./lib/eink.mjs";
 import * as tempelhof from "./lib/modules/tempelhof.mjs";
 import { buildSchedule, nextEvent } from "./lib/schedule.mjs";
-import { HOURLY_SCREENS, SCREENS, deviceBoxes, screenSvg } from "./lib/screens.mjs";
+import { HOURLY_SCREENS, SCREENS, deviceBoxes, moduleBox, screenSvg } from "./lib/screens.mjs";
+import { TITLE_SPACE } from "./lib/design.mjs";
 import { getTemplehofStatus } from "./lib/templehof.ts";
 
 const REPO = fileURLToPath(new URL("..", import.meta.url));
@@ -109,6 +110,7 @@ const fixture = {
     days: [{ date: "2026-11-23", code: 80, max: 3, min: 0, pop: 60, mm: 0.8 }, { date: "2026-11-24", code: 71, max: 3, min: 0, pop: 3, mm: 0 }, { date: "2026-11-25", code: 3, max: 2, min: -1, pop: 0, mm: 0 }],
   },
   updated: { wetter: "14:00" },
+  praeposition: { wort: "sich freuen auf", kasus: "Akk.", bedeutung: "to look forward to", beispiel: "Wir freuen uns schon auf den Sommer auf dem Tempelhofer Feld." },
 };
 
 // ------------------------------------------------------------------
@@ -144,7 +146,7 @@ for (const deviceId of Object.keys(DEVICES)) {
     `DEVICE_ID=${deviceId}`,
     `SCREENS="${Object.keys(SCREENS).join(" ")}"`,
     `HOURLY_SCREENS="${HOURLY_SCREENS.join(" ")}"`,
-    `DEFAULT_SCHEDULE="${DEFAULT_SCHEDULE}"`,
+    `DEFAULT_SCHEDULE="${dev.schedule ?? DEFAULT_SCHEDULE}"`,
   ];
 
   // Kindle-drawn boxes: Tempelhof panels + countdowns, once per box variant.
@@ -153,12 +155,14 @@ for (const deviceId of Object.keys(DEVICES)) {
   let compared = 0;
   for (const id of Object.keys(SCREENS)) {
     for (const b of deviceBoxes(id)) {
-      const box = { w: b.w, h: b.h, variant: b.variant };
+      // Module coordinates start TITLE_SPACE above the box (no section titles).
+      const box = moduleBox(b);
+      const top = b.y - TITLE_SPACE;
       const cb = tempelhof.countdownBox(box);
       const P = pixelRect(b, s);
-      const C = pixelRect({ x: b.x + cb.x, y: b.y + cb.y, w: cb.w, h: cb.h }, s);
-      const panelSvg = (state) => canvasSvg(`<g transform="translate(${b.x} ${b.y})">${tempelhof.render(box, state, { withCountdown: false })}</g>`);
-      const cdSvg = (m) => canvasSvg(`<g transform="translate(${b.x + cb.x} ${b.y + cb.y})">${tempelhof.countdownSvg(box, m)}</g>`);
+      const C = pixelRect({ x: b.x + cb.x, y: top + cb.y, w: cb.w, h: cb.h }, s);
+      const panelSvg = (state) => canvasSvg(`<g transform="translate(${b.x} ${top})">${tempelhof.render(box, state, { withCountdown: false })}</g>`);
+      const cdSvg = (m) => canvasSvg(`<g transform="translate(${b.x + cb.x} ${top + cb.y})">${tempelhof.countdownSvg(box, m)}</g>`);
       const dir = `${out}/dashboard/tempelhof/${b.variant}`;
       if (!built.has(b.variant)) {
         built.add(b.variant);

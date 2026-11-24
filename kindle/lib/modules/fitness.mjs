@@ -12,7 +12,7 @@
 // Variant: "wide" (a band across the screen).
 // ============================================================
 
-import { INK, RULE, TYPE, deNumber, deTime, deWeekdayShort, label, pill, text, vrule, width } from "../design.mjs";
+import { deNumber, deTime, deWeekdayShort, INK, pill, RULE, sectionTitle, text, TYPE, vrule, width } from "../design.mjs";
 
 export const id = "fitness";
 export const cadence = "hourly";
@@ -124,7 +124,7 @@ function column(person, week, date, w) {
 export function render(box, data, { date }) {
   const people = data?.people ?? [];
   const week = weekOf(date);
-  let svg = label(0, 30, "Bewegung diese Woche");
+  let svg = sectionTitle("Bewegung diese Woche");
   if (!people.length) return svg + text(0, 210, "Noch keine Daten", TYPE.title, { ink: INK.secondary });
 
   const n = people.length;

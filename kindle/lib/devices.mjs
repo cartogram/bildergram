@@ -6,12 +6,14 @@
 // down cleanly. `rotate` turns landscape into the portrait
 // framebuffer (eips pastes pixels as-is).
 //
+// `schedule` is the default until the first check-in; the two never show
+// the same screen at once (src/routes/kindle.ts enforces it on save).
 // Keep ids in sync with src/devices.ts (tokens, MACs).
 // ============================================================
 
 export const DEVICES = {
-  kindle_01: { name: "Matt (Paperwhite 3)", width: 1448, height: 1072, rotate: "ccw" },
-  kindle_02: { name: "Fiona (Paperwhite 2)", width: 1024, height: 758, rotate: "ccw" },
+  kindle_01: { name: "Matt (Paperwhite 3)", width: 1448, height: 1072, rotate: "ccw", schedule: "0600:morgen 0900:tag 1815:abend 2300:nacht" },
+  kindle_02: { name: "Fiona (Paperwhite 2)", width: 1024, height: 758, rotate: "ccw", schedule: "0900:morgen 1815:nacht 2300:tag" },
 };
 
 export const DEFAULT_DEVICE = "kindle_01";

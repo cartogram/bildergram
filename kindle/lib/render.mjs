@@ -11,6 +11,7 @@ import { device } from "./devices.mjs";
 import { DEFAULT_CINEMAS, fetchProgramme, withoutSeen } from "./kino.mjs";
 import { entryFor } from "./modules/ausdruck.mjs";
 import { parseFitness } from "./modules/fitness.mjs";
+import { entryFor as praepositionFor } from "./modules/praeposition.mjs";
 import { fetchWeather } from "./modules/wetter.mjs";
 import { buildSchedule, tempelhofState } from "./schedule.mjs";
 import { SCREENS, screenSvg } from "./screens.mjs";
@@ -46,6 +47,7 @@ export async function screenData(id, {
       }));
   }
   if (modules.has("ausdruck")) data.ausdruck = entryFor(date);
+  if (modules.has("praeposition")) data.praeposition = praepositionFor(date);
   // Exercise minutes come from the hub (the iPhones post them there).
   if (modules.has("fitness")) data.fitness = parseFitness(fitness);
   if (modules.has("tempelhof")) data.tempelhof = tempelhofState(buildSchedule(now, 1), now);

@@ -107,6 +107,20 @@ export function vrule(x, y, h, weight = RULE.hair, ink = INK.primary) {
   return `<rect x="${round(x)}" y="${round(y)}" width="${weight}" height="${round(h)}" fill="${ink}"/>`;
 }
 
+/**
+ * Section titles (WETTER, TEMPELHOFER FELD, …) are off: the screens read
+ * without them. Modules still lay out below a title line; screens.mjs and
+ * the build render each module TITLE_SPACE taller and shifted up by it, so
+ * the top content takes the title's place and bottom-anchored lines stay.
+ */
+export const SECTION_TITLES = false;
+export const TITLE_SPACE = SECTION_TITLES ? 0 : 64;
+
+/** A module's section title, or nothing while SECTION_TITLES is off. */
+export function sectionTitle(str) {
+  return SECTION_TITLES ? label(0, 30, str) : "";
+}
+
 /** Module label: small letter-spaced capitals, e.g. "WETTER". Baseline at y. */
 export function label(x, y, str) {
   return text(x, y, str.toUpperCase(), TYPE.label);

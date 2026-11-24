@@ -13,6 +13,7 @@ import { encodePng, initRenderer, rasterize } from "./lib/eink.mjs";
 import { fetchProgramme } from "./lib/kino.mjs";
 import { entryFor } from "./lib/modules/ausdruck.mjs";
 import { parseFitness, weekOf } from "./lib/modules/fitness.mjs";
+import { entryFor as praepositionFor, loadEntries as praepositionen } from "./lib/modules/praeposition.mjs";
 import { fetchWeather } from "./lib/modules/wetter.mjs";
 import { berlinParts, berlinToUtc, buildSchedule, tempelhofState } from "./lib/schedule.mjs";
 import { SCREENS, screenSvg } from "./lib/screens.mjs";
@@ -35,6 +36,7 @@ const base = {
   updated: { wetter: deTime(weather.fetchedAt) },
   kino: { programme, from: "18:00", updated: `${deTime(programme.fetchedAt)}` },
   ausdruck: entryFor(date),
+  praeposition: praepositionFor(date),
 };
 
 // Sample exercise minutes (the real ones come from the iPhones via the hub).
@@ -66,6 +68,15 @@ const scenes = [
   { id: "morgen", when: "07:30", data: base },
   { id: "tag", when: "14:05", data: { ...base, tempelhof: tempelhofState(events, at(14, 5)) } },
   { id: "tag", when: "18:05", note: "after closing", data: { ...base, tempelhof: tempelhofState(events, at(18, 5)) } },
+  // The longest pairing and example in the list, to check they fit the band.
+  {
+    id: "tag", when: "14:05", note: "longest Präposition",
+    data: {
+      ...base,
+      tempelhof: tempelhofState(events, at(14, 5)),
+      praeposition: praepositionen().reduce((a, b) => (`${b.wort}${b.bedeutung}${b.beispiel}`.length > `${a.wort}${a.bedeutung}${a.beispiel}`.length ? b : a)),
+    },
+  },
   { id: "abend", when: "18:15", data: base },
   { id: "nacht", when: "Sa 23:00", note: "sample minutes", data: { ...base, date: sat, fitness: fitnessScenes[0] } },
   { id: "nacht", when: "23:00", note: "sample minutes, today", data: { ...base, fitness: fitnessScenes[1] } },

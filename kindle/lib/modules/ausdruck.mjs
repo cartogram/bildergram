@@ -9,7 +9,7 @@
 // ============================================================
 
 import { readFileSync } from "node:fs";
-import { INK, TYPE, label, text } from "../design.mjs";
+import { INK, label, sectionTitle, text, TYPE } from "../design.mjs";
 import { wrap } from "../eink.mjs";
 
 export const id = "ausdruck";
@@ -40,12 +40,12 @@ function block(str, x, y, size, maxW, maxLines, opts = {}) {
 }
 
 /** The text stack at scale `k` (1 = design size); y values relative to the first baseline. */
-function stack(box, entry, full, k) {
+function stack(box, entry, full, k, quote = true) {
   const S = full
     ? { head: 96, mean: TYPE.title.size, ex: 44, headLines: 3, gapMean: 92, gapEx: 140 }
     : { head: TYPE.headline.size, mean: TYPE.body.size, ex: 34, headLines: 2, gapMean: 62, gapEx: 70 };
   const r = (n) => Math.round(n * k);
-  const head = block(quoted(entry.ausdruck), 0, 0, r(S.head), box.w, S.headLines, { weight: "bold" });
+  const head = block(quote ? quoted(entry.ausdruck) : entry.ausdruck, 0, 0, r(S.head), box.w, S.headLines, { weight: "bold" });
   const mean = block(entry.bedeutung, 0, head.y + r(S.gapMean), r(S.mean), box.w, 2, { ink: INK.secondary });
   const exY = mean.y + r(S.gapEx);
   const ex = block(entry.beispiel, 0, exY, r(S.ex), box.w, full ? 3 : 2, { ink: INK.secondary });
@@ -54,7 +54,11 @@ function stack(box, entry, full, k) {
   return { svg, ascent: r(S.head * 0.8), bottom: ex.y + r(S.ex * 0.3) };
 }
 
-export function render(box, entry) {
+/**
+ * `title` and `quote` let other "… des Tages" modules (praeposition)
+ * reuse this layout: { ausdruck, bedeutung, beispiel } entries.
+ */
+export function render(box, entry, { title = "Ausdruck des Tages", quote = true } = {}) {
   const full = box.variant === "full";
   const top = 72; // below the module label
 
@@ -62,11 +66,11 @@ export function render(box, entry) {
   // the label, shrinking the text until long entries fit the box.
   let s;
   for (const k of full ? [1] : [1, 0.9, 0.82, 0.75]) {
-    s = stack(box, entry, full, k);
+    s = stack(box, entry, full, k, quote);
     if (full || 112 + s.bottom <= box.h) break;
   }
   const firstBaseline = full
     ? top + Math.max(0, Math.round((box.h - top - s.bottom - s.ascent) / 2)) + s.ascent
     : 112;
-  return label(0, 30, "Ausdruck des Tages") + `<g transform="translate(0 ${firstBaseline})">${s.svg}</g>`;
+  return sectionTitle(title) + `<g transform="translate(0 ${firstBaseline})">${s.svg}</g>`;
 }

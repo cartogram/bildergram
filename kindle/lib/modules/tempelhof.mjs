@@ -9,7 +9,7 @@
 // Data: kindle/lib/schedule.mjs → tempelhofState(events, ms).
 // ============================================================
 
-import { INK, TYPE, deCountdown, fitSize, label, pill, text, underlined } from "../design.mjs";
+import { deCountdown, fitSize, INK, pill, sectionTitle, text, TYPE, underlined } from "../design.mjs";
 
 export const id = "tempelhof";
 export const cadence = "minute";
@@ -55,7 +55,7 @@ export function render(box, state, { withCountdown = true } = {}) {
   const until = state.open ? `bis zur Schließung um ${state.target}` : `bis zur Öffnung um ${state.target}`;
   const untilSize = fitSize(until, TYPE.title, box.w);
   let svg =
-    label(0, 30, "Tempelhofer Feld") +
+    sectionTitle("Tempelhofer Feld") +
     p.svg +
     text(0, l.untilY, until, { ...TYPE.title, size: untilSize }, { ink: INK.secondary }) +
     // Hours of the day of the next event (after closing, that is tomorrow), so no "heute".
