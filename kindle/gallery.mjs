@@ -12,6 +12,7 @@ import { deDateLong, deTime } from "./lib/design.mjs";
 import { encodePng, initRenderer, rasterize } from "./lib/eink.mjs";
 import { fetchProgramme } from "./lib/kino.mjs";
 import { entryFor } from "./lib/modules/ausdruck.mjs";
+import { parseFitness, weekOf } from "./lib/modules/fitness.mjs";
 import { fetchWeather } from "./lib/modules/wetter.mjs";
 import { berlinParts, berlinToUtc, buildSchedule, tempelhofState } from "./lib/schedule.mjs";
 import { SCREENS, screenSvg } from "./lib/screens.mjs";
@@ -36,12 +37,39 @@ const base = {
   ausdruck: entryFor(date),
 };
 
+// Sample exercise minutes (the real ones come from the iPhones via the hub).
+const week = weekOf(date);
+const sample = (mins) => Object.fromEntries(week.map((d, i) => [d, mins[i]]).filter(([d]) => d <= date));
+const synced = new Date(at(21, 40)).toISOString();
+// A fuller week: the same screen on this week's Saturday.
+const sat = week[5];
+const [sy, sm, sd] = sat.split("-").map(Number);
+const satAt = (h, mi) => new Date(berlinToUtc(sy, sm, sd, h, mi)).toISOString();
+const sampleSat = (mins) => Object.fromEntries(week.slice(0, 6).map((d, i) => [d, mins[i]]));
+const fitness = (people) => parseFitness({ people });
+const fitnessScenes = [
+  fitness([
+    { name: "Matt", goal: 150, days: sampleSat([32, 0, 45, 18, 20, 0]), syncedAt: satAt(21, 40) },
+    { name: "Fiona", goal: 150, days: sampleSat([55, 40, 0, 62, 30, 75]), syncedAt: satAt(18, 5) },
+  ]),
+  fitness([
+    { name: "Matt", goal: 150, days: sample([32, 0, 45, 18, 60, 0, 25]), syncedAt: synced },
+    { name: "Fiona", goal: 150, days: sample([55, 40, 0, 62, 30, 75, 20]), syncedAt: new Date(at(18, 5)).toISOString() },
+  ]),
+  fitness([
+    { name: "Matt", goal: 150, days: {}, syncedAt: null },
+    { name: "Fiona", goal: 200, days: sample([12, 0, 0, 0, 0, 0, 0]), syncedAt: new Date(at(7, 15) - 86_400_000).toISOString() },
+  ]),
+];
+
 const scenes = [
   { id: "morgen", when: "07:30", data: base },
   { id: "tag", when: "14:05", data: { ...base, tempelhof: tempelhofState(events, at(14, 5)) } },
   { id: "tag", when: "18:05", note: "after closing", data: { ...base, tempelhof: tempelhofState(events, at(18, 5)) } },
   { id: "abend", when: "18:15", data: base },
-  { id: "nacht", when: "23:00", data: base },
+  { id: "nacht", when: "Sa 23:00", note: "sample minutes", data: { ...base, date: sat, fitness: fitnessScenes[0] } },
+  { id: "nacht", when: "23:00", note: "sample minutes, today", data: { ...base, fitness: fitnessScenes[1] } },
+  { id: "nacht", when: "23:00", note: "no data yet / stale sync", data: { ...base, fitness: fitnessScenes[2] } },
 ];
 
 const t0 = performance.now();

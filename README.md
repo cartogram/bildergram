@@ -9,7 +9,7 @@ its own daily schedule:
 | 06:00 | **Morgen** | Weather (now, 3-day high/low and precipitation, wind, sunset) and the *Ausdruck des Tages* |
 | 09:00 | **Tag** | Tempelhofer Feld (open/closed, countdown updated every minute) and the weather |
 | 18:15 | **Abend** | IM KINO: the evening's screenings at your chosen [Yorck](https://www.yorck.de) cinemas, without films you've already logged on Letterboxd |
-| 23:00 | **Nacht** | The *Ausdruck des Tages* (B2: expression, English meaning, example sentence) |
+| 23:00 | **Nacht** | Exercise this week, Matt and Fiona side by side (minutes against a weekly goal, from Apple Health), and the *Ausdruck des Tages* (B2: expression, English meaning, example sentence) |
 
 The Kindle sleeps between updates with Wi-Fi off. It goes online on an
 interval (default hourly) while a weather screen is showing, when it doesn't
@@ -94,6 +94,8 @@ npx wrangler secret put ADMIN_TOKEN             # for the admin page
 npx wrangler secret put RENDERER_TOKEN          # same value as on Vercel
 npx wrangler secret put DEVICE_TOKEN_KINDLE_01  # Matt's token (goes into its hub.env)
 npx wrangler secret put DEVICE_TOKEN_KINDLE_02  # Fiona's token
+npx wrangler secret put FITNESS_TOKEN_MATT      # Matt's iPhone Shortcut (see Fitness below)
+npx wrangler secret put FITNESS_TOKEN_FIONA     # Fiona's iPhone Shortcut
 npm run deploy
 ```
 
@@ -144,8 +146,50 @@ each it shows:
 - a one-shot **Return to the normal Kindle UI** switch;
 - a live preview of each screen, at that Kindle's size.
 
+For both Kindles it also shows each person's weekly exercise goal, this week's
+minutes, when their iPhone last synced and what it last sent.
+
 Changes reach the Kindle at its next check-in; press its power button to apply
 them right away.
+
+## Fitness (iPhone Shortcut)
+
+Nacht shows this week's **exercise minutes** (the green ring in Apple Fitness)
+for Matt and Fiona. Each iPhone sends them to the hub with a Shortcut, using its
+own token (`FITNESS_TOKEN_MATT` / `FITNESS_TOKEN_FIONA`), which tells the hub whose
+minutes they are.
+
+iPhones only let Health data be read while they are **unlocked**; a locked read
+comes back empty or as zeros. The hub keeps each day's highest value, so a bad
+read never wipes real minutes, and "Stand" on the screen only moves on a read
+with real minutes.
+
+**The Shortcut** (Shortcuts → +), about six actions:
+
+1. **Find Health Samples** where *Type* is *Exercise Minutes* and *Start Date* is
+   in the last *7 days*; *Group By*: *Day*.
+2. **Repeat with Each** item in *Health Samples*, containing:
+   - **Format Date**: *Repeat Item → Start Date*, Date Format *Custom*, `yyyy-MM-dd`;
+   - **Text**: *Formatted Date*, a space, *Repeat Item → Value*.
+3. **Combine Text**: *Repeat Results* with *New Lines*. The result looks like
+   `2026-11-24 35`, one line per day.
+4. **Get Contents of URL**: `https://bildergram.distance.workers.dev/api/fitness`,
+   Method *POST*, Header `Authorization` = `Bearer <your token>`, Request Body
+   *File* = *Combined Text*.
+5. **Show Notification** with *Contents of URL* (the hub answers e.g.
+   "Gespeichert: 7 Tage · diese Woche 95 min"; remove it once it works).
+
+Run it once by hand to grant Health access. Then add two automations
+(Automation → +), each set to **Run Immediately**:
+
+- **App** → *Fitness* → *Is Closed*: runs after you look at a workout, while the
+  phone is unlocked (the reliable one);
+- **Apple Watch Workout** → *Ends*: catches workouts right away when the phone
+  happens to be unlocked.
+
+The admin page shows each phone's last post and what the hub made of it, which
+helps while setting this up. The hub also accepts German dates
+(`24.11.2026, 00:00 35 min`) and JSON (`{"days":{"2026-11-24":35}}`).
 
 ## Development
 
@@ -173,8 +217,10 @@ its id to `SCREENS` in `src/routes/kindle.ts`; check it with
 ```
 bildergram/
 ├── src/                       # Cloudflare Worker hub
-│   ├── worker.ts              # Routing: /api/kindle/*, /api/admin/kindle*, admin page
-│   ├── routes/kindle.ts       # Check-in, screen images, admin API, R2 state
+│   ├── worker.ts              # Routing: /api/kindle/*, /api/fitness, /api/admin/*, admin page
+│   ├── routes/kindle.ts       # Check-in, screen images, admin API
+│   ├── routes/fitness.ts      # Exercise minutes from the iPhones, goals
+│   ├── state.ts               # R2 JSON state, admin token check
 │   ├── devices.ts             # Kindle token + MAC authentication
 │   ├── types.ts
 │   └── client/                # Admin page (vanilla TS, built by Vite)
@@ -192,7 +238,7 @@ bildergram/
 │       ├── devices.mjs        # The Kindles: panel size and rotation
 │       ├── design.mjs         # Design system: tokens, primitives, icons, German formatting
 │       ├── screens.mjs        # The screens: frame + boxes → modules
-│       ├── modules/           # tempelhof, wetter, kino, ausdruck
+│       ├── modules/           # tempelhof, wetter, kino, ausdruck, fitness
 │       ├── render.mjs         # Load a screen's data and render it
 │       ├── eink.mjs           # SVG → 16-gray, rotated, 8-bit PNG for eips
 │       ├── kino.mjs           # yorck.de fetching and parsing, Letterboxd seen-film filter
@@ -218,4 +264,5 @@ bildergram/
 - [x] **Phase 9**: Screens on the device — server-rendered screen bases with the Tempelhof box drawn on the Kindle, hourly check-ins while weather shows, battery history and per-screen previews on the admin page, 365 B2 expressions
 - [x] **Phase 10**: Two Kindles — screens rendered per device size (Paperwhite 3 at 1448 × 1072, Paperwhite 2 at 1024 × 758), a bundle and paste check per device, per-device config, status and previews on the hub, a device switcher on the admin page
 - [x] **Phase 11**: Letterboxd filter — IM KINO leaves out films in the user's public Letterboxd feed (matched by TMDB id via the Yorck film pages) and films hidden by hand on the admin page
+- [x] **Phase 12**: Fitness on Nacht — exercise minutes from each iPhone (a Shortcut posting to `/api/fitness`, a token per person), weekly goals on the admin page, Matt and Fiona side by side with progress bars and a Monday–Sunday strip; Nacht checks in hourly
 - [x] Fiona (`kindle_02`, Paperwhite 2) jailbroken and installed: screens downloaded at 758 × 1024, base and Tempelhof pastes verified pixel-exact on the panel's framebuffer

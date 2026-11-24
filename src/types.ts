@@ -6,8 +6,11 @@
 interface HubSecrets {
   /** Shared secret sent to the Vercel screen renderer as `x-renderer-token` */
   RENDERER_TOKEN?: string;
-  /** Bearer token for /api/admin/kindle* (the admin page asks for it once) */
+  /** Bearer token for /api/admin/* (the admin page asks for it once) */
   ADMIN_TOKEN?: string;
+  /** Each iPhone's bearer token for POST /api/fitness (src/routes/fitness.ts) */
+  FITNESS_TOKEN_MATT?: string;
+  FITNESS_TOKEN_FIONA?: string;
 }
 
 /**

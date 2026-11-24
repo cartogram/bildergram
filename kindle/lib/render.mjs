@@ -10,6 +10,7 @@ import { encodePng, initRenderer, rasterize, rotate } from "./eink.mjs";
 import { device } from "./devices.mjs";
 import { DEFAULT_CINEMAS, fetchProgramme, withoutSeen } from "./kino.mjs";
 import { entryFor } from "./modules/ausdruck.mjs";
+import { parseFitness } from "./modules/fitness.mjs";
 import { fetchWeather } from "./modules/wetter.mjs";
 import { buildSchedule, tempelhofState } from "./schedule.mjs";
 import { SCREENS, screenSvg } from "./screens.mjs";
@@ -24,7 +25,7 @@ export function berlinDate(ms = Date.now()) {
  * fetched. `now` (ms) drives the Tempelhof state for full renders.
  */
 export async function screenData(id, {
-  date = berlinDate(), battery = null, cinemas = DEFAULT_CINEMAS, from = "18:00", letterboxd = null, hidden = [], now = Date.now(),
+  date = berlinDate(), battery = null, cinemas = DEFAULT_CINEMAS, from = "18:00", letterboxd = null, hidden = [], fitness = null, now = Date.now(),
 } = {}) {
   const modules = new Set(SCREENS[id].boxes.map((b) => b.module));
   const data = { date, battery };
@@ -45,6 +46,8 @@ export async function screenData(id, {
       }));
   }
   if (modules.has("ausdruck")) data.ausdruck = entryFor(date);
+  // Exercise minutes come from the hub (the iPhones post them there).
+  if (modules.has("fitness")) data.fitness = parseFitness(fitness);
   if (modules.has("tempelhof")) data.tempelhof = tempelhofState(buildSchedule(now, 1), now);
   await Promise.all(jobs);
   return data;

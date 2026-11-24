@@ -22,16 +22,21 @@
 // ============================================================
 
 import { DEVICES, authenticateDevice, deviceById } from "../devices";
+import { adminAuthorized, readJson, writeJson } from "../state";
 import type { AppEnv } from "../types";
+import { fitnessParam } from "./fitness";
 
 /** The screens kindle/lib/screens.mjs defines (ids, German names, what they show). */
 export const SCREENS = {
   morgen: { name: "Morgen", shows: "Weather (wide) + expression of the day" },
   tag: { name: "Tag", shows: "Tempelhof countdown + weather" },
   abend: { name: "Abend", shows: "Yorck cinema listing" },
-  nacht: { name: "Nacht", shows: "Expression of the day" },
+  nacht: { name: "Nacht", shows: "Exercise this week (Matt + Fiona) + expression of the day" },
 } as const;
 export type Screen = keyof typeof SCREENS;
+
+/** Screens showing the fitness module (kindle/lib/screens.mjs). */
+const FITNESS_SCREENS = new Set<string>(["nacht"]);
 
 export interface KindleConfig {
   /** Daily timetable: from `at` (Berlin HH:MM) until the next entry, show `screen`. */
@@ -106,22 +111,6 @@ const isScreen = (s: unknown): s is Screen => typeof s === "string" && Object.ha
 // State
 // ------------------------------------------------------------------
 
-async function readJson<T>(env: AppEnv, key: string): Promise<T | null> {
-  const obj = await env.DISPLAY_ASSETS.get(key);
-  if (!obj) return null;
-  try {
-    return (await obj.json()) as T;
-  } catch {
-    return null;
-  }
-}
-
-async function writeJson(env: AppEnv, key: string, value: unknown): Promise<void> {
-  await env.DISPLAY_ASSETS.put(key, JSON.stringify(value), {
-    httpMetadata: { contentType: "application/json" },
-  });
-}
-
 /** Phase 7 configs used "tempelhof"/"kino" and had no interval; map them. */
 function migrate(c: Partial<KindleConfig> & { schedule?: { at: string; screen: string }[] }): KindleConfig {
   const old: Record<string, Screen> = { tempelhof: "tag", kino: "abend" };
@@ -182,6 +171,8 @@ async function renderScreen(env: AppEnv, device: string, config: KindleConfig, p
   if (config.kino.hideSeen && config.kino.letterboxdUser) url.searchParams.set("letterboxd", config.kino.letterboxdUser);
   if (config.kino.hiddenFilms.length) url.searchParams.set("hide", config.kino.hiddenFilms.join(","));
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  // Screens with the fitness module get everyone's exercise minutes (the iPhones post them here).
+  if (FITNESS_SCREENS.has(params.screen)) url.searchParams.set("fitness", await fitnessParam(env, params.date ?? berlinToday()));
   const res = await fetch(url, { headers: env.RENDERER_TOKEN ? { "x-renderer-token": env.RENDERER_TOKEN } : {} });
   return new Response(res.body, {
     status: res.status,
@@ -253,13 +244,6 @@ export async function handleKindleDevice(request: Request, env: AppEnv): Promise
 // ------------------------------------------------------------------
 // Admin endpoints
 // ------------------------------------------------------------------
-
-function adminAuthorized(request: Request, env: AppEnv): Response | null {
-  if (!env.ADMIN_TOKEN) return Response.json({ error: "ADMIN_TOKEN is not set on the Worker" }, { status: 503 });
-  const auth = request.headers.get("Authorization") ?? "";
-  if (auth !== `Bearer ${env.ADMIN_TOKEN}`) return Response.json({ error: "unauthorized" }, { status: 401 });
-  return null;
-}
 
 export async function handleKindleAdmin(request: Request, env: AppEnv): Promise<Response> {
   const denied = adminAuthorized(request, env);

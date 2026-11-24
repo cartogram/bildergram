@@ -2,8 +2,9 @@
 // Admin SPA — Kindle dashboards (Phase 9–10)
 // For each Kindle: shows its last check-in and battery history, edits
 // its screen schedule, check-in interval and cinemas, and previews each
-// screen at its size. Talks to /api/admin/kindle* with the admin token (asked for
-// once and kept in this browser's localStorage).
+// screen at its size. For both: the weekly exercise goals and each iPhone's
+// last sync (Phase 12). Talks to /api/admin/* with the admin token (asked
+// for once and kept in this browser's localStorage).
 // ============================================================
 
 import "./styles.css";
@@ -29,6 +30,19 @@ interface KindleStatus {
   version: string;
   log: string;
   history?: [number, number][];
+}
+
+interface FitnessPerson {
+  id: string;
+  name: string;
+  goal: number;
+  tokenSet: boolean;
+  days: Record<string, number>;
+  weekTotal: number;
+  syncedAt: string | null;
+  receivedAt: string | null;
+  lastPayload: string;
+  lastResult: string;
 }
 
 interface FilmInfo {
@@ -306,6 +320,11 @@ function render(state: AdminState): void {
         </div>
       </form>
 
+      <form class="card" id="fitness">
+        <h2>Fitness <span class="muted">(both Kindles, on Nacht)</span></h2>
+        <div id="fitness-body"><p class="muted">Loading…</p></div>
+      </form>
+
       <section class="card">
         <div class="row">
           <h2>Preview</h2>
@@ -335,6 +354,65 @@ function render(state: AdminState): void {
   }
   void loadPreview(state);
   void loadFilms();
+  void loadFitness();
+}
+
+// ------------------------------------------------------------------
+// Fitness (shared by both Kindles)
+// ------------------------------------------------------------------
+
+function fitnessHtml(people: FitnessPerson[]): string {
+  const rows = people.map((p) => {
+    const synced = p.syncedAt ? `${escapeHtml(berlinTime(p.syncedAt))} (${ago(p.syncedAt)})` : "never";
+    const last = p.receivedAt
+      ? `<details><summary class="muted">Last post ${escapeHtml(ago(p.receivedAt))}: ${escapeHtml(p.lastResult)}</summary><pre class="log">${escapeHtml(p.lastPayload || "(empty body)")}</pre></details>`
+      : "";
+    return `<div class="person">
+        <div class="row"><strong>${escapeHtml(p.name)}</strong><span class="muted">this week ${p.weekTotal} / ${p.goal} min</span></div>
+        <label class="inline">Weekly goal <input type="number" min="10" max="3000" step="5" data-goal="${p.id}" value="${p.goal}"> minutes</label>
+        <p class="muted">Last sync: ${synced}${p.tokenSet ? "" : " · <strong>no token set on the Worker</strong>"}</p>
+        ${last}
+      </div>`;
+  });
+  return `${rows.join("")}
+    <p class="muted">Exercise minutes (the green ring) from each iPhone's Shortcut, posted to <code>${escapeHtml(location.origin)}/api/fitness</code>. iPhones only share Health data while unlocked, so the hub keeps each day's highest value.</p>
+    <div class="actions"><button type="submit">Save goals</button><span id="fitness-msg" class="muted"></span></div>`;
+}
+
+async function loadFitness(): Promise<void> {
+  const box = document.getElementById("fitness-body");
+  const form = document.getElementById("fitness") as HTMLFormElement | null;
+  if (!box || !form) return;
+  try {
+    const res = await api("/api/admin/fitness");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const body = (await res.json()) as { people: FitnessPerson[] };
+    box.innerHTML = fitnessHtml(body.people);
+  } catch (err) {
+    if ((err as Error).message === "unauthorized") return;
+    box.innerHTML = `<p class="error">Fitness unavailable: ${escapeHtml((err as Error).message)}</p>`;
+    return;
+  }
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("fitness-msg");
+    const goals: Record<string, number> = {};
+    for (const input of form.querySelectorAll<HTMLInputElement>("input[data-goal]")) goals[input.dataset.goal!] = Number(input.value);
+    try {
+      const res = await api("/api/admin/fitness", { method: "PUT", body: JSON.stringify({ goals }), headers: { "content-type": "application/json" } });
+      const body = (await res.json()) as { people?: FitnessPerson[]; error?: string };
+      if (!res.ok || !body.people) throw new Error(body.error ?? `HTTP ${res.status}`);
+      box.innerHTML = fitnessHtml(body.people);
+      const m = document.getElementById("fitness-msg");
+      if (m) m.textContent = "Saved. Nacht shows the new goals from the next check-in.";
+    } catch (err) {
+      if ((err as Error).message === "unauthorized") return;
+      if (msg) {
+        msg.textContent = (err as Error).message;
+        msg.className = "error";
+      }
+    }
+  };
 }
 
 function bindForm(state: AdminState): void {

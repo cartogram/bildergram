@@ -349,3 +349,20 @@ input[type="text"] {
   background: var(--accent);
   color: var(--accent-text);
 }
+
+/* Phase 12: fitness */
+
+.person {
+  display: grid;
+  gap: 6px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.person input[type="number"] {
+  width: 6em;
+}
+
+.person pre.log {
+  max-height: 160px;
+}

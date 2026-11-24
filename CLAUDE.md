@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A battery-powered e-ink dashboard on two jailbroken Kindles: `kindle_01` (**Matt**), a Paperwhite 3, and `kindle_02` (**Fiona**), a Paperwhite 2. Each shows **German screens** (the admin page stays in English) on its own daily schedule: **Morgen** (weather + expression of the day), **Tag** (Tempelhof countdown + weather), **Abend** (IM KINO, the Yorck cinema listing) and **Nacht** (expression of the day).
+A battery-powered e-ink dashboard on two jailbroken Kindles: `kindle_01` (**Matt**), a Paperwhite 3, and `kindle_02` (**Fiona**), a Paperwhite 2. Each shows **German screens** (the admin page stays in English) on its own daily schedule: **Morgen** (weather + expression of the day), **Tag** (Tempelhof countdown + weather), **Abend** (IM KINO, the Yorck cinema listing) and **Nacht** (exercise this week for Matt and Fiona + expression of the day).
 
 There are three parts:
 - **Kindle** (`kindle/device/dashboard.sh`): a busybox shell loop. It draws each screen's downloaded base image with `eips`, pastes the Tempelhof panel and countdown on Tag, and suspends to RAM with Wi-Fi off, waking on the RTC alarm.
@@ -53,12 +53,13 @@ There is no test runner. Verify changes with:
   - `wetter` is hourly (Open-Meteo, no key; variants `compact` and `wide`).
   - `kino` is daily (yorck.de).
   - `ausdruck` is daily, from `kindle/data/ausdruecke.json`: 365 B2 entries `{ausdruck, bedeutung, beispiel}`, rotating by days since 2026-01-01.
+  - `fitness` is hourly: this week's exercise minutes per person against a weekly goal. The data comes from the hub (the renderer's `fitness` param, validated by `parseFitness`), not from a fetch.
 - **`screens.mjs`**: `SCREENS` (frame flags, boxes, rules) and `screenSvg(id, data, mode)`, where `mode` is one of:
   - `full`: everything; used by the gallery and the admin preview.
   - `base`: device boxes left blank; this is what the server sends to the Kindle.
   - `fallback`: "Keine Verbindung" placeholders, prebuilt for offline use.
 
-  `DEVICE_MODULES` (tempelhof) and `HOURLY_SCREENS` (screens containing `wetter`) are derived from the screens. To add a screen, edit `SCREENS` here **and** in `src/routes/kindle.ts`.
+  `DEVICE_MODULES` (tempelhof) and `HOURLY_SCREENS` (screens with an hourly module: `wetter`, `fitness`) are derived from the screens. To add a screen, edit `SCREENS` here **and** in `src/routes/kindle.ts`.
 - **`render.mjs`**: `screenData` fetches only what a screen's modules need; `renderScreen` produces the PNG.
 
 ## Devices and images
@@ -76,7 +77,7 @@ There is no test runner. Verify changes with:
 
 ## Hub (`src/`)
 
-- **Routing** (`worker.ts`): only `/api/kindle/*` and `/api/admin/kindle*` are handled.
+- **Routing** (`worker.ts`): only `/api/kindle/*`, `/api/fitness`, `/api/admin/kindle*` and `/api/admin/fitness` are handled. `state.ts` holds the shared R2 JSON helpers and the admin check.
   - Device requests use `Access-Token` = the device's `DEVICE_TOKEN_KINDLE_0x`, with an optional `ID` header carrying the MAC (not checked while a device's MAC is still `""`).
   - Admin requests use `Authorization: Bearer ADMIN_TOKEN`, with `?device=` defaulting to `kindle_01`.
   - Other `/api/*` paths return 404; everything else is the SPA.
@@ -87,12 +88,18 @@ There is no test runner. Verify changes with:
   - The `exit` flag is one-shot: it is cleared once sent.
   - **Status** keeps a week of `[epoch, battery]` history.
   - **Screen images**: `GET /api/kindle/screen/<id>.png?day=&battery=` → renderer. The admin preview (`/api/admin/kindle/screen?screen=`) is the full render.
-- **Environment**: `RENDERER_URL` is a var in `wrangler.jsonc`. `ADMIN_TOKEN`, `RENDERER_TOKEN`, `DEVICE_TOKEN_KINDLE_01` and `DEVICE_TOKEN_KINDLE_02` are secrets. `AppEnv` types the hub secrets as optional regardless of `.dev.vars`. State lives in R2 per device (`kindle/<device>/*.json`, in the bucket still named `trmnl-display-assets`). The renderer gets `device=` so each Kindle downloads screens at its size.
+- **Environment**: `RENDERER_URL` is a var in `wrangler.jsonc`. `ADMIN_TOKEN`, `RENDERER_TOKEN`, `DEVICE_TOKEN_KINDLE_01`, `DEVICE_TOKEN_KINDLE_02`, `FITNESS_TOKEN_MATT` and `FITNESS_TOKEN_FIONA` are secrets. `AppEnv` types the hub secrets as optional regardless of `.dev.vars`. State lives in R2 per device (`kindle/<device>/*.json`, in the bucket still named `trmnl-display-assets`). The renderer gets `device=` so each Kindle downloads screens at its size.
 - **Admin SPA** (`src/client/main.ts`): keeps the token in localStorage and loads images with `fetch` and object URLs, because they need the auth header.
+
+- **`routes/fitness.ts`** (Phase 12):
+  - `POST /api/fitness` with `Authorization: Bearer FITNESS_TOKEN_<PERSON>` (the token picks the person in `PEOPLE`). The body is one day per line, `YYYY-MM-DD minutes`, from an iPhone Shortcut; German dates, times after the date, decimal commas and JSON are accepted too.
+  - iPhones only allow Health reads while unlocked, and a locked read is empty or all zeros. So each day keeps the **highest** value ever received, and `syncedAt` ("Stand" on the screen) only moves on a post with a nonzero value.
+  - State: `fitness/<person>.json` (60 days, plus the last payload and result for the admin page) and `fitness/settings.json` (weekly goals, default 150). People are shared by both Kindles, not per device.
+  - Screens in `FITNESS_SCREENS` (`nacht`) get `fitness=<json>` (that week's minutes, goals, `syncedAt`) on the renderer URL.
 
 ## Renderer and data sources
 
-- **Endpoints**: `api/screen.mjs`, `GET ?screen=&device=&date=&battery=&cinemas=&from=[&letterboxd=&hide=][&preview=1]`, and `api/films.mjs` (the coming days' films marked `seen`, for the admin page), protected by `x-renderer-token` = `RENDERER_TOKEN`. Failures are logged with `console.error`.
+- **Endpoints**: `api/screen.mjs`, `GET ?screen=&device=&date=&battery=&cinemas=&from=[&letterboxd=&hide=][&fitness=<json>][&preview=1]`, and `api/films.mjs` (the coming days' films marked `seen`, for the admin page), protected by `x-renderer-token` = `RENDERER_TOKEN`. Failures are logged with `console.error`.
 - **Bundling**: `vercel.json` sets `framework: null`, skips the Vite build, runs `npm install --omit=dev`, and lists fonts, WASM, `kindle/lib/**` and `kindle/data/*.json` under `includeFiles`. `.vercelignore` must keep `.dev.vars` and `.env*` out of uploads.
 - **yorck.de**:
   - Each `/kinos/<slug>` page embeds its programme (~100 KB) in `__NEXT_DATA__` (`pageProps.filmsSpecials[].fields.sessions[]`, where `startTime` carries the Berlin offset).
