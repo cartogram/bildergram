@@ -86,6 +86,5 @@ export function render(box, programme, { date, from = "18:00", updated, titleSiz
     }
     svg += placed.svg;
   }
-  if (updated) svg += stamp(0, box.h - 8, `Stand ${updated}`).svg;
   return svg;
 }

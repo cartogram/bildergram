@@ -28,11 +28,10 @@ export const SCREENS = {
     name: "Morgen",
     frame: { date: true, battery: true },
     boxes: [
-      // The forecast's day names sit on the top bar's baseline, beside the date (96 = their baseline in the module).
-      { module: "wetter", variant: "wide", x: CONTENT.left, y: CONTENT.top, w: contentW, h: 260, raise: CONTENT.top - TITLE_SPACE + 96 - TOPBAR.baseline },
-      { module: "ausdruck", variant: "wide", x: CONTENT.left, y: CONTENT.top + 320, w: contentW, h: contentH - 320 },
+      { module: "wetter", variant: "wide", x: CONTENT.left, y: CONTENT.top, w: contentW, h: 330, raise: 38 },
+      { module: "ausdruck", variant: "wide", x: CONTENT.left, y: CONTENT.top + 390, w: contentW, h: contentH - 390 },
     ],
-    rules: [{ h: true, x: CONTENT.left, y: CONTENT.top + 284, len: contentW }],
+    rules: [{ h: true, x: CONTENT.left, y: CONTENT.top + 354, len: contentW }],
   },
   tag: {
     name: "Tag",
@@ -102,7 +101,9 @@ export function screenSvg(id, data, mode = "full") {
   let svg = svgOpen(W, H);
   if (s.frame) {
     const live = mode !== "fallback";
-    svg += topbar({ date: s.frame.date && live ? data.date : null, battery: s.frame.battery && live ? data.battery : null });
+    // The screen's "Stand": when its weather or listing was fetched.
+    const updated = s.boxes.some((b) => b.module === "wetter") ? data.updated?.wetter : s.boxes.some((b) => b.module === "kino") ? data.kino?.updated : null;
+    svg += topbar({ date: s.frame.date && live ? data.date : null, battery: s.frame.battery && live ? data.battery : null, updated: live ? updated : null });
   }
   for (const r of s.rules) svg += r.v ? vrule(r.x, r.y, r.len) : hrule(r.x, r.y, r.len);
   for (const b of s.boxes) {
@@ -112,13 +113,13 @@ export function screenSvg(id, data, mode = "full") {
     if (onDevice && mode !== "full") inner = "";
     else if (!onDevice && mode === "fallback") inner = placeholder(box, b.module);
     else if (b.module === "tempelhof") inner = tempelhof.render(box, data.tempelhof);
-    else if (b.module === "wetter") inner = wetter.render(box, data.wetter, { updated: data.updated?.wetter });
+    else if (b.module === "wetter") inner = wetter.render(box, data.wetter);
     else if (b.module === "ausdruck") inner = ausdruck.render(box, data.ausdruck);
     else if (b.module === "praeposition") inner = praeposition.render(box, data.praeposition);
     else if (b.module === "fitness") inner = fitness.render(box, data.fitness, { date: data.date });
     else if (b.module === "kino") {
       inner = kino.render(box, data.kino.programme, {
-        date: data.date, from: data.kino.from, updated: data.kino.updated, titleSize: s.frame ? undefined : 40,
+        date: data.date, from: data.kino.from, titleSize: s.frame ? undefined : 40,
       });
     }
     svg += `<g transform="translate(${b.x} ${b.y - TITLE_SPACE})">${inner}</g>`;

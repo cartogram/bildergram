@@ -19,7 +19,7 @@ export const DEFAULT_LOCATION = { lat: 52.473, lon: 13.401 };
 /**
  * Normalized weather:
  * { fetchedAt, now: { temp, code, wind }, sunset: "16:03",
- *   days: [{ date, code, max, min, pop, mm }] × 3 }
+ *   days: [{ date, code, max, min, pop, mm }] × 4 (today first) }
  */
 export async function fetchWeather({ lat, lon } = DEFAULT_LOCATION) {
   const url = new URL("https://api.open-meteo.com/v1/forecast");
@@ -27,7 +27,7 @@ export async function fetchWeather({ lat, lon } = DEFAULT_LOCATION) {
     latitude: String(lat),
     longitude: String(lon),
     timezone: "Europe/Berlin",
-    forecast_days: "3",
+    forecast_days: "4",
     current: "temperature_2m,weather_code,wind_speed_10m",
     daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,sunset",
   }).toString();
@@ -42,7 +42,7 @@ export function parseWeather(j) {
     fetchedAt: new Date().toISOString(),
     now: { temp: j.current.temperature_2m, code: j.current.weather_code, wind: j.current.wind_speed_10m },
     sunset: d.sunset[0].slice(11, 16),
-    days: d.time.slice(0, 3).map((date, i) => ({
+    days: d.time.slice(0, 4).map((date, i) => ({
       date,
       code: d.weather_code[i],
       max: d.temperature_2m_max[i],
@@ -64,7 +64,7 @@ function precip(day) {
 }
 
 export function render(box, w, { updated } = {}) {
-  return box.variant === "wide" ? renderWide(box, w, updated) : renderCompact(box, w, updated);
+  return box.variant === "wide" ? renderWide(box, w) : renderCompact(box, w, updated);
 }
 
 /** Narrow column (e.g. beside Tempelhof). */
@@ -84,7 +84,7 @@ function renderCompact(box, w, updated) {
   svg += hrule(0, y, box.w);
   y += 72;
   // Three days
-  w.days.forEach((d, i) => {
+  w.days.slice(0, 3).forEach((d, i) => {
     svg += text(0, y, dayName(d.date, i), TYPE.strong);
     svg += weatherIcon(d.code, box.w - 64, y - 46, 60);
     svg += text(0, y + 50, `${deg(d.max)} / ${deg(d.min)}`, TYPE.body);
@@ -102,32 +102,32 @@ function detail(kind, x, y, value) {
 }
 
 /** Full width: now on the left, three day columns on the right. */
-function renderWide(box, w, updated) {
+function renderWide(box, w) {
   let svg = sectionTitle("Wetter");
   const leftW = Math.round(box.w * 0.38);
   // Now: the icon with the temperature centred under it; beside them a
   // column with the conditions, wind and sunset.
   const iconSize = 150;
-  svg += weatherIcon(w.now.code, -6, 0, iconSize);
-  svg += text(iconSize / 2, 230, deg(w.now.temp), { ...TYPE.display, underline: false }, { anchor: "middle" });
+  svg += weatherIcon(w.now.code, -6, 4, iconSize);
+  svg += text(iconSize / 2, 302, deg(w.now.temp), { ...TYPE.display, underline: false }, { anchor: "middle" });
+  // Today: conditions, high/low, wind, sunset (the forecast starts tomorrow).
   const midX = 249;
   const midW = leftW - midX;
   const cond = weatherText(w.now.code);
-  svg += text(midX, 126, cond, { ...TYPE.body, size: fitSize(cond, TYPE.body, midW) });
-  svg += detail("wind", midX, 184, `${deNumber(Math.round(w.now.wind))} km/h`);
-  svg += detail("sunset", midX, 235, w.sunset);
-  // The timestamp: top right, on the battery line above the date (the
-  // forecast's day names share the date's baseline: 96 - raise).
-  if (updated) svg += stamp(box.w, 96 - (box.raise ?? 0) - 56, `Stand ${updated}`, { anchor: "end" }).svg;
+  const today = w.days[0];
+  svg += text(midX, 128, cond, { ...TYPE.body, size: fitSize(cond, TYPE.body, midW) });
+  svg += text(midX, 182, `${deg(today.max)} / ${deg(today.min)}`, TYPE.body);
+  svg += detail("wind", midX, 236, `${deNumber(Math.round(w.now.wind))} km/h`);
+  svg += detail("sunset", midX, 290, w.sunset);
 
   const colX = leftW + 56;
   const colW = (box.w - colX) / 3;
   const colText = colW - 24; // keep a gap before the next column
-  // `box.raise` lifts the forecast columns, e.g. so the day names share the top bar's baseline.
+  // `box.raise` lifts the forecast columns.
   svg += `<g transform="translate(0 ${-(box.raise ?? 0)})">`;
-  w.days.forEach((d, i) => {
+  w.days.slice(1, 4).forEach((d, i) => {
     const x = colX + i * colW;
-    const day = dayName(d.date, i);
+    const day = dayName(d.date, i + 1);
     svg += text(x, 96, day, { ...TYPE.strong, size: fitSize(day, TYPE.strong, colText) });
     svg += weatherIcon(d.code, x - 4, 122, 96);
     const temps = `${deg(d.max)} / ${deg(d.min)}`;

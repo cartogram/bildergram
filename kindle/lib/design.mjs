@@ -149,14 +149,18 @@ export function stamp(x, y, str, { anchor } = {}) {
   return { svg, w };
 }
 
-/** Top bar shared by framed screens: the battery (caption) above the German date (label style). */
-export function topbar({ date, battery }) {
+/** Top bar shared by framed screens: the German date (label) left; battery and Stand right, on its line. */
+export function topbar({ date, battery, updated }) {
   let svg = "";
   if (date) svg += text(MARGIN.x, TOPBAR.baseline, deDateLong(date), TYPE.label);
-  // Battery: a caption just above the date.
-  if (battery != null) {
-    svg += text(MARGIN.x, TOPBAR.baseline - 56, `Akku ${battery} %`, TYPE.caption);
+  // Right-aligned across from the date: the battery, then when the data was fetched.
+  let right = W - MARGIN.x;
+  if (updated) {
+    const st = stamp(right, TOPBAR.baseline, `Stand ${updated}`, { anchor: "end" });
+    svg += st.svg;
+    right -= st.w + 20;
   }
+  if (battery != null) svg += text(right, TOPBAR.baseline, `Akku ${battery} %`, TYPE.caption, { anchor: "end" });
   return svg;
 }
 
