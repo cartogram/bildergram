@@ -137,7 +137,7 @@ const box = (w, h, variant) => ({ x: X, y: 30, w, h, variant });
 const moduleSpecimen = (title, b, draw) =>
   specimen(title, `${b.w} × ${b.h} box (dashed), variant "${b.variant}"`, b.h + 60, () => inBox(b, draw(moduleBox(b))));
 
-const half = box(780, 470, "half");
+const half = box(1304, 76, "half");
 moduleSpecimen("tempelhof · open", half, (mb) => tempelhof.render(mb, tempelhofState(events, at(14, 5))));
 moduleSpecimen("tempelhof · closed", half, (mb) => tempelhof.render(mb, tempelhofState(events, at(18, 5))));
 moduleSpecimen("wetter · compact", box(476, 844, "compact"), (mb) => wetter.render(mb, weather, { updated }));

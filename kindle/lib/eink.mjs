@@ -13,7 +13,7 @@ import { initWasm, Resvg } from "@resvg/resvg-wasm";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { deflateSync } from "node:zlib";
-import { GLYPHS, BOLD_ADVANCES } from "./glyphs.ts";
+import { GLYPHS, BOLD_ADVANCES, REGULAR_ADVANCES } from "./glyphs.ts";
 
 export const W = 1448; // landscape width
 export const H = 1072; // landscape height
@@ -59,6 +59,13 @@ export function textWidth(text, size) {
 export function boldTextWidth(text, size) {
   let adv = 0;
   for (const ch of text) adv += BOLD_ADVANCES[ch] ?? BOLD_ADVANCES[ch.normalize("NFD")[0]] ?? BOLD_ADVANCES.n;
+  return (adv * size) / 26;
+}
+
+/** Width of `text` in Arimo Regular at `size` px, from its measured advances (to 1/100 px at 26 px). */
+export function regularTextWidth(text, size) {
+  let adv = 0;
+  for (const ch of text) adv += REGULAR_ADVANCES[ch] ?? REGULAR_ADVANCES[ch.normalize("NFD")[0]] ?? REGULAR_ADVANCES.n;
   return (adv * size) / 26;
 }
 

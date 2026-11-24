@@ -158,28 +158,38 @@ for (const deviceId of Object.keys(DEVICES)) {
       // Module coordinates start TITLE_SPACE above the box (no section titles).
       const box = moduleBox(b);
       const top = b.y - TITLE_SPACE;
-      const cb = tempelhof.countdownBox(box);
       const P = pixelRect(b, s);
-      const C = pixelRect({ x: b.x + cb.x, y: top + cb.y, w: cb.w, h: cb.h }, s);
+      // The countdown follows the sentence, so its position (and, at a
+      // fractional scale, its anti-aliasing) differs per state.
+      const C = {};
+      for (const st of ["open", "closed"]) {
+        const cb = tempelhof.countdownBox(box, st === "open");
+        C[st] = { cb, r: pixelRect({ x: b.x + cb.x, y: top + cb.y, w: cb.w, h: cb.h }, s) };
+      }
       const panelSvg = (state) => canvasSvg(`<g transform="translate(${b.x} ${top})">${tempelhof.render(box, state, { withCountdown: false })}</g>`);
-      const cdSvg = (m) => canvasSvg(`<g transform="translate(${b.x + cb.x} ${top + cb.y})">${tempelhof.countdownSvg(box, m)}</g>`);
+      const cdSvg = (st, m) => canvasSvg(`<g transform="translate(${b.x + C[st].cb.x} ${top + C[st].cb.y})">${tempelhof.countdownSvg(box, m)}</g>`);
       const dir = `${out}/dashboard/tempelhof/${b.variant}`;
       if (!built.has(b.variant)) {
         built.add(b.variant);
         mkdirSync(`${dir}/panel`, { recursive: true });
-        mkdirSync(`${dir}/cd`, { recursive: true });
+        for (const st of ["open", "closed"]) mkdirSync(`${dir}/cd/${st}`, { recursive: true });
         for (const key of bgKeys) {
           writeFileSync(`${dir}/panel/${key}.png`, png(renderRegion(panelSvg(stateForKey(key)), P, dev.width)));
           pieces++;
         }
-        for (let m = 0; m <= maxMinutes; m++) {
-          writeFileSync(`${dir}/cd/${m}.png`, png(renderRegion(cdSvg(m), C, dev.width)));
-          pieces++;
+        for (const st of ["open", "closed"]) {
+          for (let m = 0; m <= maxMinutes; m++) {
+            writeFileSync(`${dir}/cd/${st}/${m}.png`, png(renderRegion(cdSvg(st, m), C[st].r, dev.width)));
+            pieces++;
+          }
         }
       }
       const tp = rotatedOrigin(P, dev.rotate, canvas);
-      const cd = rotatedOrigin(C, dev.rotate, canvas);
-      env.push(`DEVICE_${id}="tempelhof:${b.variant}"`, `TP_${id}_X=${tp.x}`, `TP_${id}_Y=${tp.y}`, `CD_${id}_X=${cd.x}`, `CD_${id}_Y=${cd.y}`);
+      env.push(`DEVICE_${id}="tempelhof:${b.variant}"`, `TP_${id}_X=${tp.x}`, `TP_${id}_Y=${tp.y}`);
+      for (const st of ["open", "closed"]) {
+        const cd = rotatedOrigin(C[st].r, dev.rotate, canvas);
+        env.push(`CD_${id}_${st}_X=${cd.x}`, `CD_${id}_${st}_Y=${cd.y}`);
+      }
 
       // Paste check: the server's base + the pasted panel and countdown must
       // reproduce the full design at this device's size, pixel for pixel.
@@ -189,7 +199,8 @@ for (const deviceId of Object.keys(DEVICES)) {
         const full = rasterize(screenSvg(id, data, "full"), { width: dev.width });
         const composed = rasterize(screenSvg(id, data, "base"), { width: dev.width });
         paste(composed, renderRegion(panelSvg(state), P, dev.width), P);
-        paste(composed, renderRegion(cdSvg(minutes), C, dev.width), C);
+        const st = key.startsWith("open") ? "open" : "closed";
+        paste(composed, renderRegion(cdSvg(st, minutes), C[st].r, dev.width), C[st].r);
         let diff = 0;
         for (let i = 0; i < full.px.length; i++) if (full.px[i] !== composed.px[i]) diff++;
         if (diff > 0) throw new Error(`paste check failed for ${deviceId}/${id} (${key}): ${diff} pixels differ from the full render`);

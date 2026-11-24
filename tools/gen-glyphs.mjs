@@ -130,6 +130,9 @@ for (const ch of CHARS) {
 const hhBold = inkWidth("HH", true);
 const boldAdvances = {};
 for (const ch of CHARS) boldAdvances[ch] = Math.round(((inkWidth(`H${ch}H`, true) - hhBold) / MEASURE_SCALE) * 100) / 100;
+// Regular advances to 1/100 px too (GLYPHS rounds them to whole pixels).
+const regularAdvances = {};
+for (const ch of CHARS) regularAdvances[ch] = Math.round(((inkWidth(`H${ch}H`) - hhWidth) / MEASURE_SCALE) * 100) / 100;
 
 const body = `/**
  * Arimo glyph table: ink bitmaps and metrics. kindle/lib/eink.mjs uses the
@@ -162,6 +165,13 @@ ${Object.entries(glyphs)
       ([ch, g]) =>
         `  ${JSON.stringify(ch)}: { w: ${g.w}, h: ${g.h}, x: ${g.x}, y: ${g.y}, adv: ${g.adv}, rows: [${g.rows.map((r) => JSON.stringify(r)).join(", ")}] },`,
     )
+    .join("\n")}
+};
+
+/** Arimo Regular advance widths to 1/100 px (at 26 px), for exact widths. */
+export const REGULAR_ADVANCES: Record<string, number> = {
+${Object.entries(regularAdvances)
+    .map(([ch, a]) => `  ${JSON.stringify(ch)}: ${a},`)
     .join("\n")}
 };
 

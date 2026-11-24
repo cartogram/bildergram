@@ -1,66 +1,56 @@
 // ============================================================
-// Module: Tempelhofer Feld (Phase 8)
-// Open/closed state, a countdown to the next opening or closing,
-// and the day's hours. The countdown sits in its own sub-box
-// (countdownBox) so the Kindle can paste a new one every minute
-// over an otherwise unchanged screen.
+// Module: Tempelhofer Feld (Phase 8; one line since Phase 13)
+// One line: "Das Feld ist geöffnet, schließt in 3 h 55 min", with the
+// day's hours right-aligned on the same line. The countdown sits in its
+// own sub-box (countdownBox) so the Kindle can paste a new one every
+// minute; its x depends on the state (the sentence before it differs),
+// so the build makes a countdown set per state.
 //
 // Cadence: minute (countdown), changes state twice a day.
 // Data: kindle/lib/schedule.mjs → tempelhofState(events, ms).
 // ============================================================
 
-import { deCountdown, fitSize, INK, sectionTitle, text, TYPE } from "../design.mjs";
+import { deCountdown, exactWidth, sectionTitle, text, TYPE, width } from "../design.mjs";
 
 export const id = "tempelhof";
 export const cadence = "minute";
 
 /** The longest countdown the schedule produces ("17 h 0 min" in June). */
 const WIDEST = "17 h 59 min";
+/** The line's baseline in module coordinates (below the title space). */
+const BASELINE = 104;
+const STYLE = TYPE.body;
+const COUNT = TYPE.strong;
 
-/** Layout inside a box; shared by render() and the countdown pieces. */
-function layout(box) {
-  const heroSize = Math.min(box.variant === "full" ? TYPE.display.size : TYPE.display.size, fitSize(WIDEST, TYPE.display, box.w));
-  // Pill + countdown + "bis zur …" form one group, centred between the
-  // label (top) and the hours caption (bottom).
-  const groupH = 68 + 72 + Math.round(heroSize * 1.18) + 64;
-  const pillY = Math.max(64, Math.round(60 + (box.h - 120 - groupH) / 2));
-  const heroTop = pillY + 68 + 72;
+const prefix = (open) => (open ? "Das Feld ist geöffnet, schließt in " : "Das Feld ist geschlossen, öffnet in ");
+
+/** The countdown sub-box for a state: right after the sentence, wide enough for any countdown. */
+export function countdownBox(box, open = true) {
   return {
-    pillY,
-    heroSize,
-    // The countdown sub-box: tall enough for the hero line, full box width.
-    countdownBox: { x: 0, y: heroTop, w: box.w, h: Math.round(heroSize * 1.18) },
-    untilY: heroTop + Math.round(heroSize * 1.18) + 64,
+    x: Math.round(exactWidth(prefix(open), STYLE)),
+    y: BASELINE - Math.round(STYLE.size * 1.0),
+    w: Math.ceil(width(WIDEST, COUNT)) + 8,
+    h: Math.round(STYLE.size * 1.35),
   };
 }
 
-/** The countdown line alone, drawn into countdownBox(box) coordinates. */
+/** The countdown alone, drawn into countdownBox() coordinates. */
 export function countdownSvg(box, minutes) {
-  const l = layout(box);
-  return text(0, Math.round(l.heroSize * 0.88), deCountdown(minutes), { ...TYPE.display, size: l.heroSize });
-}
-
-export function countdownBox(box) {
-  return layout(box).countdownBox;
+  return text(0, Math.round(STYLE.size * 1.0), deCountdown(minutes), COUNT);
 }
 
 /**
- * Everything except the countdown (the static part for this state),
- * plus the countdown itself unless `withCountdown` is false.
+ * The line for this state, plus the countdown unless `withCountdown` is
+ * false (the Kindle pastes it).
  */
 export function render(box, state, { withCountdown = true } = {}) {
-  const l = layout(box);
-  const p = { svg: text(0, l.pillY + 46, state.open ? "Geöffnet" : "Geschlossen", TYPE.strong) };
-  const until = state.open ? `bis zur Schließung um ${state.target}` : `bis zur Öffnung um ${state.target}`;
-  const untilSize = fitSize(until, TYPE.body, box.w);
   let svg =
     sectionTitle("Tempelhofer Feld") +
-    p.svg +
-    text(0, l.untilY, until, { ...TYPE.body, size: untilSize }) +
+    text(0, BASELINE, prefix(state.open).trimEnd(), STYLE) +
     // Hours of the day of the next event (after closing, that is tomorrow), so no "heute".
-    text(0, box.h - 8, `Öffnungszeiten ${state.hours[0]} – ${state.hours[1]}`, TYPE.caption);
+    text(box.w, BASELINE, `Öffnungszeiten ${state.hours[0]} – ${state.hours[1]}`, TYPE.caption, { anchor: "end" });
   if (withCountdown) {
-    const c = l.countdownBox;
+    const c = countdownBox(box, state.open);
     svg += `<g transform="translate(${c.x} ${c.y})">${countdownSvg(box, state.minutes)}</g>`;
   }
   return svg;

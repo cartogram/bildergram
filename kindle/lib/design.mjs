@@ -8,7 +8,7 @@
 // SVG and quantized to the panel's 16 gray levels by eink.mjs.
 // ============================================================
 
-import { H, W, escapeXml, textWidth, boldTextWidth } from "./eink.mjs";
+import { H, W, escapeXml, textWidth, boldTextWidth, regularTextWidth } from "./eink.mjs";
 
 // ------------------------------------------------------------------
 // Tokens
@@ -88,7 +88,7 @@ export function text(x, y, str, style, opts = {}) {
  */
 export function exactWidth(str, style) {
   const s = style.caps ? str.toUpperCase() : str;
-  const w = style.weight === "bold" ? boldTextWidth(s, style.size) : textWidth(s, style.size);
+  const w = style.weight === "bold" ? boldTextWidth(s, style.size) : regularTextWidth(s, style.size);
   return w + (style.spacing ?? 0) * Math.max(0, [...s].length - 1);
 }
 

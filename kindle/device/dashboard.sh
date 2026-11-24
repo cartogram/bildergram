@@ -317,7 +317,9 @@ draw_screen() {  # $1 now
     since_full=0
     _full=1
   fi
-  paste_png "$DIR/tempelhof/$_variant/cd/$3.png" "$(var CD "$SCREEN" X)" "$(var CD "$SCREEN" Y)"
+  # The countdown follows the state's sentence: its own set and position per state.
+  _st=${2%%_*}
+  paste_png "$DIR/tempelhof/$_variant/cd/$_st/$3.png" "$(var CD "$SCREEN" "${_st}_X")" "$(var CD "$SCREEN" "${_st}_Y")"
   since_full=$((since_full + 1))
   # Give the e-ink update time to finish before the CPU stops.
   if [ "$_full" = 1 ]; then sleep 2; else sleep 1; fi

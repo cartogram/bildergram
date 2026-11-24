@@ -20,7 +20,7 @@ const contentW = CONTENT.right - CONTENT.left;
 const contentH = CONTENT.bottom - CONTENT.top;
 
 /** Tag: Tempelhof on top, the Präposition des Tages below. */
-const TAG_TOP_H = 470;
+const TAG_TOP_H = 76;
 
 /** name (German, shown on the admin page), top bar flags, boxes and rules. */
 export const SCREENS = {

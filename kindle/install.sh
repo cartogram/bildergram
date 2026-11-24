@@ -35,7 +35,7 @@ if [ -n "$KINDLE_VOLUME" ]; then
   # macOS still writes ._ metadata files onto FAT drives; remove them.
   command -v dot_clean >/dev/null && dot_clean -m "$V/dashboard" "$V/documents"
   sync
-  echo "installed to $V: $(ls "$V"/dashboard/tempelhof/*/cd | wc -l | tr -d ' ') countdown images, $(ls "$V/dashboard/fallback" | wc -l | tr -d ' ') fallback screens, $(wc -l < "$V/dashboard/schedule.txt" | tr -d ' ') Tempelhof events. Eject the drive before unplugging."
+  echo "installed to $V: $(find "$V"/dashboard/tempelhof -path "*/cd/*" -name "*.png" | wc -l | tr -d ' ') countdown images, $(ls "$V/dashboard/fallback" | wc -l | tr -d ' ') fallback screens, $(wc -l < "$V/dashboard/schedule.txt" | tr -d ' ') Tempelhof events. Eject the drive before unplugging."
   exit 0
 fi
 
@@ -56,7 +56,7 @@ if [ -n "$HUB_URL" ] && [ -n "$HUB_TOKEN" ]; then
 fi
 [ -f /mnt/us/dashboard/hub.env ] || echo "note: no hub.env yet; pass KINDLE_HUB_URL and KINDLE_HUB_TOKEN to enable check-ins"
 lipc-set-prop com.lab126.scanner doFullScan 1 >/dev/null 2>&1 || true
-echo "installed: $(ls /mnt/us/dashboard/tempelhof/*/cd | wc -l) countdown images, $(ls /mnt/us/dashboard/fallback | wc -l) fallback screens, $(wc -l < /mnt/us/dashboard/schedule.txt) Tempelhof events"'
+echo "installed: $(find /mnt/us/dashboard/tempelhof -path "*/cd/*" -name "*.png" | wc -l) countdown images, $(ls /mnt/us/dashboard/fallback | wc -l) fallback screens, $(wc -l < /mnt/us/dashboard/schedule.txt) Tempelhof events"'
 
 # COPYFILE_DISABLE keeps macOS ._ metadata files out of the archive.
 COPYFILE_DISABLE=1 tar -cf - dashboard documents |
