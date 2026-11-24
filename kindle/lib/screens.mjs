@@ -5,7 +5,7 @@
 // overlap, so on the Kindle each can be pasted on its own cadence.
 // ============================================================
 
-import { CONTENT, INK, RULE, TITLE_SPACE, TYPE, hrule, sectionTitle, text, topbar, vrule } from "./design.mjs";
+import { CONTENT, INK, RULE, TITLE_SPACE, TOPBAR, TYPE, hrule, sectionTitle, text, topbar, vrule } from "./design.mjs";
 import { svgOpen, W, H } from "./eink.mjs";
 import * as ausdruck from "./modules/ausdruck.mjs";
 import * as fitness from "./modules/fitness.mjs";
@@ -28,7 +28,8 @@ export const SCREENS = {
     name: "Morgen",
     frame: { date: true, battery: true },
     boxes: [
-      { module: "wetter", variant: "wide", x: CONTENT.left, y: CONTENT.top, w: contentW, h: 470 },
+      // The forecast's day names sit on the top bar's baseline, beside the date (96 = their baseline in the module).
+      { module: "wetter", variant: "wide", x: CONTENT.left, y: CONTENT.top, w: contentW, h: 470, raise: CONTENT.top - TITLE_SPACE + 96 - TOPBAR.baseline },
       { module: "ausdruck", variant: "wide", x: CONTENT.left, y: CONTENT.top + 530, w: contentW, h: contentH - 530 },
     ],
     rules: [{ h: true, x: CONTENT.left, y: CONTENT.top + 494, len: contentW }],
@@ -73,7 +74,7 @@ export const HOURLY_SCREENS = Object.keys(SCREENS).filter((id) => SCREENS[id].bo
  * The box a module lays out in: TITLE_SPACE taller than its screen box,
  * drawn shifted up by TITLE_SPACE (see design.mjs). The build uses it too.
  */
-export const moduleBox = (b) => ({ w: b.w, h: b.h + TITLE_SPACE, variant: b.variant });
+export const moduleBox = (b) => ({ w: b.w, h: b.h + TITLE_SPACE, variant: b.variant, raise: b.raise });
 
 /** The Kindle-drawn boxes of a screen. */
 export const deviceBoxes = (id) => SCREENS[id].boxes.filter((b) => DEVICE_MODULES.has(b.module));

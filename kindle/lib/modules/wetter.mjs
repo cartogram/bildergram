@@ -101,7 +101,7 @@ function renderWide(box, w, updated) {
   let svg = sectionTitle("Wetter");
   const leftW = Math.round(box.w * 0.38);
   svg += weatherIcon(w.now.code, -8, 64, 168);
-  svg += text(180, 210, deg(w.now.temp), TYPE.display);
+  svg += text(180, 210, deg(w.now.temp), { ...TYPE.display, underline: false });
   let y = 300;
   const cond = weatherText(w.now.code);
   svg += text(0, y, cond, { ...TYPE.body, size: fitSize(cond, TYPE.body, leftW) });
@@ -113,6 +113,8 @@ function renderWide(box, w, updated) {
   const colX = leftW + 56;
   const colW = (box.w - colX) / 3;
   const colText = colW - 24; // keep a gap before the next column
+  // `box.raise` lifts the forecast columns, e.g. so the day names share the top bar's baseline.
+  svg += `<g transform="translate(0 ${-(box.raise ?? 0)})">`;
   w.days.forEach((d, i) => {
     const x = colX + i * colW;
     const day = dayName(d.date, i);
@@ -124,6 +126,7 @@ function renderWide(box, w, updated) {
     svg += text(x, 338, `${d.pop ?? 0} %`, TYPE.body);
     if (d.mm >= 0.1) svg += text(x, 388, `${deNumber(d.mm, d.mm < 10 ? 1 : 0)} mm`, TYPE.body);
   });
+  svg += "</g>";
   if (updated) svg += text(box.w, box.h - 8, `Stand ${updated}`, TYPE.caption, { anchor: "end" });
   return svg;
 }
