@@ -144,14 +144,14 @@ export function underlined(x, y, str) {
   return { svg, w: Math.round(exactWidth(str, TYPE.label)), h };
 }
 
-/** Top bar shared by framed screens: German date left, battery right, rule below. */
+/** Top bar shared by framed screens: the German date (label style) left, battery right. */
 export function topbar({ date, battery }) {
   let svg = "";
-  if (date) svg += text(MARGIN.x, TOPBAR.baseline, deDateLong(date), TYPE.body);
+  if (date) svg += text(MARGIN.x, TOPBAR.baseline, deDateLong(date), TYPE.label);
   if (battery != null) {
     svg += text(W - MARGIN.x, TOPBAR.baseline, `Akku ${battery} %`, TYPE.caption, { anchor: "end" });
   }
-  return svg + hrule(MARGIN.x, TOPBAR.rule, W - 2 * MARGIN.x);
+  return svg;
 }
 
 // ------------------------------------------------------------------
