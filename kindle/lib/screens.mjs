@@ -19,9 +19,7 @@ export const MODULES = { ausdruck, fitness, kino, praeposition, tempelhof, wette
 const contentW = CONTENT.right - CONTENT.left;
 const contentH = CONTENT.bottom - CONTENT.top;
 
-const TAG_LEFT_W = 780;
-const TAG_GAP = 32;
-/** Tag's left column: Tempelhof on top, the Präposition des Tages below. */
+/** Tag: Tempelhof on top, the Präposition des Tages below. */
 const TAG_TOP_H = 470;
 
 /** name (German, shown on the admin page), top bar flags, boxes and rules. */
@@ -39,17 +37,11 @@ export const SCREENS = {
     name: "Tag",
     frame: { date: true, battery: true },
     boxes: [
-      { module: "tempelhof", variant: "half", x: CONTENT.left, y: CONTENT.top, w: TAG_LEFT_W, h: TAG_TOP_H },
-      { module: "praeposition", variant: "wide", x: CONTENT.left, y: CONTENT.top + TAG_TOP_H + 60, w: TAG_LEFT_W, h: contentH - TAG_TOP_H - 60 },
-      {
-        module: "wetter", variant: "compact",
-        x: CONTENT.left + TAG_LEFT_W + 2 * TAG_GAP + RULE.hair, y: CONTENT.top,
-        w: contentW - TAG_LEFT_W - 2 * TAG_GAP - RULE.hair, h: contentH,
-      },
+      { module: "tempelhof", variant: "half", x: CONTENT.left, y: CONTENT.top, w: contentW, h: TAG_TOP_H },
+      { module: "praeposition", variant: "wide", x: CONTENT.left, y: CONTENT.top + TAG_TOP_H + 60, w: contentW, h: contentH - TAG_TOP_H - 60 },
     ],
     rules: [
-      { v: true, x: CONTENT.left + TAG_LEFT_W + TAG_GAP, y: CONTENT.top, len: contentH },
-      { h: true, x: CONTENT.left, y: CONTENT.top + TAG_TOP_H + 24, len: TAG_LEFT_W },
+      { h: true, x: CONTENT.left, y: CONTENT.top + TAG_TOP_H + 24, len: contentW },
     ],
   },
   abend: {
@@ -90,7 +82,7 @@ export const deviceBoxes = (id) => SCREENS[id].boxes.filter((b) => DEVICE_MODULE
 function placeholder(box, module) {
   return (
     sectionTitle(LABELS[module]) +
-    text(0, Math.min(200, box.h / 2), "Keine Verbindung", TYPE.title, { ink: INK.secondary }) +
+    text(0, Math.min(200, box.h / 2), "Keine Verbindung", TYPE.body, { ink: INK.secondary }) +
     text(0, Math.min(200, box.h / 2) + 56, "Power-Taste drücken, um zu aktualisieren", TYPE.body, { ink: INK.tertiary })
   );
 }

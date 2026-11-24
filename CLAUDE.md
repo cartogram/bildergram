@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A battery-powered e-ink dashboard on two jailbroken Kindles: `kindle_01` (**Matt**), a Paperwhite 3, and `kindle_02` (**Fiona**), a Paperwhite 2. Each shows **German screens** (the admin page stays in English) on its own daily schedule: **Morgen** (weather + expression of the day), **Tag** (Tempelhof countdown + Präposition des Tages + weather), **Abend** (IM KINO, the Yorck cinema listing) and **Nacht** (exercise this week for Matt and Fiona + expression of the day).
+A battery-powered e-ink dashboard on two jailbroken Kindles: `kindle_01` (**Matt**), a Paperwhite 3, and `kindle_02` (**Fiona**), a Paperwhite 2. Each shows **German screens** (the admin page stays in English) on its own daily schedule: **Morgen** (weather + expression of the day), **Tag** (Tempelhof countdown + Präposition des Tages), **Abend** (IM KINO, the Yorck cinema listing) and **Nacht** (exercise this week for Matt and Fiona + expression of the day).
 
 There are three parts:
 - **Kindle** (`kindle/device/dashboard.sh`): a busybox shell loop. It draws each screen's downloaded base image with `eips`, pastes the Tempelhof panel and countdown on Tag, and suspends to RAM with Wi-Fi off, waking on the RTC alarm.
@@ -86,7 +86,7 @@ There is no test runner. Verify changes with:
   - Other `/api/*` paths return 404; everything else is the SPA.
   - There are no cron triggers: the explicit empty `crons` list in `wrangler.jsonc` also clears old schedules on deploy.
 - **`routes/kindle.ts`**:
-  - **The Kindles never show the same screen at once**: saving a schedule that clashes with another Kindle's at any time is refused (`firstClash`). Defaults: Matt 06:00 morgen, 09:00 tag, 18:15 abend, 23:00 nacht; Fiona 09:00 morgen, 18:15 nacht, 23:00 tag (also in `kindle/lib/devices.mjs` for `DEFAULT_SCHEDULE`).
+  - **Default schedules** (`DEFAULT_SCHEDULES`, also in `kindle/lib/devices.mjs` for `DEFAULT_SCHEDULE`): Matt 06:00 tag, 18:15 abend (Tempelhof and the Kino); Fiona 06:00 morgen, 18:00 nacht (weather and workouts). The German modules fill the rest of each screen.
   - **Config**: `{schedule:[{at,screen}], kino:{cinemas,from,letterboxdUser,hideSeen,hiddenFilms}, checkinMinutes (15–360), exit}`. `hiddenFilms` holds Yorck film slugs. Phase 7 configs (screens `tempelhof`/`kino`) are migrated on read.
   - **Check-in** (`POST /api/kindle/checkin`): the body is the device's log tail. The reply is shell-safe `KEY="value"` lines (`SCHEDULE="0600:morgen 0900:tag …"`, `CHECKIN_MINUTES`, `EXIT`, `SERVER_TIME`). The Kindle validates them with a regex before sourcing, so keep values within `[A-Za-z0-9 :._-]`.
   - The `exit` flag is one-shot: it is cleared once sent.

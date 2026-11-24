@@ -31,14 +31,14 @@ export const INK = {
 
 /** Type scale (px at 300 ppi). `caps` styles are letter-spaced capitals. */
 export const TYPE = {
-  hero: { size: 200, weight: "bold" },
   display: { size: 132, weight: "bold" },
-  headline: { size: 64, weight: "bold" },
-  title: { size: 48 },
-  body: { size: 40 },
   label: { size: 30, weight: "bold", spacing: 5, ink: INK.secondary },
+  body: { size: 44 },
   caption: { size: 28, ink: INK.tertiary },
 };
+
+/** Emphasis within body text (names, headings): the body size in bold. */
+export const BOLD = { ...TYPE.body, weight: "bold" };
 
 export const RULE = { hair: 3, thick: 6 };
 
@@ -126,22 +126,10 @@ export function label(x, y, str) {
   return text(x, y, str.toUpperCase(), TYPE.label);
 }
 
-/** Inverted pill (white on black) for states like GEÖFFNET; returns { svg, w, h }. */
-export function pill(x, y, str, size = 44) {
-  const style = { size, weight: "bold", spacing: 4 };
-  const padX = Math.round(size * 0.55);
-  const h = Math.round(size * 1.55);
-  const w = Math.round(width(str, style) + 2 * padX);
-  const svg =
-    `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.round(h / 2)}" fill="${INK.primary}"/>` +
-    text(x + padX, y + Math.round(h * 0.68), str, style, { ink: INK.paper });
-  return { svg, w, h };
-}
-
 /**
- * The pill's quieter sibling: the same bold letter-spaced word in black,
- * starting at x (no inset), with a thick rule under it as long as the
- * word, e.g. GESCHLOSSEN. Takes the same box as pill(); returns { svg, w, h }.
+ * A state word (GEÖFFNET, GESCHLOSSEN, ZIEL ERREICHT): bold, letter-spaced, black,
+ * starting at x, with a thick rule under it as long as the word.
+ * Its box is size × 1.55 tall; returns { svg, w, h }.
  */
 export function underlined(x, y, str, size = 44) {
   const style = { size, weight: "bold", spacing: 4 };

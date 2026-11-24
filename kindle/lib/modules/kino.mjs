@@ -72,10 +72,10 @@ export function render(box, programme, { date, from = "18:00", updated, titleSiz
     .map((c) => ({ ...c, rows: c.sessions.filter((s) => s.date === date && s.time >= from) }))
     .filter((c) => c.rows.length);
 
-  let svg = titleSize ? text(0, titleSize, "IM KINO", { ...TYPE.label, size: titleSize, spacing: 6 }) : sectionTitle("Im Kino");
+  let svg = titleSize ? text(0, titleSize, "IM KINO", { ...TYPE.caption, size: titleSize, spacing: 6 }) : sectionTitle("Im Kino");
   const top = titleSize ? titleSize + 64 : 64;
   if (!cinemas.length) {
-    svg += text(0, top + 120, "Heute keine Vorstellungen", TYPE.title, { ink: INK.secondary });
+    svg += text(0, top + 120, "Heute keine Vorstellungen", TYPE.body, { ink: INK.secondary });
   } else {
     let placed;
     for (const size of [40, 36, 32, 28]) {

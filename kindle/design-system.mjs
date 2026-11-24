@@ -48,13 +48,13 @@ function inBox(b, inner) {
 
 // ---------------- Tokens ----------------
 
-specimen("Type scale", "TYPE tokens: size, weight and ink as the panel shows them", 1010, () => {
+specimen("Type scale", "TYPE tokens: size, weight and ink as the panel shows them", 560, () => {
   let y = 0, svg = "";
   for (const [name, style] of Object.entries(TYPE)) {
-    const sample = name === "label" ? "Tempelhofer Feld" : name === "hero" || name === "display" ? "12 h 55" : "Sonnenuntergang 16:02";
+    const sample = name === "display" ? "12 h 55" : "Sonnenuntergang 16:02";
     y += Math.max(84, Math.round(style.size * 1.25) + 24);
     svg += note(X, y - style.size * 0.35, `${name}`) + note(X, y - style.size * 0.35 + 34, `${style.size}${style.weight ? " bold" : ""}`);
-    svg += text(X + 200, y, style.caps || name === "label" ? sample.toUpperCase() : sample, style);
+    svg += text(X + 200, y, sample, style);
   }
   return svg;
 });
@@ -83,15 +83,15 @@ specimen("Spacing and rules", `MARGIN x ${MARGIN.x} / top ${MARGIN.top} / bottom
 
 // ---------------- Primitives ----------------
 
-specimen("Primitives", `label (section titles are ${D.SECTION_TITLES ? "on" : "off"}), pill, underlined, fitSize`, 440, () => {
-  const p = D.pill(X, 120, "GEÖFFNET");
+specimen("Primitives", `label (section titles are ${D.SECTION_TITLES ? "on" : "off"}), underlined, fitSize`, 440, () => {
+  const p = D.underlined(X, 120, "GEÖFFNET");
   const u = D.underlined(X + p.w + 80, 120, "GESCHLOSSEN");
-  const fitted = D.fitSize("Sonnenuntergang 16:02", TYPE.title, 380);
+  const fitted = D.fitSize("Sonnenuntergang 16:02", TYPE.body, 380);
   return (
     D.label(X, 50, "Tempelhofer Feld") + note(X + 420, 50, "label()") +
-    p.svg + u.svg + note(X, 240, "pill() — open") + note(X + p.w + 80, 240, "underlined() — closed, rule as long as the word") +
+    p.svg + u.svg + note(X, 240, "underlined() — open") + note(X + p.w + 80, 240, "closed: the rule is as long as the word") +
     `<rect x="${X}" y="300" width="380" height="80" fill="none" stroke="#999" stroke-dasharray="6 6"/>` +
-    text(X, 355, "Sonnenuntergang 16:02", { ...TYPE.title, size: fitted }) + note(X + 420, 355, `fitSize() → ${fitted} px to fit 380 px (title is ${TYPE.title.size})`)
+    text(X, 355, "Sonnenuntergang 16:02", { ...TYPE.body, size: fitted }) + note(X + 420, 355, `fitSize() → ${fitted} px to fit 380 px (body is ${TYPE.body.size})`)
   );
 });
 

@@ -8,7 +8,7 @@
 // Variants: "compact" (narrow column) and "wide" (full width).
 // ============================================================
 
-import { deNumber, deWeekdayShort, fitSize, hrule, INK, sectionTitle, text, TYPE, weatherIcon, weatherText } from "../design.mjs";
+import { BOLD, deNumber, deWeekdayShort, fitSize, hrule, INK, sectionTitle, text, TYPE, weatherIcon, weatherText } from "../design.mjs";
 
 export const id = "wetter";
 export const cadence = "hourly";
@@ -101,10 +101,10 @@ function renderWide(box, w, updated) {
   let svg = sectionTitle("Wetter");
   const leftW = Math.round(box.w * 0.38);
   svg += weatherIcon(w.now.code, -8, 64, 168);
-  svg += text(180, 210, deg(w.now.temp), TYPE.hero);
+  svg += text(180, 210, deg(w.now.temp), TYPE.display);
   let y = 300;
   const cond = weatherText(w.now.code);
-  svg += text(0, y, cond, { ...TYPE.title, size: fitSize(cond, TYPE.title, leftW) });
+  svg += text(0, y, cond, { ...TYPE.body, size: fitSize(cond, TYPE.body, leftW) });
   y += 58;
   svg += text(0, y, `Wind ${deNumber(Math.round(w.now.wind))} km/h`, TYPE.body, { ink: INK.secondary });
   y += 52;
@@ -116,10 +116,10 @@ function renderWide(box, w, updated) {
   w.days.forEach((d, i) => {
     const x = colX + i * colW;
     const day = dayName(d.date, i);
-    svg += text(x, 96, day, { ...TYPE.headline, size: fitSize(day, { ...TYPE.headline, size: 48 }, colText) });
+    svg += text(x, 96, day, { ...BOLD, size: fitSize(day, { ...BOLD, size: 48 }, colText) });
     svg += weatherIcon(d.code, x - 4, 122, 96);
     const temps = `${deg(d.max)} / ${deg(d.min)}`;
-    svg += text(x, 284, temps, { ...TYPE.title, weight: "bold", size: fitSize(temps, { ...TYPE.title, weight: "bold" }, colText) });
+    svg += text(x, 284, temps, { ...TYPE.body, weight: "bold", size: fitSize(temps, { ...TYPE.body, weight: "bold" }, colText) });
     // Chance and amount on separate lines so they never run into the next column.
     svg += text(x, 338, `${d.pop ?? 0} %`, TYPE.body, { ink: INK.secondary });
     if (d.mm >= 0.1) svg += text(x, 388, `${deNumber(d.mm, d.mm < 10 ? 1 : 0)} mm`, TYPE.body, { ink: INK.secondary });

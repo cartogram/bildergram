@@ -9,7 +9,7 @@
 // ============================================================
 
 import { readFileSync } from "node:fs";
-import { INK, label, sectionTitle, text, TYPE } from "../design.mjs";
+import { INK, sectionTitle, text, TYPE } from "../design.mjs";
 import { wrap } from "../eink.mjs";
 
 export const id = "ausdruck";
@@ -42,15 +42,15 @@ function block(str, x, y, size, maxW, maxLines, opts = {}) {
 /** The text stack at scale `k` (1 = design size); y values relative to the first baseline. */
 function stack(box, entry, full, k, quote = true) {
   const S = full
-    ? { head: 96, mean: TYPE.title.size, ex: 44, headLines: 3, gapMean: 92, gapEx: 140 }
-    : { head: TYPE.headline.size, mean: TYPE.body.size, ex: 34, headLines: 2, gapMean: 62, gapEx: 70 };
+    ? { head: 96, mean: TYPE.body.size, ex: 44, headLines: 3, gapMean: 92, gapEx: 140 }
+    : { head: TYPE.body.size, mean: TYPE.body.size, ex: 34, headLines: 2, gapMean: 62, gapEx: 70 };
   const r = (n) => Math.round(n * k);
   const head = block(quote ? quoted(entry.ausdruck) : entry.ausdruck, 0, 0, r(S.head), box.w, S.headLines, { weight: "bold" });
   const mean = block(entry.bedeutung, 0, head.y + r(S.gapMean), r(S.mean), box.w, 2, { ink: INK.secondary });
   const exY = mean.y + r(S.gapEx);
   const ex = block(entry.beispiel, 0, exY, r(S.ex), box.w, full ? 3 : 2, { ink: INK.secondary });
   let svg = head.svg + mean.svg + ex.svg;
-  if (full) svg += label(0, exY - r(64), "Beispiel");
+  if (full) svg += text(0, exY - r(64), "BEISPIEL", { ...TYPE.caption, weight: "bold" });
   return { svg, ascent: r(S.head * 0.8), bottom: ex.y + r(S.ex * 0.3) };
 }
 

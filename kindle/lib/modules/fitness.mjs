@@ -12,7 +12,7 @@
 // Variant: "wide" (a band across the screen).
 // ============================================================
 
-import { deNumber, deTime, deWeekdayShort, INK, pill, RULE, sectionTitle, text, TYPE, vrule, width } from "../design.mjs";
+import { deNumber, deTime, deWeekdayShort, INK, RULE, sectionTitle, text, TYPE, underlined, vrule, width } from "../design.mjs";
 
 export const id = "fitness";
 export const cadence = "hourly";
@@ -65,11 +65,11 @@ function column(person, week, date, w) {
   let svg = "";
 
   // Name, "Ziel erreicht", and when the phone last sent data.
-  const name = { size: TYPE.title.size, weight: "bold" };
+  const name = { size: TYPE.body.size, weight: "bold" };
   svg += text(0, 104, person.name, name);
   let used = Math.round(width(person.name, name));
   if (reached) {
-    const p = pill(used + 20, 104 - 36, "ZIEL ERREICHT", 26);
+    const p = underlined(used + 20, 104 - 36, "ZIEL ERREICHT", 26);
     svg += p.svg;
     used += 20 + p.w;
   }
@@ -79,7 +79,7 @@ function column(person, week, date, w) {
   if (note) svg += text(w, 104, note, TYPE.caption, { anchor: "end" });
 
   if (!person.syncedAt) {
-    svg += text(0, 210, "Noch keine Daten", TYPE.title, { ink: INK.secondary });
+    svg += text(0, 210, "Noch keine Daten", TYPE.body, { ink: INK.secondary });
     svg += text(0, 266, "Kurzbefehl einrichten", TYPE.body, { ink: INK.tertiary });
     return svg;
   }
@@ -87,7 +87,7 @@ function column(person, week, date, w) {
   // Total against the goal.
   const big = deNumber(total);
   svg += text(0, 236, big, TYPE.display);
-  svg += text(Math.round(width(big, TYPE.display)) + 6, 236, `/ ${deNumber(person.goal)} min`, TYPE.title, { ink: INK.secondary });
+  svg += text(Math.round(width(big, TYPE.display)) + 6, 236, `/ ${deNumber(person.goal)} min`, TYPE.body, { ink: INK.secondary });
 
   // Progress bar: an outline, filled up to the goal.
   const barY = 256;
@@ -125,7 +125,7 @@ export function render(box, data, { date }) {
   const people = data?.people ?? [];
   const week = weekOf(date);
   let svg = sectionTitle("Bewegung diese Woche");
-  if (!people.length) return svg + text(0, 210, "Noch keine Daten", TYPE.title, { ink: INK.secondary });
+  if (!people.length) return svg + text(0, 210, "Noch keine Daten", TYPE.body, { ink: INK.secondary });
 
   const n = people.length;
   const colW = Math.floor((box.w - (n - 1) * (2 * GAP + RULE.hair)) / n);

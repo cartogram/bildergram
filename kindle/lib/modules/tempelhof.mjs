@@ -9,7 +9,7 @@
 // Data: kindle/lib/schedule.mjs → tempelhofState(events, ms).
 // ============================================================
 
-import { deCountdown, fitSize, INK, pill, sectionTitle, text, TYPE, underlined } from "../design.mjs";
+import { deCountdown, fitSize, INK, sectionTitle, text, TYPE, underlined } from "../design.mjs";
 
 export const id = "tempelhof";
 export const cadence = "minute";
@@ -19,7 +19,7 @@ const WIDEST = "17 h 59 min";
 
 /** Layout inside a box; shared by render() and the countdown pieces. */
 function layout(box) {
-  const heroSize = Math.min(box.variant === "full" ? TYPE.hero.size : TYPE.display.size, fitSize(WIDEST, TYPE.hero, box.w));
+  const heroSize = Math.min(box.variant === "full" ? TYPE.display.size : TYPE.display.size, fitSize(WIDEST, TYPE.display, box.w));
   // Pill + countdown + "bis zur …" form one group, centred between the
   // label (top) and the hours caption (bottom).
   const groupH = 68 + 72 + Math.round(heroSize * 1.1) + 64;
@@ -50,14 +50,13 @@ export function countdownBox(box) {
  */
 export function render(box, state, { withCountdown = true } = {}) {
   const l = layout(box);
-  // Open: the black pill. Closed: the same word underlined, quieter.
-  const p = state.open ? pill(0, l.pillY, "GEÖFFNET") : underlined(0, l.pillY, "GESCHLOSSEN");
+  const p = underlined(0, l.pillY, state.open ? "GEÖFFNET" : "GESCHLOSSEN");
   const until = state.open ? `bis zur Schließung um ${state.target}` : `bis zur Öffnung um ${state.target}`;
-  const untilSize = fitSize(until, TYPE.title, box.w);
+  const untilSize = fitSize(until, TYPE.body, box.w);
   let svg =
     sectionTitle("Tempelhofer Feld") +
     p.svg +
-    text(0, l.untilY, until, { ...TYPE.title, size: untilSize }, { ink: INK.secondary }) +
+    text(0, l.untilY, until, { ...TYPE.body, size: untilSize }, { ink: INK.secondary }) +
     // Hours of the day of the next event (after closing, that is tomorrow), so no "heute".
     text(0, box.h - 8, `Öffnungszeiten ${state.hours[0]} – ${state.hours[1]}`, TYPE.caption);
   if (withCountdown) {

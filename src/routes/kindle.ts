@@ -29,7 +29,7 @@ import { fitnessParam } from "./fitness";
 /** The screens kindle/lib/screens.mjs defines (ids, German names, what they show). */
 export const SCREENS = {
   morgen: { name: "Morgen", shows: "Weather (wide) + expression of the day" },
-  tag: { name: "Tag", shows: "Tempelhof countdown + preposition of the day + weather" },
+  tag: { name: "Tag", shows: "Tempelhof countdown + preposition of the day" },
   abend: { name: "Abend", shows: "Yorck cinema listing" },
   nacht: { name: "Nacht", shows: "Exercise this week (Matt + Fiona) + expression of the day" },
 } as const;
@@ -86,38 +86,21 @@ export const DEFAULT_CONFIG: KindleConfig = {
 };
 
 /**
- * Default schedules per Kindle (keep in sync with kindle/lib/devices.mjs).
- * They never show the same screen at the same time; see firstClash().
+ * Default schedules per Kindle (keep in sync with kindle/lib/devices.mjs):
+ * Matt has Tempelhof and the Kino, Fiona the weather and workouts.
  */
 const DEFAULT_SCHEDULES: Record<string, KindleConfig["schedule"]> = {
-  kindle_01: DEFAULT_CONFIG.schedule,
+  kindle_01: [
+    { at: "06:00", screen: "tag" },
+    { at: "18:15", screen: "abend" },
+  ],
   kindle_02: [
-    { at: "09:00", screen: "morgen" },
-    { at: "18:15", screen: "nacht" },
-    { at: "23:00", screen: "tag" },
+    { at: "06:00", screen: "morgen" },
+    { at: "18:00", screen: "nacht" },
   ],
 };
 
 const defaultConfig = (device: string): KindleConfig => ({ ...DEFAULT_CONFIG, schedule: DEFAULT_SCHEDULES[device] ?? DEFAULT_CONFIG.schedule });
-
-const toMinutes = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3));
-
-/** The screen a schedule shows at minute-of-day m (before the first entry: the day's last). */
-function screenAt(schedule: KindleConfig["schedule"], m: number): string {
-  let screen = schedule[schedule.length - 1].screen;
-  for (const e of schedule) if (toMinutes(e.at) <= m) screen = e.screen;
-  return screen;
-}
-
-/** First time two schedules show the same screen, or null. Screens only change at entries. */
-export function firstClash(a: KindleConfig["schedule"], b: KindleConfig["schedule"]): { at: string; screen: string } | null {
-  const times = [...new Set([0, ...a.map((e) => toMinutes(e.at)), ...b.map((e) => toMinutes(e.at))])].sort((x, y) => x - y);
-  for (const m of times) {
-    const s = screenAt(a, m);
-    if (s === screenAt(b, m)) return { at: `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`, screen: s };
-  }
-  return null;
-}
 
 /** Yorck cinemas (slug → name), from yorck.de/kinos. */
 export const YORCK_CINEMAS: Record<string, string> = {
@@ -146,19 +129,19 @@ const isScreen = (s: unknown): s is Screen => typeof s === "string" && Object.ha
 // ------------------------------------------------------------------
 
 /** Phase 7 configs used "tempelhof"/"kino" and had no interval; map them. */
-function migrate(c: Partial<KindleConfig> & { schedule?: { at: string; screen: string }[] }): KindleConfig {
+function migrate(c: Partial<KindleConfig> & { schedule?: { at: string; screen: string }[] }, device: string): KindleConfig {
   const old: Record<string, Screen> = { tempelhof: "tag", kino: "abend" };
   const parsed = parseConfig({
     ...DEFAULT_CONFIG,
     ...c,
     schedule: (c.schedule ?? DEFAULT_CONFIG.schedule).map((e) => ({ ...e, screen: old[e.screen] ?? e.screen })),
   });
-  return typeof parsed === "string" ? DEFAULT_CONFIG : parsed;
+  return typeof parsed === "string" ? defaultConfig(device) : parsed;
 }
 
 async function readConfig(env: AppEnv, device: string): Promise<KindleConfig> {
   const stored = await readJson<KindleConfig>(env, configKey(device));
-  return stored ? migrate(stored) : defaultConfig(device);
+  return stored ? migrate(stored, device) : defaultConfig(device);
 }
 
 /** Validate an admin-supplied config; returns an error message or the clean config. */
@@ -309,15 +292,6 @@ export async function handleKindleAdmin(request: Request, env: AppEnv): Promise<
     }
     const parsed = parseConfig(body);
     if (typeof parsed === "string") return Response.json({ error: parsed }, { status: 400 });
-    // The Kindles never show the same screen at the same time.
-    for (const other of DEVICES) {
-      if (other.id === id) continue;
-      const clash = firstClash(parsed.schedule, (await readConfig(env, other.id)).schedule);
-      if (clash) {
-        const name = SCREENS[clash.screen as Screen]?.name ?? clash.screen;
-        return Response.json({ error: `${other.name} also shows ${name} at ${clash.at}; the Kindles never show the same screen at once` }, { status: 400 });
-      }
-    }
     await writeJson(env, configKey(id), parsed);
     return Response.json({ config: parsed });
   }
