@@ -1,82 +1,78 @@
 // ============================================================
-// kindle/lib/screens.mjs — the screens (Phase 8; fitness on Nacht, Phase 12)
-// Each screen is a hand-designed layout: an optional top bar
-// (date, battery) and boxes, each filled by a module. Boxes don't
-// overlap, so on the Kindle each can be pasted on its own cadence.
+// kindle/lib/screens.mjs — the screens (Phase 8; fitness on Nacht,
+// Phase 12; tiles, Phase 14)
+// Each screen is a set of tiles on the 8 × 4 grid (design.mjs GRID,
+// cell()), each filled by a module. Tiles don't overlap, so on the
+// Kindle each can be pasted on its own cadence. The date tile sits in
+// cell (0, 0) on every screen (the "Aktualisiere …" piece goes there).
 // ============================================================
 
-import { CONTENT, INK, RULE, TITLE_SPACE, TOPBAR, TYPE, hrule, sectionTitle, text, topbar, vrule } from "./design.mjs";
+import { cell, TILE_PAD, TITLE_SPACE, TYPE, text, tile } from "./design.mjs";
 import { svgOpen, W, H } from "./eink.mjs";
 import * as ausdruck from "./modules/ausdruck.mjs";
+import * as datum from "./modules/datum.mjs";
 import * as fitness from "./modules/fitness.mjs";
 import * as kino from "./modules/kino.mjs";
 import * as praeposition from "./modules/praeposition.mjs";
 import * as tempelhof from "./modules/tempelhof.mjs";
 import * as wetter from "./modules/wetter.mjs";
 
-export const MODULES = { ausdruck, fitness, kino, praeposition, tempelhof, wetter };
+export const MODULES = { ausdruck, datum, fitness, kino, praeposition, tempelhof, wetter };
 
-const contentW = CONTENT.right - CONTENT.left;
-const contentH = CONTENT.bottom - CONTENT.top;
+/**
+ * A tile at cell (col, row) spanning cols × rows: `tile` is its rect,
+ * x/y/w/h its content (TILE_PAD inside). `tone` overrides the screen's tile
+ * style for this tile; a "bleed" tile has no container, and its module may
+ * draw graphics into the padding (box.bleed) while text keeps the inset.
+ */
+function T(module, [col, row, cols = 1, rows = 1], opts = {}) {
+  const r = cell(col, row, cols, rows);
+  return { module, tile: r, x: r.x + TILE_PAD, y: r.y + TILE_PAD, w: r.w - 2 * TILE_PAD, h: r.h - 2 * TILE_PAD, bleed: opts.tone === "bleed" ? TILE_PAD : 0, ...opts };
+}
+const DATE = T("datum", [0, 0, 2, 1], { tone: "dark" });
 
-/** Tag: Tempelhof on top, the Präposition des Tages below. */
-const TAG_TOP_H = 76;
-/** Two columns side by side, with a rule between them. */
-const GAP = 32;
-const HALF_W = Math.floor((contentW - 2 * GAP - RULE.hair) / 2);
-
-/** name (German, shown on the admin page), top bar flags, boxes and rules. */
+/**
+ * name (German, shown on the admin page), tile style ("outline" or
+ * "fill"; the date tile is always dark) and tiles.
+ */
 export const SCREENS = {
   morgen: {
     name: "Morgen",
-    frame: { date: true, battery: true },
+    style: "outline",
     boxes: [
-      { module: "wetter", variant: "wide", x: CONTENT.left, y: CONTENT.top, w: contentW, h: 330, raise: 8 },
-      // The German, split: the Ausdruck left, the Präposition right.
-      { module: "ausdruck", variant: "wide", x: CONTENT.left, y: CONTENT.top + 370, w: HALF_W, h: 360 },
-      { module: "praeposition", variant: "wide", x: CONTENT.left + HALF_W + 2 * GAP + RULE.hair, y: CONTENT.top + 370, w: HALF_W, h: 360 },
-      // The Feld line at the bottom (Kindle-drawn; its own piece set, as its
-      // position differs from Tag's).
-      { module: "tempelhof", variant: "morgen", x: CONTENT.left, y: CONTENT.bottom - TAG_TOP_H, w: contentW, h: TAG_TOP_H },
-    ],
-    rules: [
-      { h: true, x: CONTENT.left, y: CONTENT.top + 334, len: contentW },
-      { v: true, x: CONTENT.left + HALF_W + GAP, y: CONTENT.top + 370, len: 340 },
-      { h: true, x: CONTENT.left, y: CONTENT.bottom - TAG_TOP_H - 24, len: contentW },
+      DATE,
+      // Kindle-drawn: `variant` names its piece set (the build makes one per variant).
+      T("tempelhof", [0, 1, 2, 1], { variant: "morgen", tone: "fill" }),
+      T("wetter", [2, 0, 2, 2], { variant: "mixed", tone: "fill" }),
+      T("ausdruck", [4, 0, 4, 2], { variant: "card", tone: "light" }),
+      T("kino", [0, 2, 4, 2], { variant: "tonight", tone: "light" }),
+      // Each person's exercise rings, inverted.
+      T("fitness", [4, 2, 2, 2], { variant: "person", person: "Matt", tone: "dark" }),
+      T("fitness", [6, 2, 2, 2], { variant: "person", person: "Fiona", tone: "dark" }),
     ],
   },
+  // Tag, Abend and Nacht are the old screens' modules on tiles, not designed yet.
   tag: {
     name: "Tag",
-    frame: { date: true, battery: true },
-    boxes: [
-      { module: "tempelhof", variant: "half", x: CONTENT.left, y: CONTENT.top, w: contentW, h: TAG_TOP_H },
-      { module: "praeposition", variant: "wide", x: CONTENT.left, y: CONTENT.top + TAG_TOP_H + 60, w: contentW, h: contentH - TAG_TOP_H - 60 },
-    ],
-    rules: [
-      { h: true, x: CONTENT.left, y: CONTENT.top + TAG_TOP_H + 24, len: contentW },
-    ],
+    style: "outline",
+    boxes: [DATE, T("tempelhof", [2, 0, 6, 2], { variant: "tag" }), T("praeposition", [0, 2, 8, 2], { variant: "wide" })],
   },
   abend: {
     name: "Abend",
-    frame: { date: true, battery: true },
-    boxes: [{ module: "kino", variant: "full", x: CONTENT.left, y: CONTENT.top, w: contentW, h: contentH }],
-    rules: [],
+    style: "outline",
+    boxes: [DATE, T("kino", [2, 0, 6, 4], { variant: "full" })],
   },
   nacht: {
     name: "Nacht",
-    frame: { date: true, battery: false },
-    boxes: [
-      { module: "fitness", variant: "wide", x: CONTENT.left, y: CONTENT.top, w: contentW, h: 470 },
-      { module: "ausdruck", variant: "wide", x: CONTENT.left, y: CONTENT.top + 530, w: contentW, h: contentH - 530 },
-    ],
-    rules: [{ h: true, x: CONTENT.left, y: CONTENT.top + 494, len: contentW }],
+    style: "outline",
+    boxes: [DATE, T("ausdruck", [2, 0, 6, 2], { variant: "wide" }), T("fitness", [0, 2, 8, 2], { variant: "wide" })],
   },
 };
 
 /** Modules the Kindle draws itself (prebuilt, updated every minute); the rest come from the server. */
 export const DEVICE_MODULES = new Set(["tempelhof"]);
 
-const LABELS = { wetter: "Wetter", kino: "Im Kino", ausdruck: "Ausdruck des Tages", tempelhof: "Tempelhofer Feld", fitness: "Bewegung diese Woche", praeposition: "Präposition des Tages" };
+const LABELS = { datum: "Datum", wetter: "Wetter", kino: "Im Kino", ausdruck: "Ausdruck des Tages", tempelhof: "Tempelhofer Feld", fitness: "Bewegung diese Woche", praeposition: "Präposition des Tages" };
 
 /** Screens whose content goes stale within the hour (weather, fitness) — the Kindle checks in on the interval. */
 export const HOURLY_SCREENS = Object.keys(SCREENS).filter((id) => SCREENS[id].boxes.some((b) => MODULES[b.module].cadence === "hourly"));
@@ -85,58 +81,56 @@ export const HOURLY_SCREENS = Object.keys(SCREENS).filter((id) => SCREENS[id].bo
  * The box a module lays out in: TITLE_SPACE taller than its screen box,
  * drawn shifted up by TITLE_SPACE (see design.mjs). The build uses it too.
  */
-export const moduleBox = (b) => ({ w: b.w, h: b.h + TITLE_SPACE, variant: b.variant, raise: b.raise });
+export const moduleBox = (b) => ({ w: b.w, h: b.h + TITLE_SPACE, variant: b.variant, tone: b.tone, person: b.person, bleed: b.bleed ?? 0 });
 
 /** The Kindle-drawn boxes of a screen. */
 export const deviceBoxes = (id) => SCREENS[id].boxes.filter((b) => DEVICE_MODULES.has(b.module));
 
-/** Placeholder for a server module when the Kindle has no downloaded screen. */
+/** Placeholder for a server module when the Kindle has no downloaded screen (the date tile says why). */
 function placeholder(box, module) {
-  return (
-    sectionTitle(LABELS[module]) +
-    text(0, Math.min(200, box.h / 2), "Keine Verbindung", TYPE.body) +
-    text(0, Math.min(200, box.h / 2) + 56, "Power-Taste drücken, um zu aktualisieren", TYPE.caption)
-  );
+  return text(0, TITLE_SPACE + 30, LABELS[module], TYPE.caption);
 }
+
+/** A tile: its background, then `inner` (module coordinates) placed in its content box. */
+export function boxSvg(b, inner, style = "outline") {
+  return tile(b.tile, b.tone ?? style) + `<g transform="translate(${b.x} ${b.y - TITLE_SPACE})">${inner}</g>`;
+}
+
+/** One tile's content (module coordinates) for `data` in `mode` (see screenSvg). */
+export function moduleSvg(b, data, mode = "full") {
+  const box = moduleBox(b);
+  const onDevice = DEVICE_MODULES.has(b.module);
+  if (b.module === "datum") return datum.render(box, mode === "fallback" ? {} : { date: data.date, battery: data.battery });
+  if (mode === "fallback" && !onDevice) return placeholder(box, b.module);
+  if (b.module === "tempelhof") return tempelhof.render(box, data.tempelhof);
+  if (b.module === "wetter") return wetter.render(box, data.wetter);
+  if (b.module === "ausdruck") return ausdruck.render(box, data.ausdruck);
+  if (b.module === "praeposition") return praeposition.render(box, data.praeposition);
+  if (b.module === "fitness") return fitness.render(box, data.fitness, { date: data.date });
+  if (b.module === "kino") return kino.render(box, data.kino.programme, { date: data.kino.date ?? data.date, day: data.kino.day, from: data.kino.from });
+  return "";
+}
+
+/** A tile for `module` at cell (col, row) spanning cols × rows (the design page builds its own). */
+export const tileAt = (module, rect, opts) => T(module, rect, opts);
 
 /**
  * Render a screen to SVG. `data` supplies each module's input:
  * { date, battery, tempelhof: state, wetter: weather, kino: { programme, from, updated },
- *   ausdruck: entry, fitness: { people }, updated: { wetter: "HH:MM" } }
+ *   ausdruck: entry, praeposition: entry, fitness: { people } }
  *
  * mode "full"     — everything (gallery, admin preview)
- *      "base"     — Kindle-drawn boxes left blank (the server's image for the Kindle)
- *      "fallback" — no data: server boxes show "Keine Verbindung", Kindle boxes blank (prebuilt)
+ *      "base"     — Kindle-drawn tiles left blank (the server's image for the Kindle)
+ *      "fallback" — no data: the date tile says "Keine Verbindung", the others show their name
+ * `style` overrides the screen's tile style (the gallery compares them).
  */
-export function screenSvg(id, data, mode = "full") {
+export function screenSvg(id, data, mode = "full", { style } = {}) {
   const s = SCREENS[id];
+  style ??= s.style;
   let svg = svgOpen(W, H);
-  if (s.frame) {
-    const live = mode !== "fallback";
-    // The screen's "Stand": when its weather or listing was fetched.
-    const updated = s.boxes.some((b) => b.module === "wetter") ? data.updated?.wetter : s.boxes.some((b) => b.module === "kino") ? data.kino?.updated : null;
-    // "Stand" is left out of the top bar for now (pass `updated` to bring it back).
-    void updated;
-    svg += topbar({ date: s.frame.date && live ? data.date : null, battery: s.frame.battery && live ? data.battery : null });
-  }
-  for (const r of s.rules) svg += r.v ? vrule(r.x, r.y, r.len) : hrule(r.x, r.y, r.len);
   for (const b of s.boxes) {
-    const box = moduleBox(b);
-    const onDevice = DEVICE_MODULES.has(b.module);
-    let inner = "";
-    if (onDevice && mode !== "full") inner = "";
-    else if (!onDevice && mode === "fallback") inner = placeholder(box, b.module);
-    else if (b.module === "tempelhof") inner = tempelhof.render(box, data.tempelhof);
-    else if (b.module === "wetter") inner = wetter.render(box, data.wetter);
-    else if (b.module === "ausdruck") inner = ausdruck.render(box, data.ausdruck);
-    else if (b.module === "praeposition") inner = praeposition.render(box, data.praeposition);
-    else if (b.module === "fitness") inner = fitness.render(box, data.fitness, { date: data.date });
-    else if (b.module === "kino") {
-      inner = kino.render(box, data.kino.programme, {
-        date: data.date, from: data.kino.from, titleSize: s.frame ? undefined : 40,
-      });
-    }
-    svg += `<g transform="translate(${b.x} ${b.y - TITLE_SPACE})">${inner}</g>`;
+    if (DEVICE_MODULES.has(b.module) && mode !== "full") continue;
+    svg += boxSvg(b, moduleSvg(b, data, mode), style);
   }
   return svg + "</svg>";
 }

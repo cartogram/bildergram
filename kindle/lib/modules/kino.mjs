@@ -4,11 +4,16 @@
 // section per cinema (time, title, formats), balanced over two
 // columns, text shrinking until everything fits.
 //
+// Variant "tonight" (a tile, Phase 14; from 22:00 tomorrow's, "morgen ab
+// 18:00" — render.mjs kinoDay): every cinema's screenings in
+// one list by time (time, title, the cinema's letter in a circle),
+// as many as fit.
+//
 // Cadence: daily (rendered at check-in for the slot's date).
 // Data: kindle/lib/kino.mjs → fetchProgramme(slugs).
 // ============================================================
 
-import { sectionTitle, stamp, text, TYPE, width } from "../design.mjs";
+import { CIRCLE_LABEL, circleLabel, firstBaseline, sectionTitle, text, TILE_TYPE, TITLE_SPACE, TYPE, width } from "../design.mjs";
 import { wrap } from "../eink.mjs";
 
 export const id = "kino";
@@ -69,7 +74,8 @@ function columns(cinemas, size, box, top) {
  * `titleSize` enlarges the "IM KINO" label when the module is the
  * whole screen (no top bar).
  */
-export function render(box, programme, { date, from = "18:00", updated, titleSize } = {}) {
+export function render(box, programme, { date, day = "heute", from = "18:00", titleSize } = {}) {
+  if (box.variant === "tonight") return renderTonight(box, programme, { date, day, from });
   const cinemas = programme.cinemas
     .map((c) => ({ ...c, rows: c.sessions.filter((s) => s.date === date && s.time >= from) }))
     .filter((c) => c.rows.length);
@@ -87,4 +93,43 @@ export function render(box, programme, { date, from = "18:00", updated, titleSiz
     svg += placed.svg;
   }
   return svg;
+}
+
+/** The tile: "Im Kino" and the evening's screenings by time, one line each. */
+function renderTonight(box, programme, { date, day, from }) {
+  const top = TITLE_SPACE;
+  const size = 30;
+  const rowH = 50;
+  const rows = programme.cinemas
+    .flatMap((c) => c.sessions.filter((s) => s.date === date && s.time >= from).map((s) => ({ ...s, cinema: c.name })))
+    .sort((a, b) => a.time.localeCompare(b.time) || a.title.localeCompare(b.title));
+  const y1 = top + firstBaseline(TILE_TYPE.label.size);
+  let svg = text(0, y1, "Im Kino", TILE_TYPE.label) + text(box.w, y1, `${day} ab ${from}`, TYPE.caption, { anchor: "end" });
+  if (!rows.length) return svg + text(0, top + 110, "Heute keine Vorstellungen", { size });
+  const timeW = Math.ceil(width("00:00", { size, weight: "bold" })) + 18;
+  const titleW = box.w - timeW - CIRCLE_LABEL.d - 20;
+  const letters = cinemaLetters(programme.cinemas.map((c) => c.name));
+  // Leave room for "+ n weitere" when not everything fits.
+  // Rows from baseline top + 100 down to the bottom; when some are left out,
+  // the last row's place goes to "+ n weitere" (on the bottom line).
+  let fit = Math.floor((box.h - (top + 94)) / rowH) + 1;
+  if (fit < rows.length) fit = Math.floor((box.h - 44 - (top + 94)) / rowH) + 1;
+  rows.slice(0, fit).forEach((r, i) => {
+    const y = top + 94 + i * rowH;
+    svg += text(0, y, r.time, { size, weight: "bold" });
+    svg += text(timeW, y, wrap(r.title, size, titleW, 1)[0], { size });
+    // The cinema's initials in a circle, centred on the row's lowercase letters.
+    svg += circleLabel(box.w - CIRCLE_LABEL.d / 2, y - Math.round(size * 0.36), letters.get(r.cinema));
+  });
+  if (fit < rows.length) svg += text(0, box.h, `+ ${rows.length - fit} weitere`, TYPE.caption);
+  return svg;
+}
+
+/** "Neues Off" → "NO", "Rollberg" → "R". */
+const initials = (name) => name.split(/[\s-]+/).filter(Boolean).map((w) => w[0].toUpperCase()).join("").slice(0, 2);
+
+/** Each cinema's label: its first letter ("Neues Off" → "N"), or its two initials when the first letter is shared. */
+function cinemaLetters(names) {
+  const first = (n) => n.trim()[0].toUpperCase();
+  return new Map(names.map((n) => [n, names.filter((m) => first(m) === first(n)).length > 1 ? initials(n) : first(n)]));
 }

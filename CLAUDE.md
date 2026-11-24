@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A battery-powered e-ink dashboard on two jailbroken Kindles: `kindle_01` (**Matt**), a Paperwhite 3, and `kindle_02` (**Fiona**), a Paperwhite 2. Each shows **German screens** (the admin page stays in English) on its own daily schedule: **Morgen** (weather + expression of the day), **Tag** (Tempelhof countdown + Präposition des Tages), **Abend** (IM KINO, the Yorck cinema listing) and **Nacht** (exercise this week for Matt and Fiona + expression of the day).
+A battery-powered e-ink dashboard on two jailbroken Kindles: `kindle_01` (**Matt**), a Paperwhite 3, and `kindle_02` (**Fiona**), a Paperwhite 2. Each shows **German screens** (the admin page stays in English) on its own daily schedule: **Morgen** (tiles: date, Feld gauge, weather, expression of the day, Kino tonight, exercise rings), **Tag** (Tempelhof countdown + Präposition des Tages), **Abend** (IM KINO, the Yorck cinema listing) and **Nacht** (exercise this week for Matt and Fiona + expression of the day).
 
 There are three parts:
 - **Kindle** (`kindle/device/dashboard.sh`): a busybox shell loop. It draws each screen's downloaded base image with `eips`, pastes the Tempelhof panel and countdown on Tag, and suspends to RAM with Wi-Fi off, waking on the RTC alarm.
@@ -43,21 +43,25 @@ There is no test runner. Verify changes with:
 
 - **`design.mjs`** is the design system. It holds:
   - tokens: `TYPE` scale, `INK` (three levels that land exactly on the panel's 16 grays), `MARGIN`/`CONTENT`, `RULE`;
-  - primitives: `text`, `label`, `pill` (open: GEÖFFNET), `underlined` (the same word in black with a thick rule under it; closed: GESCHLOSSEN), rules, `topbar` (date + battery);
+  - primitives: `text`, `label`, `underlined`, rules, `topbar` (unused since the tiles);
+  - **the tile grid (Phase 14)**: `GRID` (8 × 4 cells of 171 × 256, 8 apart, 12 from the edges), `cell(col, row, cols, rows)`, `TILE_PAD` (24), and `tile(rect, style)` with styles `outline`, `light` (light gray border), `fill` (light gray), `dark` (black; modules switch to `TILE_INK_DARK`) and `bleed` (no container);
+  - tile tokens: `TILE_TYPE` (display 104 bold, heading 32 bold, body 32, label 28 bold, small 24), `TILE_INK` (ink, muted, faint, line on paper), `firstBaseline(size)` (every tile's first line has its capitals 8 px below the content top; last lines sit on the bottom edge), `pill()` and `circleLabel()` (24 bold in a 32-high shape), `statRow()` (label left, bold value right, 38 apart);
   - German formatting: `deDateLong`, `deNumber` (decimal comma, typographic minus), `deCountdown`;
   - the WMO weather icons and German weather texts.
 
   - **Section titles are off** (`SECTION_TITLES`): modules still lay out under a title line, so `screens.mjs` (`moduleBox`) and the build render each module `TITLE_SPACE` (64) taller and shifted up by it. Modules draw titles only through `sectionTitle()`.
 
-  New UI should use these rather than raw sizes or colors. `npm run kindle:design` renders every token, primitive, icon and module variant to `kindle/dist/gallery/design-system.html`. Bold is the real **Arimo Bold** (`assets/fonts/Arimo-Bold.ttf`), and `width()` assumes bold runs ≤ 7% wider than regular (it overestimates, by about 6% on GESCHLOSSEN). `exactWidth()` uses Arimo Bold's measured advances instead; use it only where drawing must end with the text, such as an underline, because switching layout to it would shift sizes and line breaks.
+  New UI should use these rather than raw sizes or colors. `npm run kindle:design` renders the grid, the tile tokens, the components, every card in each state (sample data from `kindle/samples.mjs`) and an audit of sizes and grays to `kindle/dist/gallery/design-system.html`. Bold is the real **Arimo Bold** (`assets/fonts/Arimo-Bold.ttf`), and `width()` assumes bold runs ≤ 7% wider than regular (it overestimates, by about 6% on GESCHLOSSEN). `exactWidth()` uses Arimo Bold's measured advances instead; use it only where drawing must end with the text, such as an underline, because switching layout to it would shift sizes and line breaks.
 - **`modules/*.mjs`**: each module exports `render(box, data, …)`, which returns SVG in box-local coordinates, plus its `cadence`.
-  - `tempelhof` is per-minute and drawn on the device; it also exports `countdownBox` and `countdownSvg`.
-  - `wetter` is hourly (Open-Meteo, no key; variants `compact` and `wide`).
-  - `kino` is daily (yorck.de).
+  - `datum` (Phase 14) is the date tile: weekday, day, month, and Akku in a pill; it sits in cell (0, 0) on every screen because the check-in's "Aktualisiere …" piece (`updatingRect`) is pasted there.
+  - `tempelhof` is per-minute and drawn on the device; it also exports `countdownBox` and `countdownSvg`. A short tile (Morgen) is "Feld schließt in" over the countdown plus a half-circle gauge (`GAUGE_STEPS` dots from the last event to the next, times in pills); open draws the ring as an "n" above the text, closed as a "u" below, so countdown and gauge pieces are placed per state (`gaugeBox`, `gaugeSvg`, `gaugeStep`).
+  - `wetter` is hourly (Open-Meteo, no key; 1-column variants `mixed`, `details`, `days`, and `forecast`).
+  - `kino` is daily (yorck.de); the `tonight` tile lists every cinema by time with a letter per cinema, and from 22:00 Berlin time shows tomorrow's listing (`render.mjs` `kinoDay`).
   - `ausdruck` is daily, from `kindle/data/ausdruecke.json`: 365 B2 entries `{ausdruck, bedeutung, beispiel}`, rotating by days since 2026-01-01.
   - `praeposition` is daily, from `kindle/data/praepositionen.json`: 215 verbs with a fixed preposition `{wort, kasus, bedeutung, beispiel}`, contrasting pairs on neighbouring days; drawn with the `ausdruck` band layout.
-  - `fitness` is hourly: this week's exercise minutes per person against a weekly goal. The data comes from the hub (the renderer's `fitness` param, validated by `parseFitness`), not from a fetch.
-- **`screens.mjs`**: `SCREENS` (frame flags, boxes, rules) and `screenSvg(id, data, mode)`, where `mode` is one of:
+  - `fitness` is hourly: exercise minutes per person against day, week and year goals; the `person` tile draws three rings (today, the week as one segment per day, the year) and a legend. The data comes from the hub (the renderer's `fitness` param, validated by `parseFitness`), not from a fetch.
+  - The `ausdruck` `card` variant centres the English meaning (as title), the expression and the example; optional `woerter` (`[{artikel, wort, plural} | {verb, formen}]`, not yet in the data) flow at the bottom.
+- **`screens.mjs`**: `SCREENS` (a tile `style` and tiles from `T(module, [col, row, cols, rows], { variant, tone })`; Tag, Abend and Nacht are on the grid but not yet designed), `moduleSvg(b, data, mode)` and `screenSvg(id, data, mode)`, where `mode` is one of:
   - `full`: everything; used by the gallery and the admin preview.
   - `base`: device boxes left blank; this is what the server sends to the Kindle.
   - `fallback`: "Keine Verbindung" placeholders, prebuilt for offline use.
@@ -70,7 +74,7 @@ There is no test runner. Verify changes with:
 - **Devices**: `kindle/lib/devices.mjs` holds each panel's landscape size and rotation (`kindle_01`: 1448×1072, `kindle_02`: 1024×758). `src/devices.ts` holds tokens and MACs; keep the ids in sync. Screens are designed on the 1448×1072 canvas and rasterized at the device width (`rasterize(svg, { width })` uses resvg's `fitTo`).
 - **Tempelhof pieces at a fractional scale**: pieces are **cropped from full-canvas renders** at the device width. Rendering only a region through a shifted viewBox anti-aliases differently at fractional scales (up to 119 gray levels off), which broke the pixel-exact paste check. `pixelRect` rounds box rects outward to whole device pixels.
 
-- **Format**: the framebuffer is 1072×1448 **portrait**, 8 bpp gray (`eips -i`). `eips -g` pastes pixels as-is, with no scaling, rotation or depth conversion. So everything is drawn as a 1448×1072 landscape SVG, quantized to 16 grays, rotated counter-clockwise (`KINDLE_ROTATE=cw` flips it), and written as an 8-bit grayscale PNG; 1-bit PNGs display wrongly. The paste positions in the generated `layout.env` are portrait coordinates (`TP_<screen>_X`, `CD_<screen>_X`, `UPD_X`, …).
+- **Format**: the framebuffer is 1072×1448 **portrait**, 8 bpp gray (`eips -i`). `eips -g` pastes pixels as-is, with no scaling, rotation or depth conversion. So everything is drawn as a 1448×1072 landscape SVG, quantized to 16 grays, rotated counter-clockwise (`KINDLE_ROTATE=cw` flips it), and written as an 8-bit grayscale PNG; 1-bit PNGs display wrongly. The paste positions in the generated `layout.env` are portrait coordinates (`TP_<screen>_X`, `CD_<screen>_X`, `GG_<screen>_<state>_X`, `UPD_X`, …).
 - **resvg-wasm gotchas**:
   - `img.pixels` is a getter that copies out of WASM memory on every read, so read it once; reading it per pixel made builds take over 10 minutes.
   - Call `img.free()` and `resvg.free()` after each render. Without that, a build of about 1,000 full renders crashed WASM (`RuntimeError: unreachable`), and long-lived Vercel instances would leak memory.
@@ -124,8 +128,9 @@ There is no test runner. Verify changes with:
 
   After a failure it waits `RETRY_SECS` (15 min) before trying again. Each check-in downloads every scheduled screen: the current one for its slot's day, the others for today.
 - **Tempelhof box**:
-  - On Tag the loop pastes `tempelhof/<variant>/panel/<state>.png` on full redraws (state changes, and every 15 minutes against ghosting).
-  - It pastes `cd/<minutes>.png` every minute; minutes are rounded up.
+  - The loop pastes `tempelhof/<variant>/panel/<state>.png` (the whole tile, background included) on full redraws (state changes, and every 15 minutes against ghosting).
+  - It pastes `cd/<open|closed>/<minutes>.png` every minute; minutes are rounded up.
+  - Where the tile has a gauge (`GG_<screen>_<state>_X`), it pastes `gauge/<state>/<since>-<target>/<step>.png` when the step changes; `tempelhof_lookup` returns the previous event and the pair of times too.
   - The schedule comes from `schedule.txt` (3 years; the build checks it against `getTemplehofStatus`).
 - **Waking**: it sets `/sys/class/rtc/rtc1/wakealarm` to `+N`, then runs `echo mem > /sys/power/state`.
   - After a timer wake, `wakealarm` reads empty. If it still holds the pending alarm, the power button or USB woke the Kindle: with USB charging the loop exits, otherwise it checks in.

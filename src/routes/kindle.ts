@@ -28,7 +28,7 @@ import { fitnessParam } from "./fitness";
 
 /** The screens kindle/lib/screens.mjs defines (ids, German names, what they show). */
 export const SCREENS = {
-  morgen: { name: "Morgen", shows: "Weather + Tempelhof line + expression of the day" },
+  morgen: { name: "Morgen", shows: "Tiles: date, Feld gauge, weather, expression of the day, Kino tonight, Matt + Fiona's exercise rings" },
   tag: { name: "Tag", shows: "Tempelhof countdown + preposition of the day" },
   abend: { name: "Abend", shows: "Yorck cinema listing" },
   nacht: { name: "Nacht", shows: "Exercise this week (Matt + Fiona) + expression of the day" },
@@ -36,7 +36,7 @@ export const SCREENS = {
 export type Screen = keyof typeof SCREENS;
 
 /** Screens showing the fitness module (kindle/lib/screens.mjs). */
-const FITNESS_SCREENS = new Set<string>(["nacht"]);
+const FITNESS_SCREENS = new Set<string>(["morgen", "nacht"]);
 
 export interface KindleConfig {
   /** Daily timetable: from `at` (Berlin HH:MM) until the next entry, show `screen`. */

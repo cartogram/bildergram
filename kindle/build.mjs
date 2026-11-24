@@ -3,7 +3,7 @@
 // kindle/build.mjs — builds the Kindle bundle (Phase 9)
 // (`npm run kindle:build`).
 //
-// The server renders each screen's "base" (top bar, weather, cinema,
+// The server renders each screen's "base" (date, weather, cinema,
 // phrase) at check-in; the Kindle only draws what changes every
 // minute: the Tempelhof panel and countdown, pasted into the Tag
 // screen's box. This build prepares everything the Kindle draws by
@@ -26,12 +26,12 @@
 import { execFileSync } from "node:child_process";
 import { copyFileSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { INK, TOPBAR, MARGIN, text } from "./lib/design.mjs";
 import { DEVICES, device as getDevice } from "./lib/devices.mjs";
 import { W, encodePng, initRenderer, paste, rasterize, rotate, rotatedOrigin, svgOpen } from "./lib/eink.mjs";
 import * as tempelhof from "./lib/modules/tempelhof.mjs";
-import { buildSchedule, nextEvent } from "./lib/schedule.mjs";
-import { HOURLY_SCREENS, SCREENS, deviceBoxes, moduleBox, screenSvg } from "./lib/screens.mjs";
+import { buildSchedule, hhmm, nextEvent } from "./lib/schedule.mjs";
+import * as datum from "./lib/modules/datum.mjs";
+import { HOURLY_SCREENS, SCREENS, boxSvg, deviceBoxes, moduleBox, screenSvg } from "./lib/screens.mjs";
 import { TITLE_SPACE } from "./lib/design.mjs";
 import { getTemplehofStatus } from "./lib/templehof.ts";
 
@@ -42,8 +42,16 @@ const YEARS = 3; // schedule length — reinstall before it runs out
 /** Default screen schedule until the first check-in (HHMM:screen). */
 const DEFAULT_SCHEDULE = "0600:morgen 0900:tag 1815:abend 2300:nacht";
 
-/** Where "Aktualisiere …" covers the battery reading in the top bar. */
-const UPDATING = { x: W - MARGIN.x - 420, y: TOPBAR.baseline - 44, w: 420, h: 60 };
+/** The date tile (the same cell on every screen), where "Aktualisiere …" covers the battery reading. */
+const DATE_TILE = SCREENS.morgen.boxes.find((b) => b.module === "datum");
+for (const [id, s] of Object.entries(SCREENS)) {
+  const d = s.boxes.find((b) => b.module === "datum");
+  if (!d || d.x !== DATE_TILE.x || d.y !== DATE_TILE.y || d.w !== DATE_TILE.w || d.h !== DATE_TILE.h) throw new Error(`screen ${id}: the date tile must sit where Morgen's does`);
+}
+const UPDATING = (() => {
+  const r = datum.updatingRect(moduleBox(DATE_TILE));
+  return { x: DATE_TILE.x + r.x, y: DATE_TILE.y - TITLE_SPACE + r.y, w: r.w, h: r.h };
+})();
 
 function version() {
   try {
@@ -73,12 +81,15 @@ function verifySchedule(events, fromMs) {
   return checked;
 }
 
-/** Tempelhof state for a schedule background key such as "open_0700-1800". */
-function stateForKey(key, minutes = 0) {
+/** Tempelhof state for a schedule background key such as "open_0700-1800" (gauge: `since`, `progress`). */
+function stateForKey(key, minutes = 0, since = null, progress = 0) {
   const [kind, hours] = key.split("_");
   const [o, c] = hours.split("-").map((x) => `${x.slice(0, 2)}:${x.slice(2)}`);
-  return { open: kind === "open", target: kind === "open" ? c : o, minutes, hours: [o, c] };
+  return { open: kind === "open", target: kind === "open" ? c : o, minutes, hours: [o, c], since, progress };
 }
+
+/** "0700" → "07:00". */
+const colon = (x) => `${x.slice(0, 2)}:${x.slice(2)}`;
 
 /** A full-canvas design SVG holding only `inner` (everything else white). */
 const canvasSvg = (inner) => `${svgOpen(W, 1072)}${inner}</svg>`;
@@ -111,6 +122,10 @@ const fixture = {
   },
   updated: { wetter: "14:00" },
   ausdruck: { ausdruck: "sein blaues Wunder erleben", bedeutung: "to be in for a nasty surprise", beispiel: "Wer an Silvester ohne Reservierung kommt, wird sein blaues Wunder erleben." },
+  kino: {
+    from: "18:00",
+    programme: { cinemas: [{ slug: "rollberg", name: "Rollberg", sessions: [{ date: "2026-11-23", time: "19:30", title: "Perfect Days", film: null, formats: ["OmU"] }] }] },
+  },
   praeposition: { wort: "sich freuen auf", kasus: "Akk.", bedeutung: "to look forward to", beispiel: "Wir freuen uns schon auf den Sommer auf dem Tempelhofer Feld." },
 };
 
@@ -124,6 +139,9 @@ const now = Date.now();
 const events = buildSchedule(now, YEARS);
 const checked = verifySchedule(events, now);
 const bgKeys = [...new Set(events.map((e) => e.bg))];
+// Gauge label pairs "since-target" (e.g. "1800-0700") per state: the previous event's time and the next one's.
+const gaugePairs = { open: new Set(), closed: new Set() };
+events.slice(1).forEach((e, i) => gaugePairs[e.kind === "close" ? "open" : "closed"].add(`${hhmm(events[i].label)}-${hhmm(e.label)}`));
 let maxMinutes = 0;
 for (let i = 1; i < events.length; i++) maxMinutes = Math.max(maxMinutes, Math.ceil((events[i].t - events[i - 1].t) / 60_000));
 const schedule = events.map((e) => `${Math.round(e.t / 1000)} ${e.kind} ${e.bg}`).join("\n") + "\n";
@@ -148,6 +166,7 @@ for (const deviceId of Object.keys(DEVICES)) {
     `SCREENS="${Object.keys(SCREENS).join(" ")}"`,
     `HOURLY_SCREENS="${HOURLY_SCREENS.join(" ")}"`,
     `DEFAULT_SCHEDULE="${dev.schedule ?? DEFAULT_SCHEDULE}"`,
+    `GAUGE_STEPS=${tempelhof.GAUGE_STEPS}`,
   ];
 
   // Kindle-drawn boxes: Tempelhof panels + countdowns, once per box variant.
@@ -159,20 +178,36 @@ for (const deviceId of Object.keys(DEVICES)) {
       // Module coordinates start TITLE_SPACE above the box (no section titles).
       const box = moduleBox(b);
       const top = b.y - TITLE_SPACE;
-      const P = pixelRect(b, s);
+      const P = pixelRect(b.tile, s); // the whole tile: the base leaves it out
       // The countdown follows the sentence, so its position (and, at a
       // fractional scale, its anti-aliasing) differs per state.
+      const style = SCREENS[id].style;
       const C = {};
       for (const st of ["open", "closed"]) {
         const cb = tempelhof.countdownBox(box, st === "open");
         C[st] = { cb, r: pixelRect({ x: b.x + cb.x, y: top + cb.y, w: cb.w, h: cb.h }, s) };
       }
-      const panelSvg = (state) => canvasSvg(`<g transform="translate(${b.x} ${top})">${tempelhof.render(box, state, { withCountdown: false })}</g>`);
+      // Pieces carry the tile itself (the base leaves the whole tile blank).
+      const panelSvg = (state) => canvasSvg(boxSvg(b, tempelhof.render(box, state, { withCountdown: false, withGauge: false }), style));
+      // The gauge (short tiles): a piece per label pair and step, cropped from the tile with only the gauge drawn.
+      // Its place and shape differ per state ("n" open, "u" closed).
+      const gauge = tempelhof.hasGauge(box);
+      const G = {};
+      if (gauge) {
+        for (const st of ["open", "closed"]) {
+          const gb = tempelhof.gaugeBox(box, st === "open");
+          G[st] = pixelRect({ x: b.x + gb.x, y: top + gb.y, w: gb.w, h: gb.h }, s);
+        }
+      }
+      const gaugeSvg = (st, pair, step) => {
+        const [since, target] = pair.split("-").map(colon);
+        return canvasSvg(boxSvg(b, tempelhof.gaugeSvg(box, since, target, step, st === "open"), style));
+      };
       // Countdown pieces are cropped from the whole line (the sentence before
       // the countdown is the same for every state key of open/closed), so
       // anti-aliasing at the piece's edge matches the full render.
       const repKey = { open: bgKeys.find((k) => k.startsWith("open")), closed: bgKeys.find((k) => k.startsWith("closed")) };
-      const cdSvg = (st, m) => canvasSvg(`<g transform="translate(${b.x} ${top})">${tempelhof.render(box, stateForKey(repKey[st], m))}</g>`);
+      const cdSvg = (st, m) => canvasSvg(boxSvg(b, tempelhof.render(box, stateForKey(repKey[st], m), { withGauge: false }), style));
       const dir = `${out}/dashboard/tempelhof/${b.variant}`;
       if (!built.has(b.variant)) {
         built.add(b.variant);
@@ -188,6 +223,19 @@ for (const deviceId of Object.keys(DEVICES)) {
             pieces++;
           }
         }
+        for (const st of gauge ? ["open", "closed"] : []) {
+          for (const pair of gaugePairs[st]) {
+            mkdirSync(`${dir}/gauge/${st}/${pair}`, { recursive: true });
+            for (let step = 0; step <= tempelhof.GAUGE_STEPS; step++) {
+              writeFileSync(`${dir}/gauge/${st}/${pair}/${step}.png`, png(renderRegion(gaugeSvg(st, pair, step), G[st], dev.width)));
+              pieces++;
+            }
+          }
+        }
+      }
+      for (const st of gauge ? ["open", "closed"] : []) {
+        const gg = rotatedOrigin(G[st], dev.rotate, canvas);
+        env.push(`GG_${id}_${st}_X=${gg.x}`, `GG_${id}_${st}_Y=${gg.y}`);
       }
       const tp = rotatedOrigin(P, dev.rotate, canvas);
       env.push(`DEVICE_${id}="tempelhof:${b.variant}"`, `TP_${id}_X=${tp.x}`, `TP_${id}_Y=${tp.y}`);
@@ -198,14 +246,15 @@ for (const deviceId of Object.keys(DEVICES)) {
 
       // Paste check: the server's base + the pasted panel and countdown must
       // reproduce the full design at this device's size, pixel for pixel.
-      for (const [key, minutes] of [["open_0700-1800", 135], ["closed_0700-1800", 775]]) {
-        const state = stateForKey(key, minutes);
+      for (const [key, minutes, since, progress] of [["open_0700-1800", 135, "07:00", 0.8], ["closed_0700-1800", 775, "18:00", 0.04]]) {
+        const state = stateForKey(key, minutes, since, progress);
         const data = { ...fixture, tempelhof: state };
         const full = rasterize(screenSvg(id, data, "full"), { width: dev.width });
         const composed = rasterize(screenSvg(id, data, "base"), { width: dev.width });
         paste(composed, renderRegion(panelSvg(state), P, dev.width), P);
         const st = key.startsWith("open") ? "open" : "closed";
         paste(composed, renderRegion(cdSvg(st, minutes), C[st].r, dev.width), C[st].r);
+        if (gauge) paste(composed, renderRegion(gaugeSvg(st, `${hhmm(since)}-${hhmm(state.target)}`, tempelhof.gaugeStep(state)), G[st], dev.width), G[st]);
         let diff = 0;
         for (let i = 0; i < full.px.length; i++) if (full.px[i] !== composed.px[i]) diff++;
         if (diff > 0) throw new Error(`paste check failed for ${deviceId}/${id} (${key}): ${diff} pixels differ from the full render`);
@@ -221,8 +270,7 @@ for (const deviceId of Object.keys(DEVICES)) {
 
   // "Aktualisiere …" over the battery reading during a check-in.
   const U = pixelRect(UPDATING, s);
-  const upd = canvasSvg(`<rect x="${UPDATING.x}" y="${UPDATING.y}" width="${UPDATING.w}" height="${UPDATING.h}" fill="#fff"/>` +
-    text(UPDATING.x + UPDATING.w, UPDATING.y + 44, "Aktualisiere …", { size: 30, ink: INK.secondary }, { anchor: "end" }));
+  const upd = canvasSvg(boxSvg(DATE_TILE, datum.render(moduleBox(DATE_TILE), { date: fixture.date, updating: true })));
   writeFileSync(`${out}/dashboard/img/updating.png`, png(renderRegion(upd, U, dev.width)));
   const up = rotatedOrigin(U, dev.rotate, canvas);
   env.push(`UPD_X=${up.x}`, `UPD_Y=${up.y}`);

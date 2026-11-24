@@ -69,10 +69,18 @@ export function nextEvent(events, ms) {
 export const minutesLeft = (ev, ms) => Math.ceil((ev.t - ms) / 60_000);
 
 
-/** Tempelhof state at `ms`: open?, target time, minutes left (rounded up), that day's hours. */
+/**
+ * Tempelhof state at `ms`: open?, target time, minutes left (rounded up),
+ * that day's hours, and for the gauge the previous event's time (`since`)
+ * and how far through this stretch we are (`progress`, 0–1).
+ */
 export function tempelhofState(events, ms) {
   const ev = nextEvent(events, ms);
+  const prev = events[events.indexOf(ev) - 1];
   const [, hours] = ev.bg.split("_");
   const [o, c] = hours.split("-").map((x) => `${x.slice(0, 2)}:${x.slice(2)}`);
-  return { open: ev.kind === "close", target: ev.label, minutes: minutesLeft(ev, ms), hours: [o, c], bg: ev.bg };
+  return {
+    open: ev.kind === "close", target: ev.label, minutes: minutesLeft(ev, ms), hours: [o, c], bg: ev.bg,
+    since: prev?.label ?? null, progress: prev ? (ms - prev.t) / (ev.t - prev.t) : 0,
+  };
 }

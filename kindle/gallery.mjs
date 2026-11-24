@@ -16,7 +16,11 @@ import { parseFitness, weekOf } from "./lib/modules/fitness.mjs";
 import { entryFor as praepositionFor, loadEntries as praepositionen } from "./lib/modules/praeposition.mjs";
 import { fetchWeather } from "./lib/modules/wetter.mjs";
 import { berlinParts, berlinToUtc, buildSchedule, tempelhofState } from "./lib/schedule.mjs";
-import { SCREENS, screenSvg } from "./lib/screens.mjs";
+import { SCREENS, boxSvg, moduleBox, screenSvg } from "./lib/screens.mjs";
+import { cell, TILE_PAD } from "./lib/design.mjs";
+import * as wetter from "./lib/modules/wetter.mjs";
+import { svgOpen, W, H } from "./lib/eink.mjs";
+import { mockAusdruck, mockAusdruck2, sampleProgramme } from "./samples.mjs";
 
 const OUT = fileURLToPath(new URL("./dist/gallery/", import.meta.url));
 mkdirSync(OUT, { recursive: true });
@@ -56,8 +60,8 @@ const fitnessScenes = [
     { name: "Fiona", goal: 150, days: sampleSat([55, 40, 0, 62, 30, 75]), syncedAt: satAt(18, 5) },
   ]),
   fitness([
-    { name: "Matt", goal: 150, days: sample([32, 0, 45, 18, 60, 0, 25]), syncedAt: synced },
-    { name: "Fiona", goal: 150, days: sample([55, 40, 0, 62, 30, 75, 20]), syncedAt: new Date(at(18, 5)).toISOString() },
+    { name: "Matt", goal: 150, days: sample([32, 0, 45, 18, 60, 0, 25]), year: 5940, syncedAt: synced },
+    { name: "Fiona", goal: 150, days: sample([55, 40, 0, 62, 30, 75, 20]), year: 7120, syncedAt: new Date(at(18, 5)).toISOString() },
   ]),
   fitness([
     { name: "Matt", goal: 150, days: {}, syncedAt: null },
@@ -65,8 +69,16 @@ const fitnessScenes = [
   ]),
 ];
 
+const programmeSample = sampleProgramme(date);
+
 const scenes = [
-  { id: "morgen", when: "07:30", data: base },
+  { id: "morgen", when: "07:30", note: "outline tiles", data: base, style: "outline" },
+  { id: "morgen", when: "07:30", note: "filled tiles", data: base, style: "fill" },
+  // A fixed listing, so the Kino tile shows a full list at any hour (yorck.de drops screenings once they start).
+  { id: "morgen", when: "07:30", note: "sample cinema listing, Feld closed, mock Wörter, sample minutes", data: { ...base, ausdruck: mockAusdruck, fitness: fitnessScenes[1], kino: { ...base.kino, programme: programmeSample }, tempelhof: tempelhofState(events, at(5, 30)) } },
+  { id: "morgen", when: "14:05", note: "sample cinema listing, Feld open, mock Wörter, sample minutes", data: { ...base, ausdruck: mockAusdruck, fitness: fitnessScenes[1], kino: { ...base.kino, programme: programmeSample }, tempelhof: tempelhofState(events, at(14, 5)) } },
+  { id: "morgen", when: "07:30", note: "another Ausdruck with mock Wörter", data: { ...base, ausdruck: mockAusdruck2, fitness: fitnessScenes[1], kino: { ...base.kino, programme: programmeSample }, tempelhof: tempelhofState(events, at(14, 5)) } },
+  { id: "morgen", when: "07:30", note: "no connection (fallback)", data: {}, mode: "fallback" },
   { id: "tag", when: "14:05", data: { ...base, tempelhof: tempelhofState(events, at(14, 5)) } },
   { id: "tag", when: "18:05", note: "after closing", data: { ...base, tempelhof: tempelhofState(events, at(18, 5)) } },
   // The longest pairing and example in the list, to check they fit the band.
@@ -87,9 +99,23 @@ const scenes = [
 const t0 = performance.now();
 const cards = scenes.map((s, i) => {
   const file = `${String(i + 1).padStart(2, "0")}-${s.id}.png`;
-  writeFileSync(`${OUT}${file}`, encodePng(rasterize(screenSvg(s.id, s.data))));
+  writeFileSync(`${OUT}${file}`, encodePng(rasterize(screenSvg(s.id, s.data, s.mode ?? "full", { style: s.style }))));
   return { file, title: `${SCREENS[s.id].name}`, sub: `${s.when}${s.note ? ` · ${s.note}` : ""}` };
 });
+
+// The weather tile's 1-column variants side by side, plus the wide forecast.
+{
+  const tiles = [["details", [0, 0, 2, 2]], ["days", [2, 0, 2, 2]], ["mixed", [4, 0, 2, 2]], ["forecast", [0, 2, 4, 2]]];
+  let svg = svgOpen(W, H);
+  for (const [variant, [c, r, n, m]] of tiles) {
+    const t = cell(c, r, n, m);
+    const b = { module: "wetter", variant, tile: t, x: t.x + TILE_PAD, y: t.y + TILE_PAD, w: t.w - 2 * TILE_PAD, h: t.h - 2 * TILE_PAD };
+    svg += boxSvg(b, wetter.render(moduleBox(b), weather));
+  }
+  const file = `${String(cards.length + 1).padStart(2, "0")}-wetter.png`;
+  writeFileSync(`${OUT}${file}`, encodePng(rasterize(svg + "</svg>")));
+  cards.push({ file, title: "Wetter tiles", sub: "details · days · mixed, and forecast" });
+}
 
 writeFileSync(
   `${OUT}index.html`,

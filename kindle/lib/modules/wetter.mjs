@@ -1,14 +1,17 @@
 // ============================================================
-// Module: Wetter (Phase 8)
+// Module: Wetter (Phase 8; tiles since Phase 14)
 // Now (temperature, condition, wind), today's sunset, and three
 // days of high/low and precipitation, from Open-Meteo (free, no
 // key; DWD ICON model for Germany).
 //
 // Cadence: hourly while on screen (rendered at check-in).
-// Variants: "compact" (narrow column) and "wide" (full width).
+// Variants: 1-column tiles that share a header (now, today's
+// high/low): "details" (precipitation, wind), "days" (the next days)
+// and "mixed" (both, as many days as fit); "forecast" is a wider tile
+// with the next three days.
 // ============================================================
 
-import { deNumber, detailIcon, deWeekdayShort, fitSize, hrule, INK, sectionTitle, stamp, text, TYPE, weatherIcon, weatherText } from "../design.mjs";
+import { deNumber, deWeekdayShort, firstBaseline, fitSize, INK, STAT, text, TILE_INK, TILE_TYPE, TITLE_SPACE, TYPE, weatherIcon, width } from "../design.mjs";
 
 export const id = "wetter";
 export const cadence = "hourly";
@@ -57,90 +60,108 @@ export function parseWeather(j) {
 const deg = (t) => `${deNumber(Math.round(t) || 0)}°`;
 const dayName = (date, i) => (i === 0 ? "Heute" : i === 1 ? "Morgen" : deWeekdayShort(date));
 
-/** "60 %" plus "· 1,2 mm" when there is measurable precipitation. */
-function precip(day) {
-  const mm = day.mm >= 0.1 ? ` · ${deNumber(day.mm, day.mm < 10 ? 1 : 0)} mm` : "";
-  return `${day.pop ?? 0} %${mm}`;
+export function render(box, w) {
+  return box.variant === "forecast" ? renderForecast(box, w) : renderColumn(box, w);
 }
 
-export function render(box, w, { updated } = {}) {
-  return box.variant === "wide" ? renderWide(box, w) : renderCompact(box, w, updated);
+/** A small up or down arrow, `h` tall, its foot or tip on baseline y, left edge at x. */
+function arrow(x, y, h, up, ink) {
+  const w = Math.round(h * 0.6);
+  const cx = x + w / 2;
+  const [tip, tail] = up ? [y - h, y] : [y, y - h];
+  const head = up ? tip + w / 2 : tip - w / 2;
+  return `<path d="M${cx} ${tail} V${tip} M${x} ${head} L${cx} ${tip} L${x + w} ${head}" fill="none" stroke="${ink}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`;
 }
 
-/** Narrow column (e.g. beside Tempelhof). */
-function renderCompact(box, w, updated) {
-  let svg = sectionTitle("Wetter");
-  // Now: icon + temperature
-  svg += weatherIcon(w.now.code, -6, 60, 128);
-  svg += text(136, 176, deg(w.now.temp), TYPE.display);
-  let y = 248;
-  const cond = weatherText(w.now.code);
-  svg += text(0, y, cond, { ...TYPE.body, size: fitSize(cond, TYPE.body, box.w) });
-  y += 56;
-  svg += detail("wind", 0, y, `${deNumber(Math.round(w.now.wind))} km/h`);
-  y += 52;
-  svg += detail("sunset", 0, y, w.sunset);
-  y += 44;
-  svg += hrule(0, y, box.w);
-  y += 72;
-  // Three days
-  w.days.slice(0, 3).forEach((d, i) => {
-    svg += text(0, y, dayName(d.date, i), TYPE.strong);
-    svg += weatherIcon(d.code, box.w - 64, y - 46, 60);
-    svg += text(0, y + 50, `${deg(d.max)} / ${deg(d.min)}`, TYPE.body);
-    svg += text(box.w - 76, y + 50, precip(d), TYPE.caption, { anchor: "end" });
-    y += 130;
+/** Today's precipitation, short enough for a stat row: the amount, else the chance, else "Trocken". */
+function precipToday(d) {
+  if (d.mm >= 0.1) return `${deNumber(d.mm, d.mm < 10 ? 1 : 0)} mm`;
+  return (d.pop ?? 0) >= 20 ? `${d.pop} %` : "Trocken";
+}
+
+const LABEL = { size: 28, weight: "bold" };
+
+/** The top of every 1-column variant: the place, an icon, the temperature large, today's high/low beside it. */
+function header(box, w, top) {
+  const today = w.days[0];
+  // high/low right-aligned, each arrow just before its number
+  // In the stat rows' value style: the high in ink, the low faint.
+  // The arrows share one column, left of the widest value ("−10°").
+  const arrowX = box.w - Math.ceil(width("−10°", STAT.value)) - 24;
+  const hilo = (y, t, up, ink) => arrow(arrowX, y, 22, up, ink) + text(box.w, y, deg(t), { ...STAT.value, ink }, { anchor: "end" });
+  return (
+    text(0, top + firstBaseline(LABEL.size), "Tempelhof", LABEL) +
+    weatherIcon(w.now.code, box.w - 58, top - 6, 58) +
+    text(-4, top + 140, deg(w.now.temp), { size: 104, weight: "bold" }) +
+    hilo(top + 100, today.max, true, TILE_INK.ink) +
+    hilo(top + 100 + STAT.lead, today.min, false, TILE_INK.faint)
+  );
+}
+
+/**
+ * Day rows (icon, day, low, high), the last one's baseline at `bottom`, as
+ * many as fit below `minY`. The temperatures sit in fixed columns (lows
+ * right-aligned in one, highs in the other), so they line up row to row.
+ */
+function dayRows(box, w, bottom, minY) {
+  const days = w.days.slice(1);
+  const n = Math.min(days.length, Math.floor((bottom - minY) / STAT.lead) + 1);
+  // The temperatures bold, as figures.
+  const temp = { ...STAT.value, weight: "bold" };
+  const highW = Math.ceil(width("−10°", temp)) + 14;
+  let svg = "";
+  days.slice(0, n).forEach((d, i) => {
+    const y = bottom - (n - 1 - i) * STAT.lead;
+    // The icon starts the row, then the day.
+    svg += weatherIcon(d.code, -2, y - 32, 40);
+    svg += text(52, y, deWeekdayShort(d.date), TILE_TYPE.label);
+    svg += text(box.w - highW, y, deNumber(Math.round(d.min) || 0), { ...temp, ink: TILE_INK.faint }, { anchor: "end" });
+    svg += text(box.w, y, deg(d.max), { ...temp, ink: TILE_INK.ink }, { anchor: "end" });
   });
-  if (updated) svg += stamp(0, box.h - 8, `Stand ${updated}`).svg;
   return svg;
 }
 
-/** A detail line: a small icon, then the value in body text. */
-function detail(kind, x, y, value) {
-  const size = 44;
-  return detailIcon(kind, x, y - 36, size) + text(x + size + 16, y, value, TYPE.body);
+/**
+ * 1-column tiles, all with the same header:
+ *   "details" — precipitation and wind under it, each label over its value;
+ *   "days"    — the next days, at the bottom;
+ *   "mixed"   — both: precipitation and wind under the header, the days
+ *               anchored to the bottom, the space between them.
+ */
+function renderColumn(box, w) {
+  const top = TITLE_SPACE;
+  const statsY = top + 200;
+  // Each condition stacked: the label, its value under it in grey.
+  const VAL_GAP = 32;
+  const stat = (y, label, value) => text(0, y, label, TILE_TYPE.label) + text(0, y + VAL_GAP, value, { ...STAT.value, ink: TILE_INK.muted });
+  const stats =
+    stat(statsY, "Niederschlag", precipToday(w.days[0])) +
+    stat(statsY + VAL_GAP + STAT.lead + 8, "Wind", `${deNumber(Math.round(w.now.wind))} km/h`);
+  const statsEnd = statsY + 2 * VAL_GAP + STAT.lead + 8;
+  let svg = header(box, w, top);
+  if (box.variant === "details") svg += stats;
+  else if (box.variant === "days") svg += dayRows(box, w, box.h, statsY);
+  else svg += stats + dayRows(box, w, box.h, statsEnd + 40);
+  return svg;
 }
 
-/** Full width: now on the left, three day columns on the right. */
-function renderWide(box, w) {
-  let svg = sectionTitle("Wetter");
-  const leftW = Math.round(box.w * 0.38);
-  // Now: the icon with the temperature centred under it; beside them a
-  // column with the conditions, wind and sunset.
-  const iconSize = 150;
-  // Baselines line up with the forecast rows: the temperature and the
-  // sunset share the "%" line (338 − the box's raise).
-  const pctY = 338 - (box.raise ?? 0);
-  svg += weatherIcon(w.now.code, -6, 64, iconSize);
-  svg += text(iconSize / 2, pctY, deg(w.now.temp), { ...TYPE.display, underline: false }, { anchor: "middle" });
-  // Today: conditions, high/low, wind, sunset (the forecast starts tomorrow).
-  const midX = 249;
-  const midW = leftW - midX;
-  const cond = weatherText(w.now.code);
-  const today = w.days[0];
-  svg += text(midX, pctY - 162, cond, { ...TYPE.body, size: fitSize(cond, TYPE.body, midW) });
-  svg += text(midX, pctY - 108, `${deg(today.max)} / ${deg(today.min)}`, TYPE.body);
-  svg += detail("wind", midX, pctY - 54, `${deNumber(Math.round(w.now.wind))} km/h`);
-  svg += detail("sunset", midX, pctY, w.sunset);
-
-  const colX = leftW + 56;
-  const colW = (box.w - colX) / 3;
+/** The next three days, one centred column each. */
+function renderForecast(box, w) {
+  const top = TITLE_SPACE;
+  const days = w.days.slice(1, 4);
+  const colW = box.w / days.length;
   const colText = colW - 24; // keep a gap before the next column
-  // `box.raise` lifts the forecast columns.
-  svg += `<g transform="translate(0 ${-(box.raise ?? 0)})">`;
-  w.days.slice(1, 4).forEach((d, i) => {
-    // Each day's stack is centred in its column.
-    const cx = Math.round(colX + i * colW + colW / 2);
-    const mid = { anchor: "middle" };
+  const mid = { anchor: "middle" };
+  let svg = "";
+  days.forEach((d, i) => {
+    const cx = Math.round(i * colW + colW / 2);
     const day = dayName(d.date, i + 1);
-    svg += text(cx, 96, day, { ...TYPE.strong, size: fitSize(day, TYPE.strong, colText) }, mid);
-    svg += weatherIcon(d.code, cx - 48, 122, 96);
+    svg += text(cx, top + 40, day, { ...TYPE.strong, size: fitSize(day, TYPE.strong, colText) }, mid);
+    svg += weatherIcon(d.code, cx - 56, top + 76, 112);
     const temps = `${deg(d.max)} / ${deg(d.min)}`;
-    svg += text(cx, 284, temps, { ...TYPE.body, size: fitSize(temps, TYPE.body, colText) }, mid);
-    // Chance and amount on separate lines so they never run into the next column.
-    svg += text(cx, 338, `${d.pop ?? 0} %`, TYPE.body, mid);
-    if (d.mm >= 0.1) svg += text(cx, 388, `${deNumber(d.mm, d.mm < 10 ? 1 : 0)} mm`, TYPE.body, mid);
+    svg += text(cx, top + 260, temps, { ...TYPE.body, size: fitSize(temps, TYPE.body, colText) }, mid);
+    svg += text(cx, top + 316, `${d.pop ?? 0} %`, TYPE.body, mid);
+    if (d.mm >= 0.1) svg += text(cx, top + 366, `${deNumber(d.mm, d.mm < 10 ? 1 : 0)} mm`, TYPE.body, mid);
   });
-  svg += "</g>";
   return svg;
 }

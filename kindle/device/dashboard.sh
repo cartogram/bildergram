@@ -32,7 +32,7 @@ RETRY_SECS=900   # after a failed check-in, try again at most every 15 minutes
 # Europe/Berlin as a POSIX rule: the Kindle's own zone setting is unreliable.
 BERLIN_TZ='CET-1CEST,M3.5.0,M10.5.0/3'
 
-. "$DIR/layout.env"   # VERSION SCREENS HOURLY_SCREENS DEFAULT_SCHEDULE, DEVICE_*/TP_*/CD_*/UPD_* (kindle/build.mjs)
+. "$DIR/layout.env"   # VERSION SCREENS HOURLY_SCREENS DEFAULT_SCHEDULE GAUGE_STEPS, DEVICE_*/TP_*/CD_*/GG_*/UPD_* (kindle/build.mjs)
 [ -f "$DIR/hub.env" ] && . "$DIR/hub.env"   # HUB_URL HUB_TOKEN HUB_MAC (kindle/install.sh)
 
 log() {
@@ -57,7 +57,8 @@ day_offset() {  # $1 YYYY-MM-DD, $2 days → YYYY-MM-DD (anchored at noon, DST-s
 
 in_list() { case " $2 " in *" $1 "*) return 0 ;; esac; return 1; }
 
-# Value of a generated per-screen variable, e.g. `var TP tag X` → $TP_tag_X.
+# Value of a generated per-screen variable, e.g. `var TP tag X` → $TP_tag_X
+# (empty when the screen has none, e.g. GG without a gauge).
 # Screen ids are checked against $SCREENS before they get here.
 var() {
   eval "echo \"\${$1_$2${3:+_$3}}\""
@@ -173,12 +174,25 @@ checkin_due() {  # $1 now
 # Tempelhof box (prebuilt images)
 # ------------------------------------------------------------------
 
-# "<event-epoch> <background-key> <minutes-left, rounded up>" for epoch $1
+# "<event-epoch> <background-key> <minutes-left, rounded up> <previous-event-epoch>
+#  <gauge pair>" for epoch $1. The gauge pair is the previous event's time and
+# the next one's ("1800-0700"): an event's time is the opening (open) or the
+# closing (close) of the hours in its background key.
 tempelhof_lookup() {
   awk -v now="$1" '
-    $1 > now { print $1, $3, int(($1 - now + 59) / 60); found = 1; exit }
+    function at(kind, bg) { sub(/^[a-z]+_/, "", bg); return kind == "open" ? substr(bg, 1, 4) : substr(bg, 6, 4) }
+    $1 > now { print $1, $3, int(($1 - now + 59) / 60), pe, at(pk, pb) "-" at($2, $3); found = 1; exit }
+    { pe = $1; pk = $2; pb = $3 }
     END { if (!found) exit 1 }
   ' "$DIR/schedule.txt"
+}
+
+# Gauge step (0..GAUGE_STEPS) at epoch $1 between events $2 (previous) and $3 (next).
+gauge_step() {
+  _g=$(( ($1 - $2) * GAUGE_STEPS / ($3 - $2) ))
+  [ "$_g" -lt 0 ] && _g=0
+  [ "$_g" -gt "$GAUGE_STEPS" ] && _g=$GAUGE_STEPS
+  echo "$_g"
 }
 
 # ------------------------------------------------------------------
@@ -304,8 +318,9 @@ draw_screen() {  # $1 now
 
   # Tempelhof box: a panel per state, a countdown per minute.
   _variant=${_dev#*:}
+  _now=$1
   set -- $(tempelhof_lookup "$1")
-  if [ $# -ne 3 ]; then
+  if [ $# -ne 5 ]; then
     log "Tempelhof schedule exhausted: rebuild and reinstall (npm run kindle:build)"
     return
   fi
@@ -314,8 +329,18 @@ draw_screen() {  # $1 now
     full_png "$_base"
     paste_png "$DIR/tempelhof/$_variant/panel/$2.png" "$(var TP "$SCREEN" X)" "$(var TP "$SCREEN" Y)"
     shown="$SCREEN:$_base:$2"
+    shown_gauge=""
     since_full=0
     _full=1
+  fi
+  # The gauge (short tiles only; its place differs per state): pasted when its step changes.
+  _gst=${2%%_*}
+  if [ -n "$(var GG "$SCREEN" "${_gst}_X")" ]; then
+    _gs=$(gauge_step "$_now" "$4" "$1")
+    if [ "$shown_gauge" != "$5:$_gs" ]; then
+      paste_png "$DIR/tempelhof/$_variant/gauge/$_gst/$5/$_gs.png" "$(var GG "$SCREEN" "${_gst}_X")" "$(var GG "$SCREEN" "${_gst}_Y")"
+      shown_gauge="$5:$_gs"
+    fi
   fi
   # The countdown follows the state's sentence: its own set and position per state.
   _st=${2%%_*}
@@ -447,6 +472,7 @@ case "$1" in
     echo "check-in returned $?; see $LOG"
     ;;
   once|plan)
+    mode=$1   # kept: the Tempelhof lookup below overwrites $1 with `set --`
     at=${2:-$(date +%s)}
     load_state
     resolve_slot "$at"
@@ -457,9 +483,11 @@ case "$1" in
     echo "  base: $(base_image "$SCREEN" "$SLOT_DAY")"
     if [ -n "$_dev" ]; then
       set -- $(tempelhof_lookup "$at")
-      echo "  tempelhof (${_dev#*:}): panel $2, countdown $3 min, at TP $(var TP "$SCREEN" X),$(var TP "$SCREEN" Y) / CD $(var CD "$SCREEN" X),$(var CD "$SCREEN" Y)"
+      _gauge=""
+      [ -n "$(var GG "$SCREEN" "${2%%_*}_X")" ] && _gauge=", gauge ${2%%_*}/$5 step $(gauge_step "$at" "$4" "$1")/$GAUGE_STEPS"
+      echo "  tempelhof (${_dev#*:}): panel $2, countdown $3 min$_gauge, at TP $(var TP "$SCREEN" X),$(var TP "$SCREEN" Y)"
     fi
-    if [ "$1" = once ]; then
+    if [ "$mode" = once ]; then
       shown=""
       since_full=$FULL_EVERY
       draw_screen "$at"

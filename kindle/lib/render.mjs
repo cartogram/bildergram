@@ -13,12 +13,18 @@ import { entryFor } from "./modules/ausdruck.mjs";
 import { parseFitness } from "./modules/fitness.mjs";
 import { entryFor as praepositionFor } from "./modules/praeposition.mjs";
 import { fetchWeather } from "./modules/wetter.mjs";
-import { buildSchedule, tempelhofState } from "./schedule.mjs";
+import { berlinParts, buildSchedule, tempelhofState } from "./schedule.mjs";
 import { SCREENS, screenSvg } from "./screens.mjs";
 
 /** Berlin calendar date of an epoch (ms) as YYYY-MM-DD. */
 export function berlinDate(ms = Date.now()) {
   return new Date(ms).toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+}
+
+/** The Kino tile's listing at `ms`: today's ("heute") until 22:00 Berlin time, then tomorrow's ("morgen"). */
+export function kinoDay(ms) {
+  if (berlinParts(ms).h < 22) return { date: berlinDate(ms), day: "heute" };
+  return { date: berlinDate(ms + 3 * 3_600_000), day: "morgen" };
 }
 
 /**
@@ -38,12 +44,17 @@ export async function screenData(id, {
     }));
   }
   if (modules.has("kino")) {
+    // The Kino tile (Morgen) follows the clock, not the slot: today's
+    // listing until 22:00, then tomorrow's until midnight. The full listing
+    // (Abend) stays on the slot's date.
+    const tile = SCREENS[id].boxes.some((b) => b.module === "kino" && b.variant === "tonight");
+    const listing = tile ? kinoDay(now) : { date, day: "heute" };
     // Drop films already seen on Letterboxd or hidden by hand; only this
     // listing's films (that date, from `from`) are looked up.
     jobs.push(fetchProgramme(cinemas)
-      .then((p) => withoutSeen(p, { letterboxd, hidden, keep: (s) => s.date === date && s.time >= from }))
+      .then((p) => withoutSeen(p, { letterboxd, hidden, keep: (s) => s.date === listing.date && s.time >= from }))
       .then((p) => {
-        data.kino = { programme: p, from, updated: deTime(p.fetchedAt) };
+        data.kino = { programme: p, from, updated: deTime(p.fetchedAt), ...listing };
       }));
   }
   if (modules.has("ausdruck")) data.ausdruck = entryFor(date);
