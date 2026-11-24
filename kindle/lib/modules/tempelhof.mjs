@@ -9,7 +9,7 @@
 // Data: kindle/lib/schedule.mjs → tempelhofState(events, ms).
 // ============================================================
 
-import { INK, TYPE, deCountdown, fitSize, label, pill, text } from "../design.mjs";
+import { INK, TYPE, deCountdown, fitSize, label, pill, text, underlined } from "../design.mjs";
 
 export const id = "tempelhof";
 export const cadence = "minute";
@@ -50,7 +50,8 @@ export function countdownBox(box) {
  */
 export function render(box, state, { withCountdown = true } = {}) {
   const l = layout(box);
-  const p = pill(0, l.pillY, state.open ? "GEÖFFNET" : "GESCHLOSSEN");
+  // Open: the black pill. Closed: the same word underlined, quieter.
+  const p = state.open ? pill(0, l.pillY, "GEÖFFNET") : underlined(0, l.pillY, "GESCHLOSSEN");
   const until = state.open ? `bis zur Schließung um ${state.target}` : `bis zur Öffnung um ${state.target}`;
   const untilSize = fitSize(until, TYPE.title, box.w);
   let svg =

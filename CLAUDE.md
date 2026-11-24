@@ -43,11 +43,11 @@ There is no test runner. Verify changes with:
 
 - **`design.mjs`** is the design system. It holds:
   - tokens: `TYPE` scale, `INK` (three levels that land exactly on the panel's 16 grays), `MARGIN`/`CONTENT`, `RULE`;
-  - primitives: `text`, `label`, `pill`, rules, `topbar` (date + battery);
+  - primitives: `text`, `label`, `pill` (open: GEÖFFNET), `underlined` (the same word in black with a thick rule under it; closed: GESCHLOSSEN), rules, `topbar` (date + battery);
   - German formatting: `deDateLong`, `deNumber` (decimal comma, typographic minus), `deCountdown`;
   - the WMO weather icons and German weather texts.
 
-  New UI should use these rather than raw sizes or colors. Bold is the real **Arimo Bold** (`assets/fonts/Arimo-Bold.ttf`), and `width()` assumes bold runs ≤ 7% wider than regular.
+  New UI should use these rather than raw sizes or colors. Bold is the real **Arimo Bold** (`assets/fonts/Arimo-Bold.ttf`), and `width()` assumes bold runs ≤ 7% wider than regular (it overestimates, by about 6% on GESCHLOSSEN). `exactWidth()` uses Arimo Bold's measured advances instead; use it only where drawing must end with the text, such as an underline, because switching layout to it would shift sizes and line breaks.
 - **`modules/*.mjs`**: each module exports `render(box, data, …)`, which returns SVG in box-local coordinates, plus its `cadence`.
   - `tempelhof` is per-minute and drawn on the device; it also exports `countdownBox` and `countdownSvg`.
   - `wetter` is hourly (Open-Meteo, no key; variants `compact` and `wide`).
@@ -72,7 +72,7 @@ There is no test runner. Verify changes with:
   - `img.pixels` is a getter that copies out of WASM memory on every read, so read it once; reading it per pixel made builds take over 10 minutes.
   - Call `img.free()` and `resvg.free()` after each render. Without that, a build of about 1,000 full renders crashed WASM (`RuntimeError: unreachable`), and long-lived Vercel instances would leak memory.
   - resvg can't pick weights from the variable `Arimo.ttf`, which is why `Arimo-Bold.ttf` is loaded alongside it.
-- **Measuring text**: wrapping measures widths from the advance table in `kindle/lib/glyphs.ts`, which is generated from Arimo at 26 px.
+- **Measuring text**: wrapping measures widths from the advance table in `kindle/lib/glyphs.ts`, which is generated from Arimo at 26 px. The same generator also writes `BOLD_ADVANCES` (Arimo Bold, to 1/100 px) for `exactWidth()`.
 - **Imports**: `eink.mjs` and the build import `glyphs.ts` and `templehof.ts` through Node's native type stripping, both on Vercel and locally. Keep those files free of imports and of non-erasable TS syntax.
 
 ## Hub (`src/`)

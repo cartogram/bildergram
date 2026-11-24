@@ -10,6 +10,8 @@
 // from the pen position (x = left bearing, y = offset below the cap top)
 // and the advance width. kindle/lib/eink.mjs uses the advance widths to
 // measure text for wrapping; the bitmaps are kept for reference.
+// It also measures Arimo Bold's advances (to 1/100 px, no bitmaps) for
+// exact bold widths, e.g. an underline that ends with the word.
 
 import { initWasm, Resvg } from "@resvg/resvg-wasm";
 import { readFileSync, writeFileSync } from "node:fs";
@@ -39,12 +41,15 @@ function escapeXml(s) {
   return s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
-function render(text, size, width, height, originX, baseline) {
+const boldPath = `${REPO}/assets/fonts/Arimo-Bold.ttf`;
+const BOLD_OPTS = { font: { fontBuffers: [new Uint8Array(readFileSync(boldPath))], loadSystemFonts: false, sansSerifFamily: family } };
+
+function render(text, size, width, height, originX, baseline, bold = false) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
     <rect width="${width}" height="${height}" fill="#FFFFFF"/>
-    <text x="${originX}" y="${baseline}" font-size="${size}" fill="#000000" font-family="${family}, sans-serif">${escapeXml(text)}</text>
+    <text x="${originX}" y="${baseline}" font-size="${size}" fill="#000000" font-family="${family}, sans-serif"${bold ? ' font-weight="bold"' : ""}>${escapeXml(text)}</text>
   </svg>`;
-  return new Resvg(svg, OPTS).render();
+  return new Resvg(svg, bold ? BOLD_OPTS : OPTS).render();
 }
 
 /** Bounding box of the ink (dark pixels), or null for a blank image. */
@@ -87,9 +92,9 @@ function renderGlyph(ch) {
 }
 
 /** Ink width of `text` rendered at SIZE × MEASURE_SCALE. */
-function inkWidth(text) {
+function inkWidth(text, bold = false) {
   const size = SIZE * MEASURE_SCALE;
-  const box = inkBox(render(text, size, size * 3.5, size * 1.5, size / 4, size));
+  const box = inkBox(render(text, size, size * 3.5, size * 1.5, size / 4, size, bold));
   return box ? box.maxX - box.minX + 1 : 0;
 }
 
@@ -120,6 +125,11 @@ for (const ch of CHARS) {
       }
     : { w: 0, h: 0, x: 0, y: 0, adv, rows: [] };
 }
+
+// Bold advances by the same "H{ch}H" method, kept to 1/100 px.
+const hhBold = inkWidth("HH", true);
+const boldAdvances = {};
+for (const ch of CHARS) boldAdvances[ch] = Math.round(((inkWidth(`H${ch}H`, true) - hhBold) / MEASURE_SCALE) * 100) / 100;
 
 const body = `/**
  * Arimo glyph table: ink bitmaps and metrics. kindle/lib/eink.mjs uses the
@@ -152,6 +162,13 @@ ${Object.entries(glyphs)
       ([ch, g]) =>
         `  ${JSON.stringify(ch)}: { w: ${g.w}, h: ${g.h}, x: ${g.x}, y: ${g.y}, adv: ${g.adv}, rows: [${g.rows.map((r) => JSON.stringify(r)).join(", ")}] },`,
     )
+    .join("\n")}
+};
+
+/** Arimo Bold advance widths (px at the 26 px reference size), for exact bold widths. */
+export const BOLD_ADVANCES: Record<string, number> = {
+${Object.entries(boldAdvances)
+    .map(([ch, a]) => `  ${JSON.stringify(ch)}: ${a},`)
     .join("\n")}
 };
 `;

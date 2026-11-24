@@ -8,7 +8,7 @@
 // SVG and quantized to the panel's 16 gray levels by eink.mjs.
 // ============================================================
 
-import { H, W, escapeXml, textWidth } from "./eink.mjs";
+import { H, W, escapeXml, textWidth, boldTextWidth } from "./eink.mjs";
 
 // ------------------------------------------------------------------
 // Tokens
@@ -75,6 +75,17 @@ export function text(x, y, str, style, opts = {}) {
   return `<text ${attrs.join(" ")}>${escapeXml(s)}</text>`;
 }
 
+/**
+ * Exact pen width of `str` in a type style (bold from Arimo Bold's own
+ * advances), for drawing that must end with the text, e.g. an underline.
+ * Layout and wrapping keep using width(), which never under-measures.
+ */
+export function exactWidth(str, style) {
+  const s = style.caps ? str.toUpperCase() : str;
+  const w = style.weight === "bold" ? boldTextWidth(s, style.size) : textWidth(s, style.size);
+  return w + (style.spacing ?? 0) * Math.max(0, [...s].length - 1);
+}
+
 /** Largest size ≤ style.size (in 2 px steps) at which `str` fits `maxWidth`. */
 export function fitSize(str, style, maxWidth, min = 24) {
   let size = style.size;
@@ -110,6 +121,22 @@ export function pill(x, y, str, size = 44) {
   const svg =
     `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.round(h / 2)}" fill="${INK.primary}"/>` +
     text(x + padX, y + Math.round(h * 0.68), str, style, { ink: INK.paper });
+  return { svg, w, h };
+}
+
+/**
+ * The pill's quieter sibling: the same bold letter-spaced word in black,
+ * starting at x (no inset), with a thick rule under it as long as the
+ * word, e.g. GESCHLOSSEN. Takes the same box as pill(); returns { svg, w, h }.
+ */
+export function underlined(x, y, str, size = 44) {
+  const style = { size, weight: "bold", spacing: 4 };
+  const h = Math.round(size * 1.55);
+  const baseline = y + Math.round(h * 0.68);
+  const w = Math.round(exactWidth(str, style));
+  const svg =
+    text(x, baseline, str, style) +
+    `<rect x="${x}" y="${baseline + Math.round(size * 0.27)}" width="${w}" height="${RULE.thick}" fill="${INK.primary}"/>`;
   return { svg, w, h };
 }
 
