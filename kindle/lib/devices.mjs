@@ -6,15 +6,14 @@
 // down cleanly. `rotate` turns landscape into the portrait
 // framebuffer (eips pastes pixels as-is).
 //
-// `schedule` is the default until the first check-in (keep in sync with
-// DEFAULT_SCHEDULES in src/routes/kindle.ts): Matt has Tempelhof and the
-// Kino, Fiona the weather and workouts; the German modules fill in.
+// `screen` is the one screen a Kindle shows until its first check-in
+// sets it from the hub (src/routes/kindle.ts); both show "home" for now.
 // Keep ids in sync with src/devices.ts (tokens, MACs).
 // ============================================================
 
 export const DEVICES = {
-  kindle_01: { name: "Matt (Paperwhite 3)", width: 1448, height: 1072, rotate: "ccw", schedule: "0600:tag 1815:abend" },
-  kindle_02: { name: "Fiona (Paperwhite 2)", width: 1024, height: 758, rotate: "ccw", schedule: "0600:morgen 1800:nacht" },
+  kindle_01: { name: "Matt (Paperwhite 3)", width: 1448, height: 1072, rotate: "ccw", screen: "home" },
+  kindle_02: { name: "Fiona (Paperwhite 2)", width: 1024, height: 758, rotate: "ccw", screen: "home" },
 };
 
 export const DEFAULT_DEVICE = "kindle_01";

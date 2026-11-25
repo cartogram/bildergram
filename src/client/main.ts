@@ -1,8 +1,8 @@
 // ============================================================
-// Admin SPA — Kindle dashboards (Phase 9–10)
+// Admin SPA — Kindle dashboards (Phase 9–10; one screen each, Phase 15)
 // For each Kindle: shows its last check-in and battery history, edits
-// its screen schedule, check-in interval and cinemas, and previews each
-// screen at its size. For both: the weekly exercise goals and each iPhone's
+// its screen, check-in interval and cinemas, and previews the screen at
+// its size. For both: the weekly exercise goals and each iPhone's
 // last sync (Phase 12). Talks to /api/admin/* with the admin token (asked
 // for once and kept in this browser's localStorage).
 // ============================================================
@@ -15,7 +15,7 @@ interface ScreenInfo {
 }
 
 interface KindleConfig {
-  schedule: { at: string; screen: string }[];
+  screen: string;
   kino: { cinemas: string[]; from: string; letterboxdUser: string; hideSeen: boolean; hiddenFilms: string[] };
   checkinMinutes: number;
   exit: boolean;
@@ -147,15 +147,6 @@ function ago(iso: string): string {
   return `${Math.round(hours / 24)} days ago`;
 }
 
-/** The screen the schedule shows right now (Berlin time). */
-function currentScreen(c: KindleConfig): string {
-  const hhmm = new Date().toLocaleTimeString("en-GB", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" });
-  const sorted = [...c.schedule].sort((a, b) => a.at.localeCompare(b.at));
-  let current = sorted[sorted.length - 1];
-  for (const e of sorted) if (e.at <= hhmm) current = e;
-  return current.screen;
-}
-
 // ------------------------------------------------------------------
 // Views
 // ------------------------------------------------------------------
@@ -221,23 +212,13 @@ function statusHtml(s: KindleStatus | null): string {
     <details><summary>Recent log (UTC)</summary><pre>${escapeHtml(s.log || "(empty)")}</pre></details>`;
 }
 
-function scheduleHtml(c: KindleConfig, screens: Record<string, ScreenInfo>): string {
-  const rows = c.schedule
-    .map(
-      (e, i) => `
-      <li class="slot">
-        <input type="time" value="${e.at}" data-i="${i}" data-field="at" aria-label="From">
-        <select data-i="${i}" data-field="screen" aria-label="Screen">
-          ${Object.entries(screens).map(([id, s]) => `<option value="${id}" ${id === e.screen ? "selected" : ""}>${escapeHtml(s.name)} — ${escapeHtml(s.shows)}</option>`).join("")}
-        </select>
-        <button type="button" class="ghost" data-remove="${i}" ${c.schedule.length === 1 ? "disabled" : ""} aria-label="Remove">✕</button>
-      </li>`,
-    )
-    .join("");
-  return `<ol class="slots">${rows}</ol>
-    <button type="button" class="ghost" id="add-slot">+ Add a switch</button>
-    <p class="muted">Each screen shows from its time until the next one; the last runs past midnight.</p>
-    <label class="inline">Check in every <input type="number" id="interval" min="15" max="360" step="15" value="${c.checkinMinutes}"> minutes while a weather screen is showing</label>`;
+function screenHtml(c: KindleConfig, screens: Record<string, ScreenInfo>): string {
+  return `<label class="inline">Show
+      <select id="screen" aria-label="Screen">
+        ${Object.entries(screens).map(([id, s]) => `<option value="${id}" ${id === c.screen ? "selected" : ""}>${escapeHtml(s.name)} — ${escapeHtml(s.shows)}</option>`).join("")}
+      </select></label>
+    <p class="muted">The screen's cards change with the time of day themselves (the Feld countdown, tomorrow's films from 22:00).</p>
+    <label class="inline">Check in every <input type="number" id="interval" min="15" max="360" step="15" value="${c.checkinMinutes}"> minutes</label>`;
 }
 
 function cinemasHtml(c: KindleConfig, cinemas: Record<string, string>): string {
@@ -288,7 +269,7 @@ async function loadFilms(): Promise<void> {
 function render(state: AdminState): void {
   draft ??= structuredClone(state.config);
   const c = draft;
-  previewScreen ??= currentScreen(state.config);
+  previewScreen ??= state.config.screen;
   app.innerHTML = `
     <main>
       <header class="top">
@@ -305,8 +286,8 @@ function render(state: AdminState): void {
       </section>
 
       <form class="card" id="config">
-        <h2>Schedule</h2>
-        ${scheduleHtml(c, state.screens)}
+        <h2>Screen</h2>
+        ${screenHtml(c, state.screens)}
 
         <h2>Cinemas</h2>
         ${cinemasHtml(c, state.cinemas)}
@@ -321,7 +302,7 @@ function render(state: AdminState): void {
       </form>
 
       <form class="card" id="fitness">
-        <h2>Fitness <span class="muted">(both Kindles, on Nacht)</span></h2>
+        <h2>Fitness <span class="muted">(both Kindles)</span></h2>
         <div id="fitness-body"><p class="muted">Loading…</p></div>
       </form>
 
@@ -432,11 +413,8 @@ function bindForm(state: AdminState): void {
   const form = document.getElementById("config") as HTMLFormElement;
   form.addEventListener("change", (e) => {
     const el = e.target as HTMLInputElement | HTMLSelectElement;
-    const i = el.dataset.i;
-    if (i !== undefined) {
-      const entry = c.schedule[Number(i)];
-      if (el.dataset.field === "at") entry.at = el.value;
-      if (el.dataset.field === "screen") entry.screen = el.value;
+    if (el.id === "screen") {
+      c.screen = el.value;
     } else if (el.id === "kino-from") {
       c.kino.from = el.value;
     } else if (el.id === "lbx-user") {
@@ -455,16 +433,6 @@ function bindForm(state: AdminState): void {
       c.exit = (el as HTMLInputElement).checked;
     } else if (el.closest(".cinemas")) {
       c.kino.cinemas = [...form.querySelectorAll<HTMLInputElement>(".cinemas input:checked")].map((x) => x.value);
-    }
-  });
-  form.addEventListener("click", (e) => {
-    const t = e.target as HTMLElement;
-    if (t.dataset.remove !== undefined) {
-      c.schedule.splice(Number(t.dataset.remove), 1);
-      render(state);
-    } else if (t.id === "add-slot") {
-      c.schedule.push({ at: "12:00", screen: "tag" });
-      render(state);
     }
   });
   form.addEventListener("submit", async (e) => {

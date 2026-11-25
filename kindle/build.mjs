@@ -38,14 +38,12 @@ const REPO = fileURLToPath(new URL("..", import.meta.url));
 const OUT = `${REPO}/kindle/dist`;
 const YEARS = 3; // schedule length — reinstall before it runs out
 
-/** Default screen schedule until the first check-in (HHMM:screen). */
-const DEFAULT_SCHEDULE = "0600:morgen 0900:tag 1815:abend 2300:nacht";
 
 /** The date tile (the same cell on every screen), where "Aktualisiere …" covers the battery reading. */
-const DATE_TILE = SCREENS.morgen.boxes.find((b) => b.module === "datum");
+const DATE_TILE = SCREENS.home.boxes.find((b) => b.module === "datum");
 for (const [id, s] of Object.entries(SCREENS)) {
   const d = s.boxes.find((b) => b.module === "datum");
-  if (!d || d.x !== DATE_TILE.x || d.y !== DATE_TILE.y || d.w !== DATE_TILE.w || d.h !== DATE_TILE.h) throw new Error(`screen ${id}: the date tile must sit where Morgen's does`);
+  if (!d || d.x !== DATE_TILE.x || d.y !== DATE_TILE.y || d.w !== DATE_TILE.w || d.h !== DATE_TILE.h) throw new Error(`screen ${id}: the date tile must sit where home's does`);
 }
 const UPDATING = (() => {
   const r = datum.updatingRect(moduleBox(DATE_TILE));
@@ -164,7 +162,7 @@ for (const deviceId of Object.keys(DEVICES)) {
     `DEVICE_ID=${deviceId}`,
     `SCREENS="${Object.keys(SCREENS).join(" ")}"`,
     `HOURLY_SCREENS="${HOURLY_SCREENS.join(" ")}"`,
-    `DEFAULT_SCHEDULE="${dev.schedule ?? DEFAULT_SCHEDULE}"`,
+    `DEFAULT_SCREEN="${dev.screen}"`,
     `GAUGE_STEPS=${tempelhof.GAUGE_STEPS}`,
   ];
 

@@ -13,7 +13,7 @@ import { encodePng, initRenderer, rasterize } from "./lib/eink.mjs";
 import { fetchProgramme } from "./lib/kino.mjs";
 import { entryFor, loadEntries as loadAusdruecke } from "./lib/modules/ausdruck.mjs";
 import { parseFitness, weekOf } from "./lib/modules/fitness.mjs";
-import { entryFor as praepositionFor, loadEntries as praepositionen } from "./lib/modules/praeposition.mjs";
+import { entryFor as praepositionFor } from "./lib/modules/praeposition.mjs";
 import { fetchWeather } from "./lib/modules/wetter.mjs";
 import { berlinParts, berlinToUtc, buildSchedule, tempelhofState } from "./lib/schedule.mjs";
 import { SCREENS, boxSvg, moduleBox, screenSvg } from "./lib/screens.mjs";
@@ -71,23 +71,12 @@ const ausdruecke = loadAusdruecke();
 const mostWords = ausdruecke.reduce((a, b) => ((b.woerter?.length ?? 0) > (a.woerter?.length ?? 0) ? b : a));
 
 const scenes = [
-  { id: "morgen", when: "07:30", note: "sample listing and minutes", data: { ...full, tempelhof: feldAt(7, 30) } },
-  { id: "morgen", when: "05:30", note: "Feld closed", data: { ...full, tempelhof: feldAt(5, 30) } },
-  { id: "morgen", when: "07:30", note: "the Ausdruck with the most Wörter", data: { ...full, ausdruck: mostWords, tempelhof: feldAt(7, 30) } },
-  { id: "morgen", when: "07:30", note: "no connection (fallback)", data: {}, mode: "fallback" },
-  { id: "tag", when: "14:05", data: { ...full, tempelhof: feldAt(14, 5) } },
-  // The longest pairing and example in the list, to check they fit the card.
-  {
-    id: "tag", when: "14:05", note: "longest Präposition",
-    data: {
-      ...full,
-      tempelhof: feldAt(14, 5),
-      praeposition: praepositionen().reduce((a, b) => (`${b.wort}${b.bedeutung}${b.beispiel}`.length > `${a.wort}${a.bedeutung}${a.beispiel}`.length ? b : a)),
-    },
-  },
-  { id: "abend", when: "18:15", data: { ...full, tempelhof: feldAt(18, 15) } },
-  { id: "nacht", when: "23:00", note: "sample minutes", data: { ...full, tempelhof: feldAt(23, 0) } },
-  { id: "nacht", when: "23:00", note: "no data yet / stale sync", data: { ...full, fitness: fitnessScenes[2], tempelhof: feldAt(23, 0) } },
+  { id: "home", when: "07:30", note: "sample listing and minutes", data: { ...full, tempelhof: feldAt(7, 30) } },
+  { id: "home", when: "05:30", note: "Feld closed", data: { ...full, tempelhof: feldAt(5, 30) } },
+  { id: "home", when: "22:30", note: "Kino shows tomorrow's listing", data: { ...full, kino: { ...full.kino, day: "morgen" }, tempelhof: feldAt(22, 30) } },
+  { id: "home", when: "07:30", note: "the Ausdruck with the most Wörter", data: { ...full, ausdruck: mostWords, tempelhof: feldAt(7, 30) } },
+  { id: "home", when: "07:30", note: "no exercise data yet / stale sync", data: { ...full, fitness: fitnessScenes[2], tempelhof: feldAt(7, 30) } },
+  { id: "home", when: "07:30", note: "no connection (fallback)", data: {}, mode: "fallback" },
 ];
 
 const t0 = performance.now();

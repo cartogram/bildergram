@@ -1,11 +1,12 @@
 // ============================================================
-// kindle/lib/screens.mjs — the screens (Phase 8; tiles, Phase 14)
-// Each screen is a set of tiles on the 8 × 4 grid (design.mjs GRID,
+// kindle/lib/screens.mjs — the screens (Phase 8; tiles, Phase 14; one
+// screen per Kindle, Phase 15)
+// A screen is a set of tiles on the 8 × 4 grid (design.mjs GRID,
 // cell()), each filled by a module. Tiles don't overlap, so on the
-// Kindle each can be pasted on its own cadence. Two tiles are in the
-// same cells on every screen: the date (0, 0) — the "Aktualisiere …"
-// piece goes there — and the Feld (0, 1), so all screens share one set
-// of Kindle-drawn pieces.
+// Kindle each can be pasted on its own cadence. Every screen keeps two
+// tiles in the same cells: the date (0, 0) — the "Aktualisiere …" piece
+// goes there — and the Feld (0, 1), so all screens share one set of
+// Kindle-drawn pieces.
 // ============================================================
 
 import { cell, TILE_PAD, text, tile, TILE_INK, TILE_TYPE, firstBaseline } from "./design.mjs";
@@ -35,13 +36,16 @@ function T(module, [col, row, cols = 1, rows = 1], opts = {}) {
 const DATE = T("datum", [0, 0, 2, 1], { tone: "dark" });
 /** Kindle-drawn: `variant` names its piece set; one set serves every screen (same cell, same tone). */
 const FELD = T("tempelhof", [0, 1, 2, 1], { variant: "feld", tone: "fill" });
-const person = (name, col) => T("fitness", [col, 0, 2, 2], { variant: "person", person: name, tone: "dark" });
 
-/** name (German, shown on the admin page) and tiles. */
+/**
+ * The screens, by id: name (shown on the admin page) and tiles. Each
+ * Kindle shows one (its config's `screen`); both show "home" for now.
+ * The cards change with the time of day themselves (the Feld countdown,
+ * tomorrow's films from 22:00).
+ */
 export const SCREENS = {
-  // Fiona's morning: weather, the German card, tonight's films, exercise.
-  morgen: {
-    name: "Morgen",
+  home: {
+    name: "Start",
     boxes: [
       DATE, FELD,
       T("wetter", [2, 0, 2, 2], { variant: "mixed", tone: "fill" }),
@@ -49,36 +53,6 @@ export const SCREENS = {
       T("kino", [0, 2, 4, 2], { tone: "light" }),
       T("fitness", [4, 2, 2, 2], { variant: "person", person: "Matt", tone: "dark" }),
       T("fitness", [6, 2, 2, 2], { variant: "person", person: "Fiona", tone: "dark" }),
-    ],
-  },
-  // Matt's day: the two German cards and tonight's films (nothing hourly, to spare the battery).
-  tag: {
-    name: "Tag",
-    boxes: [
-      DATE, FELD,
-      T("praeposition", [2, 0, 6, 2], { tone: "light" }),
-      T("kino", [0, 2, 4, 2], { tone: "light" }),
-      T("ausdruck", [4, 2, 4, 2], { tone: "light" }),
-    ],
-  },
-  // Matt's evening: the cinema listing large, the Präposition beside it.
-  abend: {
-    name: "Abend",
-    boxes: [
-      DATE, FELD,
-      T("praeposition", [0, 2, 2, 2], { tone: "light" }),
-      T("kino", [2, 0, 6, 4], { tone: "light" }),
-    ],
-  },
-  // The night: exercise first, tomorrow's weather, the German card, the films (tomorrow's from 22:00).
-  nacht: {
-    name: "Nacht",
-    boxes: [
-      DATE, FELD,
-      person("Matt", 2), person("Fiona", 4),
-      T("wetter", [6, 0, 2, 2], { variant: "mixed", tone: "fill" }),
-      T("ausdruck", [0, 2, 4, 2], { tone: "light" }),
-      T("kino", [4, 2, 4, 2], { tone: "light" }),
     ],
   },
 };

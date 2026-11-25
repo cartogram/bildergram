@@ -58,13 +58,13 @@ const data = {
 
 // ---------------- Grid ----------------
 
-specimen("Grid", "8 × 4 cells", `${GRID.col} × ${GRID.row} cells, ${GRID.gap} gutters, ${GRID.margin} margin; tiles span whole cells, content ${TILE_PAD} inside (Morgen's tiles outlined)`, 1072, () => {
+specimen("Grid", "8 × 4 cells", `${GRID.col} × ${GRID.row} cells, ${GRID.gap} gutters, ${GRID.margin} margin; tiles span whole cells, content ${TILE_PAD} inside (the home screen's tiles outlined)`, 1072, () => {
   let svg = "";
   for (let c = 0; c < 8; c++) for (let r = 0; r < 4; r++) {
     const q = cell(c, r);
     svg += `<rect x="${q.x}" y="${q.y}" width="${q.w}" height="${q.h}" fill="#eeeeee"/>`;
   }
-  for (const b of SCREENS.morgen.boxes) {
+  for (const b of SCREENS.home.boxes) {
     svg += tile(b.tile, "outline") + note(b.tile.x + 20, b.tile.y + 40, `${b.module}${b.variant ? ` · ${b.variant}` : ""}`);
     svg += note(b.tile.x + 20, b.tile.y + 70, `${b.tile.w} × ${b.tile.h}`);
   }
@@ -161,7 +161,7 @@ cards("Datum and Feld", "2 × 1 each; the Feld is drawn on the Kindle (gauge pie
   ["tempelhof", 2, 1, { variant: "feld", tone: "fill" }, feld(at(5, 30)), "full", "tempelhof · closed"],
 ]);
 cards("Wetter", "2 × 2; the three column variants", [
-  ["wetter", 2, 2, { variant: "mixed", tone: "fill" }, data, "full", "mixed (Morgen, Nacht)"],
+  ["wetter", 2, 2, { variant: "mixed", tone: "fill" }, data, "full", "mixed (home)"],
   ["wetter", 2, 2, { variant: "details", tone: "fill" }, data, "full", "details"],
   ["wetter", 2, 2, { variant: "days", tone: "fill" }, data, "full", "days"],
   ["datum", 2, 1, { tone: "dark" }, {}, "fallback", "datum · no connection"],

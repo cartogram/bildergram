@@ -3,17 +3,16 @@
 # Kindle dashboard (Phase 9) — runs on a jailbroken Kindle
 # Paperwhite 3, installed to /mnt/us/dashboard/bin/.
 #
-# Shows screens on a daily schedule (SCHEDULE from the hub, e.g.
-# "0600:morgen 0900:tag 1815:abend 2300:nacht"). Each screen is a
-# base image rendered by the server (top bar, weather, cinema,
-# phrase) and downloaded at check-in; the Tag screen also has a
-# Tempelhof box that the Kindle draws itself from prebuilt images,
-# with a new countdown every minute.
+# Shows one screen (SCREEN from the hub; Phase 15): a base image
+# rendered by the server (date, weather, cinema, phrase, exercise) and
+# downloaded at check-in, plus the Tempelhofer Feld tile that the
+# Kindle draws itself from prebuilt images, with a new countdown every
+# minute. The screen's cards change with the time of day themselves.
 #
 # Between updates the Kindle suspends to RAM with Wi-Fi off and wakes
 # on the RTC alarm. It checks in with the hub when the current
-# screen's base is missing, every CHECKIN_MINUTES while a weather
-# screen is showing, and when the power button is pressed. Plugging
+# screen's base is missing (at start, and for each new day), every
+# CHECKIN_MINUTES, and when the power button is pressed. Plugging
 # in USB (or the admin page's "exit") returns to the normal Kindle UI.
 #
 #   dashboard.sh start [TEST_MINUTES]  run (TEST_MINUTES > 0 stops after that long)
@@ -32,7 +31,7 @@ RETRY_SECS=900   # after a failed check-in, try again at most every 15 minutes
 # Europe/Berlin as a POSIX rule: the Kindle's own zone setting is unreliable.
 BERLIN_TZ='CET-1CEST,M3.5.0,M10.5.0/3'
 
-. "$DIR/layout.env"   # VERSION SCREENS HOURLY_SCREENS DEFAULT_SCHEDULE GAUGE_STEPS, DEVICE_*/TP_*/CD_*/GG_*/UPD_* (kindle/build.mjs)
+. "$DIR/layout.env"   # VERSION SCREENS HOURLY_SCREENS DEFAULT_SCREEN GAUGE_STEPS, DEVICE_*/TP_*/CD_*/GG_*/UPD_* (kindle/build.mjs)
 [ -f "$DIR/hub.env" ] && . "$DIR/hub.env"   # HUB_URL HUB_TOKEN HUB_MAC (kindle/install.sh)
 
 log() {
@@ -99,57 +98,29 @@ restore_ui() {
 }
 
 # ------------------------------------------------------------------
-# State and schedule
+# State and the day
 # ------------------------------------------------------------------
 
 load_state() {
-  SCHEDULE=$DEFAULT_SCHEDULE
+  SCREEN=$DEFAULT_SCREEN
   CHECKIN_MINUTES=60
   LAST_OK=0
+  # Older state files also carry SCHEDULE (before Phase 15); it is ignored.
   [ -f "$DIR/state.env" ] && . "$DIR/state.env"
-  # Phase 7 screen names (tempelhof/kino) map to the new screens.
-  SCHEDULE=$(echo "$SCHEDULE" | sed 's/:tempelhof/:tag/g; s/:kino/:abend/g')
+  in_list "$SCREEN" "$SCREENS" || SCREEN=$DEFAULT_SCREEN
 }
 
 save_state() {
-  printf 'SCHEDULE="%s"\nCHECKIN_MINUTES=%s\nLAST_OK=%s\n' "$SCHEDULE" "$CHECKIN_MINUTES" "$LAST_OK" > "$DIR/state.env"
+  printf 'SCREEN="%s"\nCHECKIN_MINUTES=%s\nLAST_OK=%s\n' "$SCREEN" "$CHECKIN_MINUTES" "$LAST_OK" > "$DIR/state.env"
 }
 
-schedule_screens() {
-  echo "$SCHEDULE" | tr ' ' '\n' | sed -n 's/^[0-9]*://p' | sort -u
-}
-
-# Sets SCREEN, SLOT_DAY (date the current slot started) and NEXT_SWITCH
-# (epoch of the next schedule entry) for epoch $1.
-resolve_slot() {
-  _hhmm=$(berlin "$1" %H%M)
-  _today=$(berlin "$1" %Y-%m-%d)
-  SCREEN=""
-  _first=""
-  _last=""
-  _next=""
-  for _e in $(echo "$SCHEDULE" | tr ' ' '\n' | sort); do
-    _t=${_e%%:*}
-    [ -z "$_first" ] && _first=$_e
-    _last=$_e
-    if [ "$_t" -le "$_hhmm" ]; then
-      SCREEN=${_e#*:}
-    elif [ -z "$_next" ]; then
-      _next=$_t
-    fi
-  done
-  SLOT_DAY=$_today
-  if [ -z "$SCREEN" ]; then  # before the first entry: yesterday's last slot continues
-    SCREEN=${_last#*:}
-    SLOT_DAY=$(day_offset "$_today" -1)
-  fi
-  in_list "$SCREEN" "$SCREENS" || SCREEN=tag
-  if [ -n "$_next" ]; then
-    NEXT_SWITCH=$(berlin_epoch "$_today" "$(echo "$_next" | sed 's/../&:/')")
-  else
-    _t=${_first%%:*}
-    NEXT_SWITCH=$(berlin_epoch "$(day_offset "$_today" 1)" "$(echo "$_t" | sed 's/../&:/')")
-  fi
+# Sets SLOT_DAY (the Berlin date the screen's base is for: today) and
+# NEXT_SWITCH (the next midnight, when the date and the cards turn over)
+# for epoch $1.
+resolve_day() {
+  in_list "$SCREEN" "$SCREENS" || SCREEN=$DEFAULT_SCREEN
+  SLOT_DAY=$(berlin "$1" %Y-%m-%d)
+  NEXT_SWITCH=$(berlin_epoch "$(day_offset "$SLOT_DAY" 1)" 00:00)
 }
 
 # The downloaded base for screen $1 exists and is for day $2.
@@ -161,8 +132,8 @@ base_image() {  # $1 screen, $2 day
   if have_base "$1" "$2"; then echo "$DIR/screens/$1.png"; else echo "$DIR/fallback/$1.png"; fi
 }
 
-# A check-in is due: the current base is missing, or a weather screen is
-# older than CHECKIN_MINUTES.
+# A check-in is due: today's base is missing, or (a screen with hourly
+# cards) it is older than CHECKIN_MINUTES.
 checkin_due() {  # $1 now
   [ -n "$HUB_URL" ] || return 1
   have_base "$SCREEN" "$SLOT_DAY" || return 0
@@ -266,31 +237,24 @@ checkin() {  # $1 reason
     fi
   fi
 
-  # Download the base of every screen in the schedule: the current one
-  # for its slot's date, the others for today.
-  resolve_slot "$_now"
-  _today=$(berlin "$_now" %Y-%m-%d)
+  # Download today's base of the screen (the reply may have changed it).
+  resolve_day "$_now"
   mkdir -p "$DIR/screens"
   _got=""
   _failed=""
-  for _s in $(schedule_screens); do
-    in_list "$_s" "$SCREENS" || continue
-    _d=$_today
-    [ "$_s" = "$SCREEN" ] && _d=$SLOT_DAY
-    if hub_get "/api/kindle/screen/$_s.png?day=$_d&battery=$_bat" "$DIR/screens/$_s.png.part"; then
-      mv "$DIR/screens/$_s.png.part" "$DIR/screens/$_s.png"
-      echo "$_d" > "$DIR/screens/$_s.day"
-      _got="$_got $_s"
-    else
-      rm -f "$DIR/screens/$_s.png.part"
-      _failed="$_failed $_s"
-    fi
-  done
+  if hub_get "/api/kindle/screen/$SCREEN.png?day=$SLOT_DAY&battery=$_bat" "$DIR/screens/$SCREEN.png.part"; then
+    mv "$DIR/screens/$SCREEN.png.part" "$DIR/screens/$SCREEN.png"
+    echo "$SLOT_DAY" > "$DIR/screens/$SCREEN.day"
+    _got=" $SCREEN"
+  else
+    rm -f "$DIR/screens/$SCREEN.png.part"
+    _failed=" $SCREEN"
+  fi
   wifi_restore
 
   have_base "$SCREEN" "$SLOT_DAY" && LAST_OK=$_now
   save_state
-  log "check-in ($1): schedule '$SCHEDULE', every ${CHECKIN_MINUTES} min, screens:${_got:- none}${_failed:+, failed:$_failed}, clock drift ${_drift}s, battery ${_bat}%"
+  log "check-in ($1): screen $SCREEN, every ${CHECKIN_MINUTES} min, got:${_got:- none}${_failed:+, failed:$_failed}, clock drift ${_drift}s, battery ${_bat}%"
   [ "$EXIT" = 1 ] && return 2
   [ -z "$_failed" ] || return 1
   return 0
@@ -394,21 +358,21 @@ run() {
       break
     fi
 
-    resolve_slot "$now"
+    resolve_day "$now"
     if checkin_due "$now" && [ $((now - last_attempt)) -ge "$RETRY_SECS" ]; then
       last_attempt=$now
       checkin scheduled
       [ $? = 2 ] && { log "hub asked to exit"; break; }
       shown=""
       now=$(date +%s)
-      resolve_slot "$now"
+      resolve_day "$now"
     fi
 
     take_screen
     draw_screen "$now"
 
-    # Next wake: the next switch, the next minute (Tempelhof), or the next
-    # check-in (weather screens on the interval, or retrying a missing base).
+    # Next wake: midnight (a new day's base), the next minute (Tempelhof),
+    # or the next check-in (on the interval, or retrying a missing base).
     wake=$NEXT_SWITCH
     [ -n "$WAKE_AT" ] && [ "$WAKE_AT" -lt "$wake" ] && wake=$WAKE_AT
     if [ -n "$HUB_URL" ]; then
@@ -467,7 +431,7 @@ case "$1" in
     ;;
   checkin)
     load_state
-    resolve_slot "$(date +%s)"
+    resolve_day "$(date +%s)"
     checkin manual
     echo "check-in returned $?; see $LOG"
     ;;
@@ -475,11 +439,11 @@ case "$1" in
     mode=$1   # kept: the Tempelhof lookup below overwrites $1 with `set --`
     at=${2:-$(date +%s)}
     load_state
-    resolve_slot "$at"
+    resolve_day "$at"
     _dev=$(var DEVICE "$SCREEN")
     due="no"
     checkin_due "$at" && due="yes"
-    echo "at $(berlin "$at" '%a %Y-%m-%d %H:%M') Berlin: screen $SCREEN (slot day $SLOT_DAY), next switch $(berlin "$NEXT_SWITCH" '%a %H:%M'), check-in due: $due"
+    echo "at $(berlin "$at" '%a %Y-%m-%d %H:%M') Berlin: screen $SCREEN (day $SLOT_DAY), new day $(berlin "$NEXT_SWITCH" '%a %H:%M'), check-in due: $due"
     echo "  base: $(base_image "$SCREEN" "$SLOT_DAY")"
     if [ -n "$_dev" ]; then
       set -- $(tempelhof_lookup "$at")

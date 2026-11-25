@@ -1,11 +1,12 @@
 // ============================================================
-// Kindle hub (Phase 9–10) — schedule, status and screen images for
-// the Kindle dashboards (kindle/device/dashboard.sh), per device.
+// Kindle hub (Phase 9–10; one screen per Kindle since Phase 15) —
+// config, status and screen images for the Kindle dashboards
+// (kindle/device/dashboard.sh), per device.
 //
 // Device endpoints (Access-Token = the device's DEVICE_TOKEN_KINDLE_0x):
 //   POST /api/kindle/checkin               body: log tail; query: battery, charging,
 //                                          screen, version, reason
-//                                          → shell-safe env (SCHEDULE, CHECKIN_MINUTES, …)
+//                                          → shell-safe env (SCREEN, CHECKIN_MINUTES, …)
 //   GET  /api/kindle/screen/<id>.png?day=&battery=
 //                                          the screen's base (rotated, for eips)
 //
@@ -28,19 +29,16 @@ import { fitnessParam } from "./fitness";
 
 /** The screens kindle/lib/screens.mjs defines (ids, German names, what they show). */
 export const SCREENS = {
-  morgen: { name: "Morgen", shows: "Tiles: date, Feld gauge, weather, expression of the day, Kino tonight, Matt + Fiona's exercise rings" },
-  tag: { name: "Tag", shows: "Tempelhof countdown + preposition of the day" },
-  abend: { name: "Abend", shows: "Yorck cinema listing" },
-  nacht: { name: "Nacht", shows: "Exercise this week (Matt + Fiona) + expression of the day" },
+  home: { name: "Start", shows: "Tiles: date, Feld gauge, weather, expression of the day, Kino tonight, Matt + Fiona's exercise rings" },
 } as const;
 export type Screen = keyof typeof SCREENS;
 
 /** Screens showing the fitness module (kindle/lib/screens.mjs). */
-const FITNESS_SCREENS = new Set<string>(["morgen", "nacht"]);
+const FITNESS_SCREENS = new Set<string>(["home"]);
 
 export interface KindleConfig {
-  /** Daily timetable: from `at` (Berlin HH:MM) until the next entry, show `screen`. */
-  schedule: { at: string; screen: Screen }[];
+  /** The one screen this Kindle shows (its cards change with the time of day themselves). */
+  screen: Screen;
   kino: {
     cinemas: string[];
     from: string;
@@ -51,7 +49,7 @@ export interface KindleConfig {
     /** Yorck film slugs hidden by hand. */
     hiddenFilms: string[];
   };
-  /** How often the Kindle checks in while a weather screen is showing. */
+  /** How often the Kindle checks in (the screen has hourly cards: weather, exercise). */
   checkinMinutes: number;
   /** One-shot: the next check-in tells the Kindle to return to its normal UI. */
   exit: boolean;
@@ -74,33 +72,14 @@ const statusKey = (device: string) => `kindle/${device}/status.json`;
 const HISTORY_SECONDS = 7 * 86_400;
 
 export const DEFAULT_CONFIG: KindleConfig = {
-  schedule: [
-    { at: "06:00", screen: "morgen" },
-    { at: "09:00", screen: "tag" },
-    { at: "18:15", screen: "abend" },
-    { at: "23:00", screen: "nacht" },
-  ],
+  screen: "home",
   kino: { cinemas: ["rollberg", "passage", "neues-off"], from: "18:00", letterboxdUser: "", hideSeen: false, hiddenFilms: [] },
   checkinMinutes: 60,
   exit: false,
 };
 
-/**
- * Default schedules per Kindle (keep in sync with kindle/lib/devices.mjs):
- * Matt has Tempelhof and the Kino, Fiona the weather and workouts.
- */
-const DEFAULT_SCHEDULES: Record<string, KindleConfig["schedule"]> = {
-  kindle_01: [
-    { at: "06:00", screen: "tag" },
-    { at: "18:15", screen: "abend" },
-  ],
-  kindle_02: [
-    { at: "06:00", screen: "morgen" },
-    { at: "18:00", screen: "nacht" },
-  ],
-};
-
-const defaultConfig = (device: string): KindleConfig => ({ ...DEFAULT_CONFIG, schedule: DEFAULT_SCHEDULES[device] ?? DEFAULT_CONFIG.schedule });
+/** The screen each Kindle starts with; both show the same for now. */
+const defaultConfig = (_device: string): KindleConfig => ({ ...DEFAULT_CONFIG });
 
 /** Yorck cinemas (slug → name), from yorck.de/kinos. */
 export const YORCK_CINEMAS: Record<string, string> = {
@@ -128,14 +107,9 @@ const isScreen = (s: unknown): s is Screen => typeof s === "string" && Object.ha
 // State
 // ------------------------------------------------------------------
 
-/** Phase 7 configs used "tempelhof"/"kino" and had no interval; map them. */
-function migrate(c: Partial<KindleConfig> & { schedule?: { at: string; screen: string }[] }, device: string): KindleConfig {
-  const old: Record<string, Screen> = { tempelhof: "tag", kino: "abend" };
-  const parsed = parseConfig({
-    ...DEFAULT_CONFIG,
-    ...c,
-    schedule: (c.schedule ?? DEFAULT_CONFIG.schedule).map((e) => ({ ...e, screen: old[e.screen] ?? e.screen })),
-  });
+/** Configs from before Phase 15 had a daily `schedule` instead of one `screen`; they get the default. */
+function migrate(c: Partial<KindleConfig>, device: string): KindleConfig {
+  const parsed = parseConfig({ ...defaultConfig(device), ...c, screen: isScreen(c.screen) ? c.screen : defaultConfig(device).screen });
   return typeof parsed === "string" ? defaultConfig(device) : parsed;
 }
 
@@ -147,15 +121,8 @@ async function readConfig(env: AppEnv, device: string): Promise<KindleConfig> {
 /** Validate an admin-supplied config; returns an error message or the clean config. */
 export function parseConfig(input: unknown): KindleConfig | string {
   const c = input as Partial<KindleConfig> | null;
-  if (!c || !Array.isArray(c.schedule) || c.schedule.length === 0) return "schedule must be a non-empty list";
-  const schedule: KindleConfig["schedule"] = [];
-  for (const e of c.schedule) {
-    if (!e || typeof e.at !== "string" || !HHMM.test(e.at)) return `bad time: ${JSON.stringify(e?.at)}`;
-    if (!isScreen(e.screen)) return `unknown screen: ${JSON.stringify(e?.screen)}`;
-    schedule.push({ at: e.at, screen: e.screen });
-  }
-  schedule.sort((a, b) => a.at.localeCompare(b.at));
-  if (new Set(schedule.map((e) => e.at)).size !== schedule.length) return "two entries share a time";
+  if (!c) return "config must be an object";
+  if (!isScreen(c.screen)) return `unknown screen: ${JSON.stringify(c.screen)}`;
 
   const cinemas = Array.isArray(c.kino?.cinemas) ? c.kino.cinemas.filter((s) => s in YORCK_CINEMAS) : [];
   if (cinemas.length === 0) return "choose at least one cinema";
@@ -168,7 +135,7 @@ export function parseConfig(input: unknown): KindleConfig | string {
   const minutes = Number(c.checkinMinutes ?? DEFAULT_CONFIG.checkinMinutes);
   if (!Number.isInteger(minutes) || minutes < 15 || minutes > 360) return "check-in interval must be 15–360 minutes";
   return {
-    schedule,
+    screen: c.screen,
     kino: { cinemas, from, letterboxdUser, hideSeen: c.kino?.hideSeen === true && Boolean(letterboxdUser), hiddenFilms },
     checkinMinutes: minutes,
     exit: c.exit === true,
@@ -236,7 +203,7 @@ export async function handleKindleDevice(request: Request, env: AppEnv): Promise
 
     // Shell-safe KEY="value" lines; the Kindle validates them before use.
     const lines = [
-      `SCHEDULE="${config.schedule.map((e) => `${e.at.replace(":", "")}:${e.screen}`).join(" ")}"`,
+      `SCREEN="${config.screen}"`,
       `CHECKIN_MINUTES=${config.checkinMinutes}`,
       `EXIT=${config.exit ? 1 : 0}`,
       `SERVER_TIME=${nowSec}`,

@@ -187,19 +187,6 @@ button:disabled {
   cursor: default;
 }
 
-.slots {
-  list-style: none;
-  display: grid;
-  gap: 8px;
-}
-
-.slot {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 8px;
-  align-items: center;
-}
-
 .cinemas {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr));
@@ -209,6 +196,7 @@ button:disabled {
 .check,
 .inline {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   font-size: 15px;
@@ -232,14 +220,6 @@ button:disabled {
 }
 
 @media (max-width: 520px) {
-  .slot {
-    grid-template-columns: auto 1fr auto;
-  }
-
-  .slot select {
-    font-size: 14px;
-  }
-
   .facts div {
     grid-template-columns: 1fr;
     gap: 0;

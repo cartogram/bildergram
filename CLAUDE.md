@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A battery-powered e-ink dashboard on two jailbroken Kindles: `kindle_01` (**Matt**), a Paperwhite 3, and `kindle_02` (**Fiona**), a Paperwhite 2. Each shows **German screens** (the admin page stays in English) on its own daily schedule: **Morgen**, **Tag**, **Abend** and **Nacht**. Every screen is a set of tiles: the date and the Tempelhofer Feld gauge in the same place on each, then a mix of weather, the Ausdruck des Tages and Präposition des Tages cards, tonight's films at the Yorck cinemas, and Matt's and Fiona's exercise rings.
+A battery-powered e-ink dashboard on two jailbroken Kindles: `kindle_01` (**Matt**), a Paperwhite 3, and `kindle_02` (**Fiona**), a Paperwhite 2. Each shows one **German screen** (the admin page stays in English), set per Kindle on the hub; both show `home` for now (Phase 15 dropped the daily schedule). A screen is a set of tiles: the date and the Tempelhofer Feld gauge, the weather, the Ausdruck des Tages card, tonight's films at the Yorck cinemas, and Matt's and Fiona's exercise rings. Tiles change with the time of day themselves (the Feld countdown, tomorrow's films from 22:00).
 
 There are three parts:
 - **Kindle** (`kindle/device/dashboard.sh`): a busybox shell loop. It draws each screen's downloaded base image with `eips`, pastes the Feld tile (panel, countdown, gauge) on top, and suspends to RAM with Wi-Fi off, waking on the RTC alarm.
@@ -28,7 +28,7 @@ vercel deploy --prod     # the renderer (also deployed by the GitHub integration
 npm run types            # regenerate worker-configuration.d.ts after changing wrangler.jsonc or .dev.vars
 npm run glyphs           # regenerate kindle/lib/glyphs.ts (0.4 s)
 
-# test the device loop's schedule/check-in logic locally (it falls back to BSD date on macOS)
+# test the device loop's day/check-in logic locally (it falls back to BSD date on macOS)
 DASHBOARD_DIR=$PWD/kindle/dist/dashboard dash kindle/device/dashboard.sh plan <epoch>
 ```
 
@@ -51,14 +51,14 @@ There is no test runner. Verify changes with:
   New UI should use these rather than raw sizes or colors. `npm run kindle:design` renders the grid, the tile tokens, the components, every card in each state (sample data from `kindle/samples.mjs`) and where each token is used to `kindle/dist/gallery/design-system.html`. Bold is the real **Arimo Bold** (`assets/fonts/Arimo-Bold.ttf`), and `width()` assumes bold runs ≤ 7% wider than regular (it overestimates, by about 6% on GESCHLOSSEN). `exactWidth()` uses Arimo Bold's measured advances instead; use it only where drawing must end with the text, such as an underline, because switching layout to it would shift sizes and line breaks. Modules draw in their content box, origin top left (`moduleBox`).
 - **`modules/*.mjs`**: each module exports `render(box, data, …)`, which returns SVG in box-local coordinates, plus its `cadence`.
   - `datum` (Phase 14) is the date tile: weekday, day, month, and Akku in a pill; it sits in cell (0, 0) on every screen because the check-in's "Aktualisiere …" piece (`updatingRect`) is pasted there.
-  - `tempelhof` is per-minute and drawn on the device; it also exports `countdownBox` and `countdownSvg`. A short tile (Morgen) is "Feld schließt in" over the countdown plus a half-circle gauge (`GAUGE_STEPS` dots from the last event to the next, times in pills); open draws the ring as an "n" above the text, closed as a "u" below, so countdown and gauge pieces are placed per state (`gaugeBox`, `gaugeSvg`, `gaugeStep`).
+  - `tempelhof` is per-minute and drawn on the device; it also exports `countdownBox` and `countdownSvg`. The 2 × 1 tile is "Feld schließt in" over the countdown plus a half-circle gauge (`GAUGE_STEPS` dots from the last event to the next, times in pills); open draws the ring as an "n" above the text, closed as a "u" below, so countdown and gauge pieces are placed per state (`gaugeBox`, `gaugeSvg`, `gaugeStep`).
   - `wetter` is hourly (Open-Meteo, no key; 2 × 2 variants `mixed`, `details` and `days`).
   - `kino` is daily (yorck.de); the `tonight` tile lists every cinema by time with a letter per cinema, and from 22:00 Berlin time shows tomorrow's listing (`render.mjs` `kinoDay`).
   - `ausdruck` is daily, from `kindle/data/ausdruecke.json`: 365 B2 entries `{ausdruck, bedeutung, beispiel}`, rotating by days since 2026-01-01.
   - `praeposition` is daily, from `kindle/data/praepositionen.json`: 215 verbs with a fixed preposition `{wort, kasus, bedeutung, beispiel}`, contrasting pairs on neighbouring days; drawn with the `ausdruck` band layout.
   - `fitness` is hourly: exercise minutes per person against day, week and year goals; the `person` tile draws three rings (today, the week as one segment per day, the year) and a legend. The data comes from the hub (the renderer's `fitness` param, validated by `parseFitness`), not from a fetch.
   - The `ausdruck` card centres the English meaning (as title), the expression and the example; the example's Wörter (`kindle/data/woerter.json`, by entry index: `[{artikel, wort, plural} | {verb, formen}]`, plurals written out, generated and spot-checkable) flow at the bottom. `praeposition` uses the same card.
-- **`screens.mjs`**: `SCREENS` (tiles from `T(module, [col, row, cols, rows], { variant, tone })`; the date `DATE` and the Feld `FELD` are shared, so every screen uses one Kindle piece set, `feld`; Tag and Abend have nothing hourly, to spare Matt's battery), `moduleSvg(b, data, mode)` and `screenSvg(id, data, mode)`, where `mode` is one of:
+- **`screens.mjs`**: `SCREENS` (tiles from `T(module, [col, row, cols, rows], { variant, tone })`; one screen, `home`, for now; the date `DATE` and the Feld `FELD` keep their cells on any screen, so all screens share one Kindle piece set, `feld`), `moduleSvg(b, data, mode)` and `screenSvg(id, data, mode)`, where `mode` is one of:
   - `full`: everything; used by the gallery and the admin preview.
   - `base`: device boxes left blank; this is what the server sends to the Kindle.
   - `fallback`: "Keine Verbindung" placeholders, prebuilt for offline use.
@@ -87,9 +87,8 @@ There is no test runner. Verify changes with:
   - Other `/api/*` paths return 404; everything else is the SPA.
   - There are no cron triggers: the explicit empty `crons` list in `wrangler.jsonc` also clears old schedules on deploy.
 - **`routes/kindle.ts`**:
-  - **Default schedules** (`DEFAULT_SCHEDULES`, also in `kindle/lib/devices.mjs` for `DEFAULT_SCHEDULE`): Matt 06:00 tag, 18:15 abend (Tempelhof and the Kino); Fiona 06:00 morgen, 18:00 nacht (weather and workouts). The German modules fill the rest of each screen.
-  - **Config**: `{schedule:[{at,screen}], kino:{cinemas,from,letterboxdUser,hideSeen,hiddenFilms}, checkinMinutes (15–360), exit}`. `hiddenFilms` holds Yorck film slugs. Phase 7 configs (screens `tempelhof`/`kino`) are migrated on read.
-  - **Check-in** (`POST /api/kindle/checkin`): the body is the device's log tail. The reply is shell-safe `KEY="value"` lines (`SCHEDULE="0600:morgen 0900:tag …"`, `CHECKIN_MINUTES`, `EXIT`, `SERVER_TIME`). The Kindle validates them with a regex before sourcing, so keep values within `[A-Za-z0-9 :._-]`.
+  - **Config**: `{screen, kino:{cinemas,from,letterboxdUser,hideSeen,hiddenFilms}, checkinMinutes (15–360), exit}`, `screen` one of `SCREENS` (also in `kindle/lib/screens.mjs`; the default is `home`, as `screen` in `kindle/lib/devices.mjs`). `hiddenFilms` holds Yorck film slugs. Older configs (with a `schedule`) are migrated on read.
+  - **Check-in** (`POST /api/kindle/checkin`): the body is the device's log tail. The reply is shell-safe `KEY="value"` lines (`SCREEN="home"`, `CHECKIN_MINUTES`, `EXIT`, `SERVER_TIME`). The Kindle validates them with a regex before sourcing, so keep values within `[A-Za-z0-9 :._-]`.
   - The `exit` flag is one-shot: it is cleared once sent.
   - **Status** keeps a week of `[epoch, battery]` history.
   - **Screen images**: `GET /api/kindle/screen/<id>.png?day=&battery=` → renderer. The admin preview (`/api/admin/kindle/screen?screen=`) is the full render.
@@ -114,16 +113,15 @@ There is no test runner. Verify changes with:
 
 ## Device loop (`kindle/device/dashboard.sh`, installed to `/mnt/us/dashboard`)
 
-- **Screens and slots**:
-  - The loop resolves the current screen from `SCHEDULE` (kept in `state.env` with `CHECKIN_MINUTES` and `LAST_OK`).
-  - The slot before the first entry continues the previous day's last slot, so after midnight Nacht still shows the previous date.
-  - Bases are stored as `screens/<id>.png` plus `.day`. Without a base for the slot's day, the loop draws `fallback/<id>.png`.
+- **The screen and the day**:
+  - The loop shows `SCREEN` (from the hub, kept in `state.env` with `CHECKIN_MINUTES` and `LAST_OK`; `DEFAULT_SCREEN` from `layout.env` until then). `resolve_day` sets today's date and the next midnight, when it wakes for a new day's base.
+  - The base is stored as `screens/<id>.png` plus `.day`. Without a base for today, the loop draws `fallback/<id>.png`.
 - **When it checks in**:
-  - when the current base is missing;
-  - every `CHECKIN_MINUTES` while an hourly (weather) screen is showing;
+  - when today's base is missing (at start, and after midnight);
+  - every `CHECKIN_MINUTES` (the screen has hourly cards);
   - on the power button.
 
-  After a failure it waits `RETRY_SECS` (15 min) before trying again. Each check-in downloads every scheduled screen: the current one for its slot's day, the others for today.
+  After a failure it waits `RETRY_SECS` (15 min) before trying again. Each check-in downloads the screen's base for today.
 - **Tempelhof box**:
   - The loop pastes `tempelhof/<variant>/panel/<state>.png` (the whole tile, background included) on full redraws (state changes, and every 15 minutes against ghosting).
   - It pastes `cd/<open|closed>/<minutes>.png` every minute; minutes are rounded up.
@@ -142,7 +140,7 @@ There is no test runner. Verify changes with:
   - While the dashboard runs, Wi-Fi is off; a check-in uploads the log tail to the hub, where the admin page shows it.
   - `dashboard.sh once [EPOCH]` draws the screen for that instant without suspending.
   - To see what is on the panel, read `/dev/fb0` over SSH (`dd bs=<line_length> count=<yres>`) **right after** drawing: while KOReader is open it repaints its own UI over eips output within seconds.
-  - `dashboard.log` timestamps are UTC (`date -u`); the screens and schedule use Berlin time.
+  - `dashboard.log` timestamps are UTC (`date -u`); the screen and its day use Berlin time.
 - **Hardware**: Matt (`kindle_01`, 192.168.0.93) is a Paperwhite 3: 1072×1448 portrait framebuffer, firmware 5.13.7. Fiona (`kindle_02`, 192.168.0.198) is a Paperwhite 2: 758×1024 portrait framebuffer at 212 ppi, `line_length` 768 (padded rows, which eips handles), firmware 5.12.2.1.1. They share a case, so tell them apart by serial prefix (G090G1 = PW3, 90D4 = PW2). WinterBreak2 covers both.
 
 ## Conventions

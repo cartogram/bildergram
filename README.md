@@ -1,15 +1,18 @@
 # bildergram
 
 A battery-powered e-ink dashboard on two jailbroken Kindles, **Matt** (a
-Paperwhite 3) and **Fiona** (a Paperwhite 2), in German. Each Kindle shows a few hand-designed screens on
-its own daily schedule:
+Paperwhite 3) and **Fiona** (a Paperwhite 2), in German. Each Kindle shows one
+screen of tiles (both the same for now); the tiles change with the time of day
+themselves:
 
-| Default time | Screen | What it shows |
-|---|---|---|
-| 06:00 | **Morgen** | Weather (now, 3-day high/low and precipitation, wind, sunset) and the *Ausdruck des Tages* |
-| 09:00 | **Tag** | Tempelhofer Feld (open/closed, countdown updated every minute) and the weather |
-| 18:15 | **Abend** | IM KINO: the evening's screenings at your chosen [Yorck](https://www.yorck.de) cinemas, without films you've already logged on Letterboxd |
-| 23:00 | **Nacht** | Exercise this week, Matt and Fiona side by side (minutes against a weekly goal, from Apple Health), and the *Ausdruck des Tages* (B2: expression, English meaning, example sentence) |
+| Tile | What it shows |
+|---|---|
+| **Datum** | The weekday, the date and the battery |
+| **Tempelhofer Feld** | Open or closed, a countdown updated every minute, and a half-circle gauge from the last opening/closing to the next |
+| **Wetter** | Now, today's high/low, precipitation and wind, the next three days |
+| **Ausdruck des Tages** | A B2 expression: its English meaning, an example sentence and the example's words (article, plural, past forms) |
+| **Im Kino** | The evening's screenings at your chosen [Yorck](https://www.yorck.de) cinemas, without films you've logged on Letterboxd; from 22:00 tomorrow's |
+| **Matt, Fiona** | Exercise minutes from Apple Health as three rings: today, this week (a segment per day), this year |
 
 The Kindle sleeps between updates with Wi-Fi off. It goes online on an
 interval (default hourly) while a weather screen is showing, when it doesn't
@@ -19,12 +22,12 @@ have the current screen yet, and when you press its power button.
 
 ```
 ┌──────────── Kindle Paperwhite 3 (kindle/device/dashboard.sh) ─────────────┐
-│  draw the screen's base image; on Tag also paste the Tempelhof panel and   │
-│  a countdown every minute (prebuilt) → suspend until the next wake (RTC)   │
+│  draw the screen's base image; paste the Feld tile (panel, gauge) and a    │
+│  countdown every minute (prebuilt) → suspend until the next wake (RTC)     │
 └───────┬────────────────────────────────────────────────────────────────────┘
-        │ check-in: battery + log up; schedule down; then one base image per screen
+        │ check-in: battery + log up; screen + interval down; then the screen's base
         ▼
-Cloudflare Worker hub (src/) ── schedule, status + battery history, admin page, R2 state
+Cloudflare Worker hub (src/) ── config, status + battery history, admin page, R2 state
         │ GET /api/screen?screen=…
         ▼
 Vercel function (api/screen.mjs) ── Open-Meteo, yorck.de, phrase list → screen PNG
@@ -58,11 +61,11 @@ Vercel function (api/screen.mjs) ── Open-Meteo, yorck.de, phrase list → sc
 
 | When | What happens |
 |---|---|
-| A slot starts | Draw that screen (the downloaded base, or a "Keine Verbindung" fallback) |
-| Tag | The Tempelhof countdown changes every minute; a full redraw every 15 minutes clears ghosting |
-| Every 60 min (configurable) while Morgen/Tag shows | Check in: fresh weather, schedule changes |
-| Current screen not downloaded for its day | Check in (retries every 15 min if offline) |
-| Power button | Check in now ("Aktualisiere …" in the top bar) |
+| Start, and every midnight | Draw the screen (today's downloaded base, or a "Keine Verbindung" fallback) |
+| Every minute | The Feld countdown changes; the gauge moves when its step does; a full redraw every 15 minutes clears ghosting |
+| Every 60 min (configurable) | Check in: fresh weather, exercise and films, config changes |
+| Today's base not downloaded yet | Check in (retries every 15 min if offline) |
+| Power button | Check in now ("Aktualisiere …" on the date tile) |
 | USB plugged in (or "Return to Kindle UI" on the admin page) | Exit to the normal Kindle UI, which reloads (it looks like a restart but isn't one) |
 
 Three books in the Kindle library control it:
@@ -138,7 +141,7 @@ each it shows:
 
 - the last check-in (time, battery, screen, version, recent log) and a
   battery chart for the last week;
-- the schedule (which screen from which time) and the check-in interval;
+- which screen it shows and the check-in interval;
 - the cinemas for IM KINO and the first screening time to list;
 - a Letterboxd username and a switch to leave out films you've logged there (matched by
   TMDB id from your public feed), plus the coming days' films with a manual hide
@@ -267,5 +270,6 @@ bildergram/
 - [x] **Phase 12**: Fitness on Nacht — exercise minutes from each iPhone (a Shortcut posting to `/api/fitness`, a token per person), weekly goals on the admin page, Matt and Fiona side by side with progress bars and a Monday–Sunday strip; Nacht checks in hourly
 - [x] **Phase 13**: Design round — GESCHLOSSEN underlined, section titles removed, a Präposition des Tages band on Tag (215 verbs with prepositions), the two Kindles never show the same screen at once, and a design-system page (`npm run kindle:design`)
 - [x] **Phase 14**: Tile grid — screens as widget tiles on an 8 × 4 grid (`cell()`, tile styles outline / light / fill / dark / bleed); Morgen redesigned: a date tile with Akku, a Feld tile with a half-circle gauge pasted by the Kindle per step, weather with the next days, the Ausdruck as a card with the example's Wörter, Kino tonight (tomorrow's from 22:00) with cinema letters, and Matt + Fiona's exercise rings (today, week, year); Tag, Abend and Nacht rebuilt from the same tiles (one shared Feld piece set); Wörter for all 365 expressions; shared pills, stat rows and a tile type scale on the design-system page
+- [x] **Phase 15**: One screen per Kindle — the daily schedule (Morgen, Tag, Abend, Nacht) is gone; each Kindle's config names one screen (both "home" for now), and its tiles change with the time of day themselves (the Feld countdown, tomorrow's films from 22:00); the Kindle checks in on its interval and fetches a new base at midnight
 - [ ] **Backlog — Foto screen**: a random photo from a collection uploaded on the admin page (stored in R2, served to the renderer by the hub). Prototyped 2026-11-24: grayscale + contrast, Floyd–Steinberg to the 16 grays with `sharp`; landscape photos full-bleed, portrait photos left with the date right. Open questions: how often it changes (per showing or hourly), with or without the date, which Kindle and when.
 - [x] Fiona (`kindle_02`, Paperwhite 2) jailbroken and installed: screens downloaded at 758 × 1024, base and Tempelhof pastes verified pixel-exact on the panel's framebuffer
