@@ -2,9 +2,9 @@
 // ============================================================
 // kindle/design-system.mjs — the tile design system on one page
 // (`npm run kindle:design`; Phase 8, tiles since Phase 14). The grid,
-// the proposed tile type scale and inks (design.mjs TILE_TYPE,
-// TILE_INK), tiles and pills, every card in each of its states, and
-// an audit of what the cards use now against the proposal. Rendered
+// the tile type scale and inks (design.mjs TILE_TYPE, TILE_INK), tiles
+// and pills, every card in each of its states, and where each token is
+// used. Rendered
 // through the real e-ink pipeline into
 // kindle/dist/gallery/design-system.html.
 // ============================================================
@@ -18,7 +18,9 @@ import { fetchWeather } from "./lib/modules/wetter.mjs";
 import { berlinDate } from "./lib/render.mjs";
 import { berlinParts, berlinToUtc, buildSchedule, tempelhofState } from "./lib/schedule.mjs";
 import { boxSvg, moduleBox, moduleSvg, SCREENS, tileAt } from "./lib/screens.mjs";
-import { mockAusdruck, mockAusdruck2, sampleFitness, sampleProgramme } from "./samples.mjs";
+import { sampleFitness, sampleProgramme } from "./samples.mjs";
+import { entryFor, loadEntries as loadAusdruecke } from "./lib/modules/ausdruck.mjs";
+import { entryFor as praepositionFor } from "./lib/modules/praeposition.mjs";
 
 const OUT = fileURLToPath(new URL("./dist/gallery/", import.meta.url));
 mkdirSync(OUT, { recursive: true });
@@ -49,7 +51,8 @@ const data = {
   battery: 84,
   wetter: weather,
   kino: { programme: sampleProgramme(date), from: "18:00" },
-  ausdruck: mockAusdruck,
+  ausdruck: entryFor(date),
+  praeposition: praepositionFor(date),
   fitness: sampleFitness(date, new Date(now).toISOString()),
 };
 
@@ -77,7 +80,7 @@ const typeUse = {
   label: "a tile's title and field labels; the weekday",
   small: "secondary lines, legends, pills, the Feld line",
 };
-specimen("Type", "Tile type scale (proposed)", "TILE_TYPE: five sizes; bold only where marked", 600, () => {
+specimen("Type", "Tile type scale", "TILE_TYPE: five sizes; bold only where marked", 600, () => {
   let y = 0, svg = "";
   for (const [name, style] of Object.entries(TILE_TYPE)) {
     y += Math.max(84, Math.round(style.size * 1.15) + 26);
@@ -98,7 +101,7 @@ const inkUse = {
   line: "tracks; time gone by",
   paper: "the page and tiles",
 };
-specimen("Color", "Tile inks (proposed)", "TILE_INK on paper and TILE_INK_DARK on the date tile — all on the panel's 16 levels (multiples of 17)", 420, () => {
+specimen("Color", "Tile inks", "TILE_INK on paper and TILE_INK_DARK on the date tile — all on the panel's 16 levels (multiples of 17)", 420, () => {
   let svg = "";
   Object.entries(TILE_INK).forEach(([name, hex], i) => {
     const x = X + i * 280;
@@ -154,22 +157,22 @@ const feld = (ms) => ({ ...data, tempelhof: tempelhofState(events, ms) });
 cards("Datum and Feld", "2 × 1 each; the Feld is drawn on the Kindle (gauge pieces per state)", [
   ["datum", 2, 1, { tone: "dark" }, data, "full", "datum"],
   ["datum", 2, 1, { tone: "dark", updating: true }, data, "full", "datum · during a check-in"],
-  ["tempelhof", 2, 1, { variant: "morgen", tone: "fill" }, feld(at(14, 5)), "full", "tempelhof · open"],
-  ["tempelhof", 2, 1, { variant: "morgen", tone: "fill" }, feld(at(5, 30)), "full", "tempelhof · closed"],
+  ["tempelhof", 2, 1, { variant: "feld", tone: "fill" }, feld(at(14, 5)), "full", "tempelhof · open"],
+  ["tempelhof", 2, 1, { variant: "feld", tone: "fill" }, feld(at(5, 30)), "full", "tempelhof · closed"],
 ]);
 cards("Wetter", "2 × 2; the three column variants", [
-  ["wetter", 2, 2, { variant: "mixed", tone: "fill" }, data, "full", "mixed (Morgen, fill)"],
-  ["wetter", 2, 2, { variant: "details" }, data, "full", "details"],
-  ["wetter", 2, 2, { variant: "days" }, data, "full", "days"],
+  ["wetter", 2, 2, { variant: "mixed", tone: "fill" }, data, "full", "mixed (Morgen, Nacht)"],
+  ["wetter", 2, 2, { variant: "details", tone: "fill" }, data, "full", "details"],
+  ["wetter", 2, 2, { variant: "days", tone: "fill" }, data, "full", "days"],
   ["datum", 2, 1, { tone: "dark" }, {}, "fallback", "datum · no connection"],
 ]);
-cards("Im Kino and Ausdruck", "4 × 2 each (sample listing, mock Wörter)", [
-  ["kino", 4, 2, { variant: "tonight", tone: "light" }, data, "full", "kino · tonight (light)"],
-  ["ausdruck", 4, 2, { variant: "card", tone: "light" }, data, "full", "ausdruck · card (light)"],
+cards("Im Kino and Präposition", "4 × 2 each (sample listing); the Präposition uses the Ausdruck card", [
+  ["kino", 4, 2, { tone: "light" }, data, "full", "kino"],
+  ["praeposition", 4, 2, { tone: "light" }, data, "full", "praeposition"],
 ]);
-cards("Ausdruck", "4 × 2, light border: two expressions with mock Wörter", [
-  ["ausdruck", 4, 2, { variant: "card", tone: "light" }, data, "full", "sein blaues Wunder erleben"],
-  ["ausdruck", 4, 2, { variant: "card", tone: "light" }, { ...data, ausdruck: mockAusdruck2 }, "full", "etwas auf die lange Bank schieben"],
+cards("Ausdruck", "4 × 2, light border: two expressions with their Wörter", [
+  ["ausdruck", 4, 2, { tone: "light" }, data, "full", "today's"],
+  ["ausdruck", 4, 2, { tone: "light" }, { ...data, ausdruck: loadAusdruecke()[3] }, "full", "etwas auf die lange Bank schieben"],
 ]);
 cards("Bewegung", "2 × 2 per person (sample minutes)", [
   ["fitness", 2, 2, { variant: "person", person: "Matt", tone: "dark" }, data, "full", "Matt"],
@@ -179,35 +182,22 @@ cards("Bewegung", "2 × 2 per person (sample minutes)", [
 
 // ---------------- Audit ----------------
 
-/** What the cards use now, and the proposed token each maps to. */
+/** Where each token is used. */
 const typeAudit = [
-  ["Day of the month (Datum)", "88 bold", "display (104 doesn't fit with Akku)"],
-  ["Temperature (Wetter)", "104 bold", "display"],
-  ["Weekday (Datum)", "28 bold, was 40", "label ✓"],
-  ["Month (Datum)", "32 bold, was 40", "heading ✓"],
-  ["The Ausdruck", "40 bold", "heading (32 bold)"],
-  ["Example sentence (Ausdruck)", "40", "body (smaller)"],
-  ["Kino rows", "30, time bold", "body"],
-  ["Wetter values, high/low, day temperatures", "32 bold", "body bold"],
-  ["Tile titles: Tempelhof, Im Kino, Matt", "28 bold", "label"],
-  ["Wetter labels: Niederschlag, Wind, Mi", "28 bold", "label"],
-  ["Meaning (“to be in for …”)", "26 bold #333", "small, muted"],
-  ["“heute ab 18:00”, “+ 3 weitere”", "26 bold #333", "small, muted"],
-  ["Wörter", "26 (article bold)", "small"],
-  ["Feld line, times, Akku, legend", "24", "small"],
-  ["Cinema letter", "24 bold in a 32 circle (two letters shrink)", "small ✓"],
-  ["Pills: Feld times, Akku", "24 bold in a 32 pill", "small ✓"],
+  ["display · 104 bold", "the temperature (the day of the month is 88: at 104 it would touch the Akku pill)"],
+  ["heading · 32 bold", "the expression and the Präposition on the cards; the month"],
+  ["body · 32", "the example sentences; the Kino rows (time bold)"],
+  ["label · 28 bold", "tile titles (Tempelhof, Im Kino, Matt), field labels (Niederschlag, Wind, the days), the card titles, the weekday, the Feld lines and countdown"],
+  ["STAT.value · 28 bold", "values: high/low, precipitation, wind, the days' temperatures, the exercise legend"],
+  ["small · 24", "“heute ab 18:00”, “+ 3 weitere”, the Wörter, the pills and cinema letters (bold)"],
 ];
 const inkAudit = [
-  ["#000000", "text, still-to-go dots, today's ring", "ink"],
-  ["#333333", "secondary text (TYPE.caption)", "muted #555"],
-  ["#555555", "week ring", "muted"],
-  ["#666666", "tertiary text: lows, plurals, Wetter values", "faint #888"],
-  ["#999999", "year ring", "faint #888"],
-  ["#bbbbbb", "Feld dots gone by", "line #ccc"],
-  ["#cccccc", "date tile secondary text", "dark muted #aaa"],
-  ["#dddddd", "ring tracks", "line #ccc"],
-  ["#eeeeee", "the filled tile style", "(tile style)"],
+  ["#000000", "ink", "text and figures; time still to go; today's ring"],
+  ["#555555", "muted", "secondary text (values under labels, “heute ab”, verb forms); the week ring"],
+  ["#888888", "faint", "lows, goals (“/ 30”), plurals; the year ring"],
+  ["#cccccc", "line", "ring tracks; the light tile border"],
+  ["#bbbbbb", "—", "the Feld's dots for time passed"],
+  ["#eeeeee", "(fill)", "the filled tile style (Wetter, Feld)"],
 ];
 const table = (head, rows) =>
   `<table><thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows
@@ -239,12 +229,12 @@ writeFileSync(
 </style>
 <main>
   <h1>Kindle tile design system</h1>
-  <p>The 8 × 4 grid, the proposed tile type scale and inks (design.mjs TILE_TYPE and TILE_INK, not yet applied to the cards), and every card as it renders today — Arimo, 16 gray levels, the 1448 px canvas. Rendered ${date}.</p>
+  <p>The 8 × 4 grid, the tile type scale and inks (design.mjs TILE_TYPE and TILE_INK), the components, and every card — Arimo, 16 gray levels, the 1448 px canvas. Rendered ${date}.</p>
   <nav>${groups.map((g) => `<a href="#${g}">${g}</a>`).join("")}<a href="#Audit">Audit</a></nav>
   ${groups.map((g) => `<h2 id="${g}">${g}</h2>\n  ${sections.filter((s) => s.group === g).map((s) => `<section><h3>${s.title}</h3><p>${s.sub}</p><img src="${s.file}" width="1448" height="${s.h}" alt="${s.title}"></section>`).join("\n  ")}`).join("\n  ")}
-  <h2 id="Audit">Audit: today → proposed</h2>
-  <section><h3>Type</h3><p>Thirteen sizes today; five proposed.</p>${table(["Where", "Now", "Proposed"], typeAudit)}</section>
-  <section><h3>Color</h3><p>Nine grays today; four inks proposed (plus the filled tile style).</p>${table(["Gray", "Used for", "Proposed"], inkAudit)}</section>
+  <h2 id="Audit">Where the tokens are used</h2>
+  <section><h3>Type</h3><p>Five sizes, plus the stat value.</p>${table(["Token", "Used for"], typeAudit)}</section>
+  <section><h3>Color</h3><p>Four inks on paper (inverted on dark tiles), plus the passed dots and the fill.</p>${table(["Gray", "Token", "Used for"], inkAudit)}</section>
 </main>`,
 );
 console.log(`design system: ${sections.length} specimens → ${OUT}design-system.html`);

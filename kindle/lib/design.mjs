@@ -1,55 +1,29 @@
 // ============================================================
 // kindle/lib/design.mjs — design system for the Kindle screens
-// (Phase 8). Every screen and module draws with these tokens and
-// primitives, so type, spacing, ink and German wording stay
-// consistent across screens.
+// (Phase 8; tiles, Phase 14). Every tile draws with these tokens and
+// primitives — the grid, tile styles, type scale, inks, pills and stat
+// rows — so type, spacing, ink and German wording stay consistent.
 //
 // Canvas: 1448 × 1072 landscape at 300 ppi (Paperwhite 3), drawn as
 // SVG and quantized to the panel's 16 gray levels by eink.mjs.
 // ============================================================
 
-import { H, W, escapeXml, textWidth, boldTextWidth, regularTextWidth } from "./eink.mjs";
+import { escapeXml, textWidth, boldTextWidth, regularTextWidth } from "./eink.mjs";
 
 // ------------------------------------------------------------------
 // Tokens
 // ------------------------------------------------------------------
 
-export const CANVAS = { w: W, h: H };
+/** Black and white: text's default ink and the pills' (see TILE_INK for the tiles' grays). */
+export const INK = { primary: "#000000", paper: "#ffffff" };
 
-/** Spacing unit; layouts use multiples of it. */
-export const U = 8;
-
-export const MARGIN = { x: 72, top: 64, bottom: 56 };
-
-/** Three inks, each exactly one of the panel's 16 levels (multiples of 17). */
-export const INK = {
-  primary: "#000000",
-  secondary: "#333333",
-  tertiary: "#666666",
-  /** Light fill behind dark text, e.g. progress bars (204 = 12 × 17, a panel level). */
-  fill: "#cccccc",
-  paper: "#ffffff",
-};
-
-/** Type scale (px at 300 ppi). `caps` styles are letter-spaced capitals. */
-export const TYPE = {
-  display: { size: 123, weight: "bold", underline: true },
-  label: { size: 40, weight: "bold", underline: true },
-  strong: { size: 40, weight: "bold" },
-  body: { size: 40 },
-  caption: { size: 26, weight: "bold", ink: INK.secondary },
-};
-
-export const RULE = { hair: 3, thick: 6 };
-
-/** Top bar: date left, battery right, a rule below; content starts at CONTENT.top. */
-export const TOPBAR = { baseline: 104, rule: 132 };
-export const CONTENT = { top: 172, bottom: H - MARGIN.bottom, left: MARGIN.x, right: W - MARGIN.x };
+/** A tile border's width. */
+export const RULE = { hair: 3 };
 
 /**
  * Tile grid (Phase 14): 8 × 4 cells of 171 × 256, 8 apart and 12 from
- * the edges (12 + 8·171 + 7·8 + 12 = 1448; 12 + 4·256 + 3·8 + 12 = 1072). cell(col, row, cols, rows) is a tile's rect;
- * its content sits TILE_PAD inside.
+ * the edges (12 + 8·171 + 7·8 + 12 = 1448; 12 + 4·256 + 3·8 + 12 = 1072).
+ * cell(col, row, cols, rows) is a tile's rect; its content sits TILE_PAD inside.
  */
 export const GRID = { col: 171, row: 256, gap: 8, margin: 12, radius: 32 };
 export const TILE_PAD = 24;
@@ -60,13 +34,6 @@ export const cell = (col, row, cols = 1, rows = 1) => ({
   h: rows * GRID.row + (rows - 1) * GRID.gap,
 });
 
-/** Inks on a dark tile (all panel levels). */
-export const INK_DARK = { primary: INK.paper, secondary: "#cccccc", tertiary: "#999999" };
-
-/**
- * Proposed tile type scale (Phase 14, not yet applied to the modules):
- * five sizes, bold for titles and figures. See `npm run kindle:design`.
- */
 /**
  * Tile spacing (Phase 14): a tile's first line puts its capitals FIRST_CAP
  * below the content box's top (baseline = FIRST_CAP + 0.716 × size, Arimo's
@@ -88,10 +55,7 @@ export const TILE_TYPE = {
   small: { size: 24 },
 };
 
-/**
- * Proposed tile inks (Phase 14): four panel levels (multiples of 17) on
- * paper, and their counterparts on a dark tile.
- */
+/** The tile inks (Phase 14): four panel levels (multiples of 17) on paper, and their counterparts on a dark tile. */
 export const TILE_INK = {
   /** Text and figures; the time still to go; today's ring. */
   ink: "#000000",
@@ -201,20 +165,12 @@ export function text(x, y, str, style, opts = {}) {
     style.spacing ? `letter-spacing="${style.spacing}"` : "",
     opts.anchor ? `text-anchor="${opts.anchor}"` : "",
   ].filter(Boolean);
-  let svg = `<text ${attrs.join(" ")}>${escapeXml(s)}</text>`;
-  // Underlined styles (display, label): a rule exactly as long as the text.
-  if (style.underline) {
-    const w = exactWidth(s.trimEnd(), { ...style, size });
-    const left = opts.anchor === "end" ? x - w : opts.anchor === "middle" ? x - w / 2 : x;
-    const t = Math.max(RULE.hair, Math.round(size / 20));
-    svg += `<rect x="${round(left)}" y="${round(y + size * 0.2)}" width="${round(w)}" height="${t}" fill="${opts.ink ?? style.ink ?? INK.primary}"/>`;
-  }
-  return svg;
+  return `<text ${attrs.join(" ")}>${escapeXml(s)}</text>`;
 }
 
 /**
  * Exact pen width of `str` in a type style (bold from Arimo Bold's own
- * advances), for drawing that must end with the text, e.g. an underline.
+ * advances), for drawing that must end with the text, e.g. a pill.
  * Layout and wrapping keep using width(), which never under-measures.
  */
 export function exactWidth(str, style) {
@@ -235,66 +191,6 @@ export function fitSize(str, style, maxWidth, min = 24) {
 // ------------------------------------------------------------------
 
 const round = (n) => Math.round(n * 10) / 10;
-
-export function hrule(x, y, w, weight = RULE.hair, ink = INK.primary) {
-  return `<rect x="${round(x)}" y="${round(y)}" width="${round(w)}" height="${weight}" fill="${ink}"/>`;
-}
-
-export function vrule(x, y, h, weight = RULE.hair, ink = INK.primary) {
-  return `<rect x="${round(x)}" y="${round(y)}" width="${weight}" height="${round(h)}" fill="${ink}"/>`;
-}
-
-/**
- * Section titles (WETTER, TEMPELHOFER FELD, …) are off: the screens read
- * without them. Modules still lay out below a title line; screens.mjs and
- * the build render each module TITLE_SPACE taller and shifted up by it, so
- * the top content takes the title's place and bottom-anchored lines stay.
- */
-export const SECTION_TITLES = false;
-export const TITLE_SPACE = SECTION_TITLES ? 0 : 64;
-
-/** A module's section title, or nothing while SECTION_TITLES is off. */
-export function sectionTitle(str) {
-  return SECTION_TITLES ? label(0, 30, str) : "";
-}
-
-/** Module label: small letter-spaced capitals, e.g. "WETTER". Baseline at y. */
-export function label(x, y, str) {
-  return text(x, y, str, TYPE.label);
-}
-
-/**
- * A timestamp ("Stand 19:00"): a caption in a thin outlined box, the same
- * everywhere. (x, baseline y) is where a plain caption would sit; `anchor`
- * "end" right-aligns the box at x; `scale` shrinks it. Returns { svg, w }.
- */
-export function stamp(x, y, str, { anchor, scale = 1 } = {}) {
-  const style = { ...TYPE.caption, size: Math.round(TYPE.caption.size * scale) };
-  const padX = Math.round(12 * scale);
-  const w = Math.round(exactWidth(str, style)) + 2 * padX;
-  const h = Math.round(style.size * 1.6);
-  const left = anchor === "end" ? x - w : x;
-  const top = y - Math.round(style.size * 1.1);
-  const svg =
-    `<rect x="${left + RULE.hair / 2}" y="${top + RULE.hair / 2}" width="${w - RULE.hair}" height="${h - RULE.hair}" rx="${Math.round(6 * scale)}" fill="none" stroke="${style.ink}" stroke-width="${RULE.hair}"/>` +
-    text(left + padX, y, str, style);
-  return { svg, w };
-}
-
-/** Top bar shared by framed screens: the German date (label) left; battery and Stand right, on its line. */
-export function topbar({ date, battery, updated }) {
-  let svg = "";
-  if (date) svg += text(MARGIN.x, TOPBAR.baseline, deDateLong(date), TYPE.label);
-  // Right-aligned across from the date: the battery, then when the data was fetched.
-  let right = W - MARGIN.x;
-  if (updated) {
-    const st = stamp(right, TOPBAR.baseline, `Stand ${updated}`, { anchor: "end" });
-    svg += st.svg;
-    right -= st.w + 20;
-  }
-  if (battery != null) svg += text(right, TOPBAR.baseline, `Akku ${battery} %`, TYPE.caption, { anchor: "end" });
-  return svg;
-}
 
 // ------------------------------------------------------------------
 // German formatting
@@ -354,7 +250,7 @@ function sun(cx, cy, r, rays) {
 }
 
 /** Icon kind for a WMO weather code (Open-Meteo). */
-export function iconKind(code) {
+function iconKind(code) {
   if (code === 0) return "sun";
   if (code === 1 || code === 2) return "partly";
   if (code === 3) return "cloud";
@@ -364,28 +260,6 @@ export function iconKind(code) {
   if ((code >= 71 && code <= 77) || code === 85 || code === 86) return "snow";
   if (code >= 95) return "storm";
   return "cloud";
-}
-
-/**
- * Small line icons for weather details ("wind", "sunset"), drawn like the
- * weather icons on the 100-unit grid with a heavier stroke so they hold up
- * at text size. `size` px square, top-left at (x, y).
- */
-export function detailIcon(kind, x, y, size) {
-  const k = size / 100;
-  const stroke = `fill="none" stroke="${INK.primary}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"`;
-  const body = {
-    wind:
-      `<path d="M8 36 H60 A13 13 0 1 0 47 23"/>` +
-      `<path d="M8 56 H76 A13 13 0 1 1 63 69"/>` +
-      `<path d="M8 76 H44"/>`,
-    sunset:
-      `<path d="M6 66 H94"/>` +
-      `<path d="M26 66 A24 24 0 0 1 74 66"/>` +
-      `<path d="M50 20 V30 M18 34 L25 41 M82 34 L75 41"/>` +
-      `<path d="M50 78 V96 M41 88 L50 96 L59 88"/>`,
-  }[kind];
-  return `<g transform="translate(${round(x)} ${round(y)}) scale(${round(k * 1000) / 1000})" ${stroke}>${body}</g>`;
 }
 
 /** Weather icon for a WMO code, `size` px square with its top-left at (x, y). */
@@ -426,21 +300,4 @@ export function weatherIcon(code, x, y, size) {
       break;
   }
   return `<g transform="translate(${round(x)} ${round(y)}) scale(${round(k * 1000) / 1000})" ${stroke}>${body}</g>`;
-}
-
-/** German description for a WMO weather code. */
-export function weatherText(code) {
-  const t = {
-    0: "Klar", 1: "Überwiegend klar", 2: "Teilweise bewölkt", 3: "Bedeckt",
-    45: "Nebel", 48: "Nebel mit Reif",
-    51: "Leichter Nieselregen", 53: "Nieselregen", 55: "Starker Nieselregen",
-    56: "Gefrierender Nieselregen", 57: "Gefrierender Nieselregen",
-    61: "Leichter Regen", 63: "Regen", 65: "Starker Regen",
-    66: "Gefrierender Regen", 67: "Gefrierender Regen",
-    71: "Leichter Schneefall", 73: "Schneefall", 75: "Starker Schneefall", 77: "Schneegriesel",
-    80: "Leichte Regenschauer", 81: "Regenschauer", 82: "Starke Regenschauer",
-    85: "Schneeschauer", 86: "Starke Schneeschauer",
-    95: "Gewitter", 96: "Gewitter mit Hagel", 99: "Gewitter mit Hagel",
-  };
-  return t[code] ?? "Wechselhaft";
 }

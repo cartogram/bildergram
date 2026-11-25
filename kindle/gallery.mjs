@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { deDateLong, deTime } from "./lib/design.mjs";
 import { encodePng, initRenderer, rasterize } from "./lib/eink.mjs";
 import { fetchProgramme } from "./lib/kino.mjs";
-import { entryFor } from "./lib/modules/ausdruck.mjs";
+import { entryFor, loadEntries as loadAusdruecke } from "./lib/modules/ausdruck.mjs";
 import { parseFitness, weekOf } from "./lib/modules/fitness.mjs";
 import { entryFor as praepositionFor, loadEntries as praepositionen } from "./lib/modules/praeposition.mjs";
 import { fetchWeather } from "./lib/modules/wetter.mjs";
@@ -20,7 +20,7 @@ import { SCREENS, boxSvg, moduleBox, screenSvg } from "./lib/screens.mjs";
 import { cell, TILE_PAD } from "./lib/design.mjs";
 import * as wetter from "./lib/modules/wetter.mjs";
 import { svgOpen, W, H } from "./lib/eink.mjs";
-import { mockAusdruck, mockAusdruck2, sampleProgramme } from "./samples.mjs";
+import { sampleProgramme } from "./samples.mjs";
 
 const OUT = fileURLToPath(new URL("./dist/gallery/", import.meta.url));
 mkdirSync(OUT, { recursive: true });
@@ -48,17 +48,9 @@ const base = {
 const week = weekOf(date);
 const sample = (mins) => Object.fromEntries(week.map((d, i) => [d, mins[i]]).filter(([d]) => d <= date));
 const synced = new Date(at(21, 40)).toISOString();
-// A fuller week: the same screen on this week's Saturday.
-const sat = week[5];
-const [sy, sm, sd] = sat.split("-").map(Number);
-const satAt = (h, mi) => new Date(berlinToUtc(sy, sm, sd, h, mi)).toISOString();
-const sampleSat = (mins) => Object.fromEntries(week.slice(0, 6).map((d, i) => [d, mins[i]]));
 const fitness = (people) => parseFitness({ people });
 const fitnessScenes = [
-  fitness([
-    { name: "Matt", goal: 150, days: sampleSat([32, 0, 45, 18, 20, 0]), syncedAt: satAt(21, 40) },
-    { name: "Fiona", goal: 150, days: sampleSat([55, 40, 0, 62, 30, 75]), syncedAt: satAt(18, 5) },
-  ]),
+  null,
   fitness([
     { name: "Matt", goal: 150, days: sample([32, 0, 45, 18, 60, 0, 25]), year: 5940, syncedAt: synced },
     { name: "Fiona", goal: 150, days: sample([55, 40, 0, 62, 30, 75, 20]), year: 7120, syncedAt: new Date(at(18, 5)).toISOString() },
@@ -71,50 +63,52 @@ const fitnessScenes = [
 
 const programmeSample = sampleProgramme(date);
 
+// Sample listing and minutes so every tile is full at any hour (yorck.de drops screenings once they start).
+const full = { ...base, kino: { ...base.kino, programme: programmeSample }, fitness: fitnessScenes[1] };
+const feldAt = (h, mi) => tempelhofState(events, at(h, mi));
+// The entry with the most Wörter, to check the card fits them.
+const ausdruecke = loadAusdruecke();
+const mostWords = ausdruecke.reduce((a, b) => ((b.woerter?.length ?? 0) > (a.woerter?.length ?? 0) ? b : a));
+
 const scenes = [
-  { id: "morgen", when: "07:30", note: "outline tiles", data: base, style: "outline" },
-  { id: "morgen", when: "07:30", note: "filled tiles", data: base, style: "fill" },
-  // A fixed listing, so the Kino tile shows a full list at any hour (yorck.de drops screenings once they start).
-  { id: "morgen", when: "07:30", note: "sample cinema listing, Feld closed, mock Wörter, sample minutes", data: { ...base, ausdruck: mockAusdruck, fitness: fitnessScenes[1], kino: { ...base.kino, programme: programmeSample }, tempelhof: tempelhofState(events, at(5, 30)) } },
-  { id: "morgen", when: "14:05", note: "sample cinema listing, Feld open, mock Wörter, sample minutes", data: { ...base, ausdruck: mockAusdruck, fitness: fitnessScenes[1], kino: { ...base.kino, programme: programmeSample }, tempelhof: tempelhofState(events, at(14, 5)) } },
-  { id: "morgen", when: "07:30", note: "another Ausdruck with mock Wörter", data: { ...base, ausdruck: mockAusdruck2, fitness: fitnessScenes[1], kino: { ...base.kino, programme: programmeSample }, tempelhof: tempelhofState(events, at(14, 5)) } },
+  { id: "morgen", when: "07:30", note: "sample listing and minutes", data: { ...full, tempelhof: feldAt(7, 30) } },
+  { id: "morgen", when: "05:30", note: "Feld closed", data: { ...full, tempelhof: feldAt(5, 30) } },
+  { id: "morgen", when: "07:30", note: "the Ausdruck with the most Wörter", data: { ...full, ausdruck: mostWords, tempelhof: feldAt(7, 30) } },
   { id: "morgen", when: "07:30", note: "no connection (fallback)", data: {}, mode: "fallback" },
-  { id: "tag", when: "14:05", data: { ...base, tempelhof: tempelhofState(events, at(14, 5)) } },
-  { id: "tag", when: "18:05", note: "after closing", data: { ...base, tempelhof: tempelhofState(events, at(18, 5)) } },
-  // The longest pairing and example in the list, to check they fit the band.
+  { id: "tag", when: "14:05", data: { ...full, tempelhof: feldAt(14, 5) } },
+  // The longest pairing and example in the list, to check they fit the card.
   {
     id: "tag", when: "14:05", note: "longest Präposition",
     data: {
-      ...base,
-      tempelhof: tempelhofState(events, at(14, 5)),
+      ...full,
+      tempelhof: feldAt(14, 5),
       praeposition: praepositionen().reduce((a, b) => (`${b.wort}${b.bedeutung}${b.beispiel}`.length > `${a.wort}${a.bedeutung}${a.beispiel}`.length ? b : a)),
     },
   },
-  { id: "abend", when: "18:15", data: base },
-  { id: "nacht", when: "Sa 23:00", note: "sample minutes", data: { ...base, date: sat, fitness: fitnessScenes[0] } },
-  { id: "nacht", when: "23:00", note: "sample minutes, today", data: { ...base, fitness: fitnessScenes[1] } },
-  { id: "nacht", when: "23:00", note: "no data yet / stale sync", data: { ...base, fitness: fitnessScenes[2] } },
+  { id: "abend", when: "18:15", data: { ...full, tempelhof: feldAt(18, 15) } },
+  { id: "nacht", when: "23:00", note: "sample minutes", data: { ...full, tempelhof: feldAt(23, 0) } },
+  { id: "nacht", when: "23:00", note: "no data yet / stale sync", data: { ...full, fitness: fitnessScenes[2], tempelhof: feldAt(23, 0) } },
 ];
 
 const t0 = performance.now();
 const cards = scenes.map((s, i) => {
   const file = `${String(i + 1).padStart(2, "0")}-${s.id}.png`;
-  writeFileSync(`${OUT}${file}`, encodePng(rasterize(screenSvg(s.id, s.data, s.mode ?? "full", { style: s.style }))));
+  writeFileSync(`${OUT}${file}`, encodePng(rasterize(screenSvg(s.id, s.data, s.mode ?? "full"))));
   return { file, title: `${SCREENS[s.id].name}`, sub: `${s.when}${s.note ? ` · ${s.note}` : ""}` };
 });
 
-// The weather tile's 1-column variants side by side, plus the wide forecast.
+// The weather tile's variants side by side.
 {
-  const tiles = [["details", [0, 0, 2, 2]], ["days", [2, 0, 2, 2]], ["mixed", [4, 0, 2, 2]], ["forecast", [0, 2, 4, 2]]];
+  const tiles = [["details", [0, 0, 2, 2]], ["days", [2, 0, 2, 2]], ["mixed", [4, 0, 2, 2]]];
   let svg = svgOpen(W, H);
   for (const [variant, [c, r, n, m]] of tiles) {
     const t = cell(c, r, n, m);
-    const b = { module: "wetter", variant, tile: t, x: t.x + TILE_PAD, y: t.y + TILE_PAD, w: t.w - 2 * TILE_PAD, h: t.h - 2 * TILE_PAD };
+    const b = { module: "wetter", variant, tone: "fill", tile: t, x: t.x + TILE_PAD, y: t.y + TILE_PAD, w: t.w - 2 * TILE_PAD, h: t.h - 2 * TILE_PAD };
     svg += boxSvg(b, wetter.render(moduleBox(b), weather));
   }
   const file = `${String(cards.length + 1).padStart(2, "0")}-wetter.png`;
   writeFileSync(`${OUT}${file}`, encodePng(rasterize(svg + "</svg>")));
-  cards.push({ file, title: "Wetter tiles", sub: "details · days · mixed, and forecast" });
+  cards.push({ file, title: "Wetter tiles", sub: "details · days · mixed" });
 }
 
 writeFileSync(
@@ -140,7 +134,7 @@ writeFileSync(
   .actual img { width: 1448px; max-width: none; image-rendering: pixelated; }
 </style>
 <main>
-  <h1>Kindle screens — Phase 8 design review</h1>
+  <h1>Kindle screens — Phase 14 design review</h1>
   <p>Rendered ${deDateLong(date)} from live data (Open-Meteo, yorck.de, Tempelhof schedule) at the Paperwhite 3's 1448 × 1072, 16 gray levels.</p>
   <div class="bar"><button id="fit" aria-pressed="true">Fit</button><button id="actual" aria-pressed="false">Actual pixels</button></div>
   <div class="grid">

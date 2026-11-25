@@ -6,7 +6,7 @@
 // Entries live in kindle/data/praepositionen.json and rotate in order.
 //
 // Cadence: daily (deterministic, no network needed).
-// Variant: "wide" (a band), drawn with the Ausdruck des Tages layout.
+// Drawn as the Ausdruck des Tages card.
 // ============================================================
 
 import { readFileSync } from "node:fs";
@@ -24,11 +24,7 @@ export function entryFor(date, entries = loadEntries()) {
   return rotate(date, entries);
 }
 
-/** { wort, kasus, bedeutung, beispiel } → the band: the pairing, "+ Akk. · meaning", the example. */
+/** { wort, kasus, bedeutung, beispiel } → the card: "+ Akk. · meaning" as the title, the pairing, the example. */
 export function render(box, entry) {
-  return renderEntry(
-    box,
-    { ausdruck: entry.wort, bedeutung: `+ ${entry.kasus} · ${entry.bedeutung}`, beispiel: entry.beispiel },
-    { title: "Präposition des Tages", quote: false },
-  );
+  return renderEntry(box, { ausdruck: entry.wort, bedeutung: `+ ${entry.kasus} · ${entry.bedeutung}`, beispiel: entry.beispiel });
 }

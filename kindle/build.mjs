@@ -32,7 +32,6 @@ import * as tempelhof from "./lib/modules/tempelhof.mjs";
 import { buildSchedule, hhmm, nextEvent } from "./lib/schedule.mjs";
 import * as datum from "./lib/modules/datum.mjs";
 import { HOURLY_SCREENS, SCREENS, boxSvg, deviceBoxes, moduleBox, screenSvg } from "./lib/screens.mjs";
-import { TITLE_SPACE } from "./lib/design.mjs";
 import { getTemplehofStatus } from "./lib/templehof.ts";
 
 const REPO = fileURLToPath(new URL("..", import.meta.url));
@@ -50,7 +49,7 @@ for (const [id, s] of Object.entries(SCREENS)) {
 }
 const UPDATING = (() => {
   const r = datum.updatingRect(moduleBox(DATE_TILE));
-  return { x: DATE_TILE.x + r.x, y: DATE_TILE.y - TITLE_SPACE + r.y, w: r.w, h: r.h };
+  return { x: DATE_TILE.x + r.x, y: DATE_TILE.y + r.y, w: r.w, h: r.h };
 })();
 
 function version() {
@@ -175,20 +174,18 @@ for (const deviceId of Object.keys(DEVICES)) {
   let compared = 0;
   for (const id of Object.keys(SCREENS)) {
     for (const b of deviceBoxes(id)) {
-      // Module coordinates start TITLE_SPACE above the box (no section titles).
       const box = moduleBox(b);
-      const top = b.y - TITLE_SPACE;
+      const top = b.y;
       const P = pixelRect(b.tile, s); // the whole tile: the base leaves it out
       // The countdown follows the sentence, so its position (and, at a
       // fractional scale, its anti-aliasing) differs per state.
-      const style = SCREENS[id].style;
       const C = {};
       for (const st of ["open", "closed"]) {
         const cb = tempelhof.countdownBox(box, st === "open");
         C[st] = { cb, r: pixelRect({ x: b.x + cb.x, y: top + cb.y, w: cb.w, h: cb.h }, s) };
       }
       // Pieces carry the tile itself (the base leaves the whole tile blank).
-      const panelSvg = (state) => canvasSvg(boxSvg(b, tempelhof.render(box, state, { withCountdown: false, withGauge: false }), style));
+      const panelSvg = (state) => canvasSvg(boxSvg(b, tempelhof.render(box, state, { withCountdown: false, withGauge: false })));
       // The gauge (short tiles): a piece per label pair and step, cropped from the tile with only the gauge drawn.
       // Its place and shape differ per state ("n" open, "u" closed).
       const gauge = tempelhof.hasGauge(box);
@@ -201,13 +198,13 @@ for (const deviceId of Object.keys(DEVICES)) {
       }
       const gaugeSvg = (st, pair, step) => {
         const [since, target] = pair.split("-").map(colon);
-        return canvasSvg(boxSvg(b, tempelhof.gaugeSvg(box, since, target, step, st === "open"), style));
+        return canvasSvg(boxSvg(b, tempelhof.gaugeSvg(box, since, target, step, st === "open")));
       };
       // Countdown pieces are cropped from the whole line (the sentence before
       // the countdown is the same for every state key of open/closed), so
       // anti-aliasing at the piece's edge matches the full render.
       const repKey = { open: bgKeys.find((k) => k.startsWith("open")), closed: bgKeys.find((k) => k.startsWith("closed")) };
-      const cdSvg = (st, m) => canvasSvg(boxSvg(b, tempelhof.render(box, stateForKey(repKey[st], m), { withGauge: false }), style));
+      const cdSvg = (st, m) => canvasSvg(boxSvg(b, tempelhof.render(box, stateForKey(repKey[st], m), { withGauge: false })));
       const dir = `${out}/dashboard/tempelhof/${b.variant}`;
       if (!built.has(b.variant)) {
         built.add(b.variant);

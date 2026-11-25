@@ -44,11 +44,9 @@ export async function screenData(id, {
     }));
   }
   if (modules.has("kino")) {
-    // The Kino tile (Morgen) follows the clock, not the slot: today's
-    // listing until 22:00, then tomorrow's until midnight. The full listing
-    // (Abend) stays on the slot's date.
-    const tile = SCREENS[id].boxes.some((b) => b.module === "kino" && b.variant === "tonight");
-    const listing = tile ? kinoDay(now) : { date, day: "heute" };
+    // The Kino tile follows the clock, not the slot: today's listing until
+    // 22:00, then tomorrow's until midnight.
+    const listing = kinoDay(now);
     // Drop films already seen on Letterboxd or hidden by hand; only this
     // listing's films (that date, from `from`) are looked up.
     jobs.push(fetchProgramme(cinemas)

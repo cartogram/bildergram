@@ -4,10 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A battery-powered e-ink dashboard on two jailbroken Kindles: `kindle_01` (**Matt**), a Paperwhite 3, and `kindle_02` (**Fiona**), a Paperwhite 2. Each shows **German screens** (the admin page stays in English) on its own daily schedule: **Morgen** (tiles: date, Feld gauge, weather, expression of the day, Kino tonight, exercise rings), **Tag** (Tempelhof countdown + Präposition des Tages), **Abend** (IM KINO, the Yorck cinema listing) and **Nacht** (exercise this week for Matt and Fiona + expression of the day).
+A battery-powered e-ink dashboard on two jailbroken Kindles: `kindle_01` (**Matt**), a Paperwhite 3, and `kindle_02` (**Fiona**), a Paperwhite 2. Each shows **German screens** (the admin page stays in English) on its own daily schedule: **Morgen**, **Tag**, **Abend** and **Nacht**. Every screen is a set of tiles: the date and the Tempelhofer Feld gauge in the same place on each, then a mix of weather, the Ausdruck des Tages and Präposition des Tages cards, tonight's films at the Yorck cinemas, and Matt's and Fiona's exercise rings.
 
 There are three parts:
-- **Kindle** (`kindle/device/dashboard.sh`): a busybox shell loop. It draws each screen's downloaded base image with `eips`, pastes the Tempelhof panel and countdown on Tag, and suspends to RAM with Wi-Fi off, waking on the RTC alarm.
+- **Kindle** (`kindle/device/dashboard.sh`): a busybox shell loop. It draws each screen's downloaded base image with `eips`, pastes the Feld tile (panel, countdown, gauge) on top, and suspends to RAM with Wi-Fi off, waking on the RTC alarm.
 - **Hub** (`src/`): a Cloudflare Worker on the **free plan** (10 ms CPU per request). It holds the config and status (with battery history) in R2, serves the admin SPA, and passes screen images through from Vercel.
 - **Renderer** (`api/screen.mjs`): a Vercel function (project `bildergram-kino`, team `matt-seccafiens-projects`, deployed on every push to `main`) that renders each screen's base PNG.
 
@@ -42,26 +42,23 @@ There is no test runner. Verify changes with:
 ## Screens and modules (`kindle/lib/`)
 
 - **`design.mjs`** is the design system. It holds:
-  - tokens: `TYPE` scale, `INK` (three levels that land exactly on the panel's 16 grays), `MARGIN`/`CONTENT`, `RULE`;
-  - primitives: `text`, `label`, `underlined`, rules, `topbar` (unused since the tiles);
+  - primitives: `text`, `width`/`exactWidth`/`fitSize`;
   - **the tile grid (Phase 14)**: `GRID` (8 × 4 cells of 171 × 256, 8 apart, 12 from the edges), `cell(col, row, cols, rows)`, `TILE_PAD` (24), and `tile(rect, style)` with styles `outline`, `light` (light gray border), `fill` (light gray), `dark` (black; modules switch to `TILE_INK_DARK`) and `bleed` (no container);
   - tile tokens: `TILE_TYPE` (display 104 bold, heading 32 bold, body 32, label 28 bold, small 24), `TILE_INK` (ink, muted, faint, line on paper), `firstBaseline(size)` (every tile's first line has its capitals 8 px below the content top; last lines sit on the bottom edge), `pill()` and `circleLabel()` (24 bold in a 32-high shape), `statRow()` (label left, bold value right, 38 apart);
   - German formatting: `deDateLong`, `deNumber` (decimal comma, typographic minus), `deCountdown`;
   - the WMO weather icons and German weather texts.
 
-  - **Section titles are off** (`SECTION_TITLES`): modules still lay out under a title line, so `screens.mjs` (`moduleBox`) and the build render each module `TITLE_SPACE` (64) taller and shifted up by it. Modules draw titles only through `sectionTitle()`.
-
-  New UI should use these rather than raw sizes or colors. `npm run kindle:design` renders the grid, the tile tokens, the components, every card in each state (sample data from `kindle/samples.mjs`) and an audit of sizes and grays to `kindle/dist/gallery/design-system.html`. Bold is the real **Arimo Bold** (`assets/fonts/Arimo-Bold.ttf`), and `width()` assumes bold runs ≤ 7% wider than regular (it overestimates, by about 6% on GESCHLOSSEN). `exactWidth()` uses Arimo Bold's measured advances instead; use it only where drawing must end with the text, such as an underline, because switching layout to it would shift sizes and line breaks.
+  New UI should use these rather than raw sizes or colors. `npm run kindle:design` renders the grid, the tile tokens, the components, every card in each state (sample data from `kindle/samples.mjs`) and where each token is used to `kindle/dist/gallery/design-system.html`. Bold is the real **Arimo Bold** (`assets/fonts/Arimo-Bold.ttf`), and `width()` assumes bold runs ≤ 7% wider than regular (it overestimates, by about 6% on GESCHLOSSEN). `exactWidth()` uses Arimo Bold's measured advances instead; use it only where drawing must end with the text, such as an underline, because switching layout to it would shift sizes and line breaks. Modules draw in their content box, origin top left (`moduleBox`).
 - **`modules/*.mjs`**: each module exports `render(box, data, …)`, which returns SVG in box-local coordinates, plus its `cadence`.
   - `datum` (Phase 14) is the date tile: weekday, day, month, and Akku in a pill; it sits in cell (0, 0) on every screen because the check-in's "Aktualisiere …" piece (`updatingRect`) is pasted there.
   - `tempelhof` is per-minute and drawn on the device; it also exports `countdownBox` and `countdownSvg`. A short tile (Morgen) is "Feld schließt in" over the countdown plus a half-circle gauge (`GAUGE_STEPS` dots from the last event to the next, times in pills); open draws the ring as an "n" above the text, closed as a "u" below, so countdown and gauge pieces are placed per state (`gaugeBox`, `gaugeSvg`, `gaugeStep`).
-  - `wetter` is hourly (Open-Meteo, no key; 1-column variants `mixed`, `details`, `days`, and `forecast`).
+  - `wetter` is hourly (Open-Meteo, no key; 2 × 2 variants `mixed`, `details` and `days`).
   - `kino` is daily (yorck.de); the `tonight` tile lists every cinema by time with a letter per cinema, and from 22:00 Berlin time shows tomorrow's listing (`render.mjs` `kinoDay`).
   - `ausdruck` is daily, from `kindle/data/ausdruecke.json`: 365 B2 entries `{ausdruck, bedeutung, beispiel}`, rotating by days since 2026-01-01.
   - `praeposition` is daily, from `kindle/data/praepositionen.json`: 215 verbs with a fixed preposition `{wort, kasus, bedeutung, beispiel}`, contrasting pairs on neighbouring days; drawn with the `ausdruck` band layout.
   - `fitness` is hourly: exercise minutes per person against day, week and year goals; the `person` tile draws three rings (today, the week as one segment per day, the year) and a legend. The data comes from the hub (the renderer's `fitness` param, validated by `parseFitness`), not from a fetch.
-  - The `ausdruck` `card` variant centres the English meaning (as title), the expression and the example; optional `woerter` (`[{artikel, wort, plural} | {verb, formen}]`, not yet in the data) flow at the bottom.
-- **`screens.mjs`**: `SCREENS` (a tile `style` and tiles from `T(module, [col, row, cols, rows], { variant, tone })`; Tag, Abend and Nacht are on the grid but not yet designed), `moduleSvg(b, data, mode)` and `screenSvg(id, data, mode)`, where `mode` is one of:
+  - The `ausdruck` card centres the English meaning (as title), the expression and the example; the example's Wörter (`kindle/data/woerter.json`, by entry index: `[{artikel, wort, plural} | {verb, formen}]`, plurals written out, generated and spot-checkable) flow at the bottom. `praeposition` uses the same card.
+- **`screens.mjs`**: `SCREENS` (tiles from `T(module, [col, row, cols, rows], { variant, tone })`; the date `DATE` and the Feld `FELD` are shared, so every screen uses one Kindle piece set, `feld`; Tag and Abend have nothing hourly, to spare Matt's battery), `moduleSvg(b, data, mode)` and `screenSvg(id, data, mode)`, where `mode` is one of:
   - `full`: everything; used by the gallery and the admin preview.
   - `base`: device boxes left blank; this is what the server sends to the Kindle.
   - `fallback`: "Keine Verbindung" placeholders, prebuilt for offline use.

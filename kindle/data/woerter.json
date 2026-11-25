@@ -1,0 +1,5800 @@
+{
+ "0": [
+  {
+   "artikel": "die",
+   "wort": "Tomate",
+   "plural": "Tomaten"
+  },
+  {
+   "artikel": "das",
+   "wort": "Auge",
+   "plural": "Augen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Schild",
+   "plural": "Schilder"
+  },
+  {
+   "verb": "hängen",
+   "formen": "hing · hat gehangen"
+  }
+ ],
+ "1": [
+  {
+   "artikel": "der",
+   "wort": "Bär",
+   "plural": "Bären"
+  },
+  {
+   "verb": "steppen",
+   "formen": "steppte · hat gesteppt"
+  }
+ ],
+ "2": [
+  {
+   "artikel": "das",
+   "wort": "Hupen",
+   "plural": "–"
+  },
+  {
+   "artikel": "das",
+   "wort": "Fenster",
+   "plural": "Fenster"
+  },
+  {
+   "artikel": "der",
+   "wort": "Keks",
+   "plural": "Kekse"
+  },
+  {
+   "verb": "gehen",
+   "formen": "ging · ist gegangen"
+  }
+ ],
+ "3": [
+  {
+   "artikel": "die",
+   "wort": "Steuererklärung",
+   "plural": "Steuererklärungen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Bank",
+   "plural": "Bänke"
+  },
+  {
+   "verb": "schieben",
+   "formen": "schob · hat geschoben"
+  }
+ ],
+ "4": [
+  {
+   "artikel": "der",
+   "wort": "Streit",
+   "plural": "Streitigkeiten"
+  },
+  {
+   "artikel": "das",
+   "wort": "Bier",
+   "plural": "Biere"
+  },
+  {
+   "verb": "lösen",
+   "formen": "löste · hat gelöst"
+  }
+ ],
+ "5": [
+  {
+   "artikel": "das",
+   "wort": "Vorstellungsgespräch",
+   "plural": "Vorstellungsgespräche"
+  },
+  {
+   "artikel": "der",
+   "wort": "Daumen",
+   "plural": "Daumen"
+  },
+  {
+   "verb": "drücken",
+   "formen": "drückte · hat gedrückt"
+  }
+ ],
+ "6": [
+  {
+   "artikel": "die",
+   "wort": "Verspätung",
+   "plural": "Verspätungen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Schwein",
+   "plural": "Schweine"
+  },
+  {
+   "verb": "verpassen",
+   "formen": "verpasste · hat verpasst"
+  }
+ ],
+ "7": [
+  {
+   "artikel": "die",
+   "wort": "Frage",
+   "plural": "Fragen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Fettnäpfchen",
+   "plural": "Fettnäpfchen"
+  },
+  {
+   "verb": "treten",
+   "formen": "trat · ist getreten"
+  }
+ ],
+ "8": [
+  {
+   "artikel": "der",
+   "wort": "Holzweg",
+   "plural": "Holzwege"
+  },
+  {
+   "verb": "glauben",
+   "formen": "glaubte · hat geglaubt"
+  }
+ ],
+ "9": [
+  {
+   "artikel": "die",
+   "wort": "Einschätzung",
+   "plural": "Einschätzungen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Nagel",
+   "plural": "Nägel"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kopf",
+   "plural": "Köpfe"
+  },
+  {
+   "verb": "treffen",
+   "formen": "traf · hat getroffen"
+  }
+ ],
+ "10": [
+  {
+   "artikel": "der",
+   "wort": "Brei",
+   "plural": "Breie"
+  },
+  {
+   "verb": "herumreden",
+   "formen": "redete herum · hat herumgeredet"
+  }
+ ],
+ "11": [
+  {
+   "artikel": "der",
+   "wort": "Regen",
+   "plural": "–"
+  },
+  {
+   "artikel": "die",
+   "wort": "Nase",
+   "plural": "Nasen"
+  }
+ ],
+ "12": [
+  {
+   "artikel": "die",
+   "wort": "Weihnachtsfeier",
+   "plural": "Weihnachtsfeiern"
+  },
+  {
+   "artikel": "der",
+   "wort": "Affe",
+   "plural": "Affen"
+  },
+  {
+   "verb": "sich machen",
+   "formen": "machte sich · hat sich gemacht"
+  }
+ ],
+ "13": [
+  {
+   "artikel": "die",
+   "wort": "Quantenphysik",
+   "plural": "–"
+  },
+  {
+   "artikel": "der",
+   "wort": "Bahnhof",
+   "plural": "Bahnhöfe"
+  },
+  {
+   "verb": "verstehen",
+   "formen": "verstand · hat verstanden"
+  },
+  {
+   "verb": "anfangen",
+   "formen": "fing an · hat angefangen"
+  }
+ ],
+ "14": [
+  {
+   "artikel": "das",
+   "wort": "Ausland",
+   "plural": "–"
+  },
+  {
+   "artikel": "der",
+   "wort": "Tellerrand",
+   "plural": "Tellerränder"
+  },
+  {
+   "verb": "schauen",
+   "formen": "schaute · hat geschaut"
+  }
+ ],
+ "15": [
+  {
+   "artikel": "der",
+   "wort": "Fehler",
+   "plural": "Fehler"
+  },
+  {
+   "artikel": "der",
+   "wort": "Teppich",
+   "plural": "Teppiche"
+  },
+  {
+   "verb": "kehren",
+   "formen": "kehrte · hat gekehrt"
+  }
+ ],
+ "16": [
+  {
+   "artikel": "der",
+   "wort": "Bär",
+   "plural": "Bären"
+  },
+  {
+   "verb": "aufbinden",
+   "formen": "band auf · hat aufgebunden"
+  }
+ ],
+ "17": [
+  {
+   "artikel": "die",
+   "wort": "Sorge",
+   "plural": "Sorgen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Reparatur",
+   "plural": "Reparaturen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Butter",
+   "plural": "–"
+  },
+  {
+   "verb": "klappen",
+   "formen": "klappte · hat geklappt"
+  }
+ ],
+ "18": [
+  {
+   "artikel": "die",
+   "wort": "Kirche",
+   "plural": "Kirchen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Dorf",
+   "plural": "Dörfer"
+  },
+  {
+   "verb": "lassen",
+   "formen": "ließ · hat gelassen"
+  }
+ ],
+ "19": [
+  {
+   "artikel": "der",
+   "wort": "Laptop",
+   "plural": "Laptops"
+  },
+  {
+   "artikel": "das",
+   "wort": "Gras",
+   "plural": "Gräser"
+  },
+  {
+   "verb": "beißen",
+   "formen": "biss · hat gebissen"
+  }
+ ],
+ "20": [
+  {
+   "artikel": "die",
+   "wort": "Premiere",
+   "plural": "Premieren"
+  },
+  {
+   "artikel": "der",
+   "wort": "Hals",
+   "plural": "Hälse"
+  },
+  {
+   "artikel": "der",
+   "wort": "Beinbruch",
+   "plural": "Beinbrüche"
+  }
+ ],
+ "21": [
+  {
+   "artikel": "die",
+   "wort": "Zusage",
+   "plural": "Zusagen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Schneekönig",
+   "plural": "Schneekönige"
+  },
+  {
+   "verb": "sich freuen",
+   "formen": "freute sich · hat sich gefreut"
+  }
+ ],
+ "22": [
+  {
+   "artikel": "die",
+   "wort": "Wurst",
+   "plural": "Würste"
+  },
+  {
+   "verb": "essen",
+   "formen": "aß · hat gegessen"
+  }
+ ],
+ "23": [
+  {
+   "artikel": "die",
+   "wort": "Wolke",
+   "plural": "Wolken"
+  },
+  {
+   "verb": "schweben",
+   "formen": "schwebte · hat geschwebt"
+  }
+ ],
+ "24": [
+  {
+   "artikel": "der",
+   "wort": "Wein",
+   "plural": "Weine"
+  },
+  {
+   "artikel": "das",
+   "wort": "Projekt",
+   "plural": "Projekte"
+  },
+  {
+   "verb": "einschenken",
+   "formen": "schenkte ein · hat eingeschenkt"
+  },
+  {
+   "verb": "scheitern",
+   "formen": "scheiterte · ist gescheitert"
+  }
+ ],
+ "25": [
+  {
+   "artikel": "der",
+   "wort": "Vortrag",
+   "plural": "Vorträge"
+  },
+  {
+   "artikel": "der",
+   "wort": "Faden",
+   "plural": "Fäden"
+  },
+  {
+   "verb": "verlieren",
+   "formen": "verlor · hat verloren"
+  }
+ ],
+ "26": [
+  {
+   "artikel": "der",
+   "wort": "Flughafen",
+   "plural": "Flughäfen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Stunde",
+   "plural": "Stunden"
+  },
+  {
+   "verb": "totschlagen",
+   "formen": "schlug tot · hat totgeschlagen"
+  }
+ ],
+ "27": [
+  {
+   "artikel": "die",
+   "wort": "Präsentation",
+   "plural": "Präsentationen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Ärmel",
+   "plural": "Ärmel"
+  },
+  {
+   "verb": "schütteln",
+   "formen": "schüttelte · hat geschüttelt"
+  }
+ ],
+ "28": [
+  {
+   "artikel": "das",
+   "wort": "Konzert",
+   "plural": "Konzerte"
+  },
+  {
+   "artikel": "das",
+   "wort": "Lampenfieber",
+   "plural": "–"
+  }
+ ],
+ "29": [
+  {
+   "artikel": "das",
+   "wort": "Auge",
+   "plural": "Augen"
+  },
+  {
+   "verb": "besprechen",
+   "formen": "besprach · hat besprochen"
+  }
+ ],
+ "30": [
+  {
+   "artikel": "der",
+   "wort": "Euro",
+   "plural": "Euro"
+  },
+  {
+   "verb": "passen",
+   "formen": "passte · hat gepasst"
+  },
+  {
+   "verb": "dabeihaben",
+   "formen": "hatte dabei · hat dabeigehabt"
+  }
+ ],
+ "31": [
+  {
+   "artikel": "die",
+   "wort": "Vermieterin",
+   "plural": "Vermieterinnen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Haar",
+   "plural": "Haare"
+  },
+  {
+   "artikel": "der",
+   "wort": "Zahn",
+   "plural": "Zähne"
+  },
+  {
+   "verb": "sich anlegen",
+   "formen": "legte sich an · hat sich angelegt"
+  }
+ ],
+ "32": [
+  {
+   "artikel": "das",
+   "wort": "Schwein",
+   "plural": "Schweine"
+  },
+  {
+   "artikel": "der",
+   "wort": "Vermieter",
+   "plural": "Vermieter"
+  },
+  {
+   "artikel": "die",
+   "wort": "Heizung",
+   "plural": "Heizungen"
+  },
+  {
+   "verb": "pfeifen",
+   "formen": "pfiff · hat gepfiffen"
+  }
+ ],
+ "33": [
+  {
+   "artikel": "der",
+   "wort": "Feierabend",
+   "plural": "Feierabende"
+  },
+  {
+   "verb": "sich treffen",
+   "formen": "traf sich · hat sich getroffen"
+  }
+ ],
+ "34": [
+  {
+   "artikel": "die",
+   "wort": "Aussprache",
+   "plural": "Aussprachen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Übung",
+   "plural": "Übungen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Meister",
+   "plural": "Meister"
+  }
+ ],
+ "35": [
+  {
+   "artikel": "die",
+   "wort": "Wohnung",
+   "plural": "Wohnungen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Lage",
+   "plural": "Lagen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Ei",
+   "plural": "Eier"
+  }
+ ],
+ "36": [
+  {
+   "artikel": "der",
+   "wort": "Versuch",
+   "plural": "Versuche"
+  },
+  {
+   "artikel": "der",
+   "wort": "Sauerteig",
+   "plural": "Sauerteige"
+  },
+  {
+   "artikel": "die",
+   "wort": "Hose",
+   "plural": "Hosen"
+  },
+  {
+   "verb": "gehen",
+   "formen": "ging · ist gegangen"
+  }
+ ],
+ "37": [
+  {
+   "artikel": "die",
+   "wort": "Familienfeier",
+   "plural": "Familienfeiern"
+  },
+  {
+   "artikel": "die",
+   "wort": "Miene",
+   "plural": "Mienen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Spiel",
+   "plural": "Spiele"
+  }
+ ],
+ "38": [
+  {
+   "artikel": "der",
+   "wort": "Korb",
+   "plural": "Körbe"
+  },
+  {
+   "verb": "geben",
+   "formen": "gab · hat gegeben"
+  },
+  {
+   "verb": "einladen",
+   "formen": "lud ein · hat eingeladen"
+  }
+ ],
+ "39": [
+  {
+   "artikel": "der",
+   "wort": "Punkt",
+   "plural": "Punkte"
+  },
+  {
+   "verb": "bringen",
+   "formen": "brachte · hat gebracht"
+  }
+ ],
+ "40": [
+  {
+   "artikel": "der",
+   "wort": "Streit",
+   "plural": "Streitigkeiten"
+  },
+  {
+   "artikel": "der",
+   "wort": "Schnee",
+   "plural": "–"
+  }
+ ],
+ "41": [
+  {
+   "artikel": "der",
+   "wort": "Künstler",
+   "plural": "Künstler"
+  },
+  {
+   "artikel": "die",
+   "wort": "Hand",
+   "plural": "Hände"
+  },
+  {
+   "artikel": "der",
+   "wort": "Mund",
+   "plural": "Münder"
+  },
+  {
+   "verb": "leben",
+   "formen": "lebte · hat gelebt"
+  }
+ ],
+ "42": [
+  {
+   "artikel": "der",
+   "wort": "Abend",
+   "plural": "Abende"
+  },
+  {
+   "verb": "liegen",
+   "formen": "lag · hat gelegen"
+  }
+ ],
+ "43": [
+  {
+   "verb": "schwarzfahren",
+   "formen": "fuhr schwarz · ist schwarzgefahren"
+  },
+  {
+   "verb": "erwischen",
+   "formen": "erwischte · hat erwischt"
+  }
+ ],
+ "44": [
+  {
+   "artikel": "der",
+   "wort": "Handwerker",
+   "plural": "Handwerker"
+  },
+  {
+   "artikel": "die",
+   "wort": "Dame",
+   "plural": "Damen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Licht",
+   "plural": "Lichter"
+  },
+  {
+   "verb": "führen",
+   "formen": "führte · hat geführt"
+  }
+ ],
+ "45": [
+  {
+   "artikel": "das",
+   "wort": "Ding",
+   "plural": "Dinge"
+  },
+  {
+   "verb": "tragen",
+   "formen": "trug · hat getragen"
+  },
+  {
+   "verb": "helfen",
+   "formen": "half · hat geholfen"
+  }
+ ],
+ "46": [
+  {
+   "artikel": "der",
+   "wort": "Strafzettel",
+   "plural": "Strafzettel"
+  },
+  {
+   "verb": "sehen",
+   "formen": "sah · hat gesehen"
+  }
+ ],
+ "47": [
+  {
+   "artikel": "das",
+   "wort": "Büro",
+   "plural": "Büros"
+  },
+  {
+   "artikel": "die",
+   "wort": "Kugel",
+   "plural": "Kugeln"
+  },
+  {
+   "verb": "schieben",
+   "formen": "schob · hat geschoben"
+  }
+ ],
+ "48": [
+  {
+   "artikel": "der",
+   "wort": "Hund",
+   "plural": "Hunde"
+  },
+  {
+   "verb": "begraben",
+   "formen": "begrub · hat begraben"
+  }
+ ],
+ "49": [
+  {
+   "artikel": "der",
+   "wort": "Job",
+   "plural": "Jobs"
+  },
+  {
+   "artikel": "der",
+   "wort": "Anfang",
+   "plural": "Anfänge"
+  }
+ ],
+ "50": [
+  {
+   "artikel": "der",
+   "wort": "Schwager",
+   "plural": "Schwäger"
+  },
+  {
+   "artikel": "das",
+   "wort": "Thema",
+   "plural": "Themen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Senf",
+   "plural": "–"
+  },
+  {
+   "verb": "dazugeben",
+   "formen": "gab dazu · hat dazugegeben"
+  }
+ ],
+ "51": [
+  {
+   "artikel": "der",
+   "wort": "Besitzer",
+   "plural": "Besitzer"
+  },
+  {
+   "artikel": "das",
+   "wort": "Restaurant",
+   "plural": "Restaurants"
+  },
+  {
+   "artikel": "der",
+   "wort": "Bach",
+   "plural": "Bäche"
+  },
+  {
+   "verb": "runtergehen",
+   "formen": "ging runter · ist runtergegangen"
+  }
+ ],
+ "52": [
+  {
+   "artikel": "die",
+   "wort": "Oma",
+   "plural": "Omas"
+  },
+  {
+   "artikel": "das",
+   "wort": "Blatt",
+   "plural": "Blätter"
+  },
+  {
+   "artikel": "der",
+   "wort": "Mund",
+   "plural": "Münder"
+  },
+  {
+   "verb": "nehmen",
+   "formen": "nahm · hat genommen"
+  }
+ ],
+ "53": [
+  {
+   "artikel": "die",
+   "wort": "Chemie",
+   "plural": "–"
+  },
+  {
+   "verb": "stimmen",
+   "formen": "stimmte · hat gestimmt"
+  }
+ ],
+ "54": [
+  {
+   "artikel": "der",
+   "wort": "Bus",
+   "plural": "Busse"
+  },
+  {
+   "verb": "ausfallen",
+   "formen": "fiel aus · ist ausgefallen"
+  }
+ ],
+ "55": [
+  {
+   "artikel": "der",
+   "wort": "Rentner",
+   "plural": "Rentner"
+  },
+  {
+   "artikel": "das",
+   "wort": "Ohr",
+   "plural": "Ohren"
+  },
+  {
+   "verb": "abkauen",
+   "formen": "kaute ab · hat abgekaut"
+  }
+ ],
+ "56": [
+  {
+   "artikel": "das",
+   "wort": "Fahrrad",
+   "plural": "Fahrräder"
+  },
+  {
+   "artikel": "die",
+   "wort": "Tüte",
+   "plural": "Tüten"
+  },
+  {
+   "verb": "leihen",
+   "formen": "lieh · hat geliehen"
+  }
+ ],
+ "57": [
+  {
+   "artikel": "der",
+   "wort": "Schirm",
+   "plural": "Schirme"
+  },
+  {
+   "artikel": "der",
+   "wort": "Eimer",
+   "plural": "Eimer"
+  },
+  {
+   "verb": "gießen",
+   "formen": "goss · hat gegossen"
+  }
+ ],
+ "58": [
+  {
+   "artikel": "die",
+   "wort": "Präsentation",
+   "plural": "Präsentationen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Zeug",
+   "plural": "–"
+  },
+  {
+   "verb": "sich legen",
+   "formen": "legte sich · hat sich gelegt"
+  }
+ ],
+ "59": [
+  {
+   "artikel": "die",
+   "wort": "Party",
+   "plural": "Partys"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kater",
+   "plural": "Kater"
+  }
+ ],
+ "60": [
+  {
+   "artikel": "das",
+   "wort": "Geld",
+   "plural": "Gelder"
+  },
+  {
+   "artikel": "das",
+   "wort": "Heu",
+   "plural": "–"
+  },
+  {
+   "verb": "jobben",
+   "formen": "jobbte · hat gejobbt"
+  }
+ ],
+ "61": [
+  {
+   "artikel": "das",
+   "wort": "Geschenk",
+   "plural": "Geschenke"
+  },
+  {
+   "artikel": "der",
+   "wort": "Drücker",
+   "plural": "Drücker"
+  }
+ ],
+ "62": [
+  {
+   "artikel": "das",
+   "wort": "Bürgeramt",
+   "plural": "Bürgerämter"
+  },
+  {
+   "artikel": "das",
+   "wort": "Gold",
+   "plural": "–"
+  },
+  {
+   "artikel": "der",
+   "wort": "Mund",
+   "plural": "Münder"
+  }
+ ],
+ "63": [
+  {
+   "artikel": "das",
+   "wort": "Ohr",
+   "plural": "Ohren"
+  },
+  {
+   "artikel": "die",
+   "wort": "Prüfung",
+   "plural": "Prüfungen"
+  },
+  {
+   "verb": "halten",
+   "formen": "hielt · hat gehalten"
+  },
+  {
+   "verb": "schaffen",
+   "formen": "schaffte · hat geschafft"
+  }
+ ],
+ "64": [
+  {
+   "artikel": "die",
+   "wort": "Miete",
+   "plural": "Mieten"
+  },
+  {
+   "artikel": "der",
+   "wort": "Apfel",
+   "plural": "Äpfel"
+  },
+  {
+   "verb": "beißen",
+   "formen": "biss · hat gebissen"
+  },
+  {
+   "verb": "unterschreiben",
+   "formen": "unterschrieb · hat unterschrieben"
+  }
+ ],
+ "65": [
+  {
+   "artikel": "die",
+   "wort": "Karte",
+   "plural": "Karten"
+  },
+  {
+   "verb": "setzen",
+   "formen": "setzte · hat gesetzt"
+  },
+  {
+   "verb": "kündigen",
+   "formen": "kündigte · hat gekündigt"
+  }
+ ],
+ "66": [
+  {
+   "artikel": "die",
+   "wort": "Entscheidung",
+   "plural": "Entscheidungen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Knie",
+   "plural": "Knie"
+  },
+  {
+   "verb": "brechen",
+   "formen": "brach · hat gebrochen"
+  }
+ ],
+ "67": [
+  {
+   "artikel": "die",
+   "wort": "Krise",
+   "plural": "Krisen"
+  },
+  {
+   "verb": "kriegen",
+   "formen": "kriegte · hat gekriegt"
+  },
+  {
+   "verb": "ausfallen",
+   "formen": "fiel aus · ist ausgefallen"
+  }
+ ],
+ "68": [
+  {
+   "artikel": "die",
+   "wort": "Durchreise",
+   "plural": "Durchreisen"
+  },
+  {
+   "verb": "weiterfahren",
+   "formen": "fuhr weiter · ist weitergefahren"
+  }
+ ],
+ "69": [
+  {
+   "artikel": "die",
+   "wort": "Ausrede",
+   "plural": "Ausreden"
+  },
+  {
+   "artikel": "das",
+   "wort": "Haar",
+   "plural": "Haare"
+  },
+  {
+   "verb": "herbeiziehen",
+   "formen": "zog herbei · hat herbeigezogen"
+  }
+ ],
+ "70": [
+  {
+   "artikel": "die",
+   "wort": "Mitbewohnerin",
+   "plural": "Mitbewohnerinnen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Wellenlänge",
+   "plural": "Wellenlängen"
+  }
+ ],
+ "71": [
+  {
+   "artikel": "die",
+   "wort": "Blume",
+   "plural": "Blumen"
+  },
+  {
+   "verb": "sagen",
+   "formen": "sagte · hat gesagt"
+  }
+ ],
+ "72": [
+  {
+   "artikel": "der",
+   "wort": "Vertrag",
+   "plural": "Verträge"
+  },
+  {
+   "artikel": "das",
+   "wort": "Dach",
+   "plural": "Dächer"
+  },
+  {
+   "artikel": "das",
+   "wort": "Fach",
+   "plural": "Fächer"
+  },
+  {
+   "verb": "bringen",
+   "formen": "brachte · hat gebracht"
+  }
+ ],
+ "73": [
+  {
+   "artikel": "die",
+   "wort": "Besichtigung",
+   "plural": "Besichtigungen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Katze",
+   "plural": "Katzen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Sack",
+   "plural": "Säcke"
+  },
+  {
+   "verb": "mieten",
+   "formen": "mietete · hat gemietet"
+  }
+ ],
+ "74": [
+  {
+   "artikel": "der",
+   "wort": "Regen",
+   "plural": "–"
+  },
+  {
+   "artikel": "die",
+   "wort": "Traufe",
+   "plural": "Traufen"
+  },
+  {
+   "verb": "kommen",
+   "formen": "kam · ist gekommen"
+  }
+ ],
+ "75": [
+  {
+   "artikel": "die",
+   "wort": "Achse",
+   "plural": "Achsen"
+  },
+  {
+   "verb": "kommen",
+   "formen": "kam · ist gekommen"
+  }
+ ],
+ "76": [
+  {
+   "artikel": "der",
+   "wort": "E-Scooter",
+   "plural": "E-Scooter"
+  },
+  {
+   "artikel": "der",
+   "wort": "Gehweg",
+   "plural": "Gehwege"
+  },
+  {
+   "artikel": "der",
+   "wort": "Dorn",
+   "plural": "Dornen"
+  }
+ ],
+ "77": [
+  {
+   "artikel": "der",
+   "wort": "Flug",
+   "plural": "Flüge"
+  },
+  {
+   "artikel": "die",
+   "wort": "Verspätung",
+   "plural": "Verspätungen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Anschluss",
+   "plural": "Anschlüsse"
+  },
+  {
+   "verb": "erwischen",
+   "formen": "erwischte · hat erwischt"
+  }
+ ],
+ "78": [
+  {
+   "artikel": "das",
+   "wort": "Pokalfinale",
+   "plural": "Pokalfinale"
+  },
+  {
+   "artikel": "die",
+   "wort": "Wurst",
+   "plural": "Würste"
+  }
+ ],
+ "79": [
+  {
+   "artikel": "die",
+   "wort": "Karte",
+   "plural": "Karten"
+  },
+  {
+   "verb": "spielen",
+   "formen": "spielte · hat gespielt"
+  }
+ ],
+ "80": [
+  {
+   "verb": "mitkommen",
+   "formen": "kam mit · ist mitgekommen"
+  }
+ ],
+ "81": [
+  {
+   "artikel": "das",
+   "wort": "Jubeljahr",
+   "plural": "Jubeljahre"
+  },
+  {
+   "verb": "anrufen",
+   "formen": "rief an · hat angerufen"
+  }
+ ],
+ "82": [
+  {
+   "artikel": "das",
+   "wort": "Häuschen",
+   "plural": "Häuschen"
+  },
+  {
+   "verb": "schneien",
+   "formen": "schneite · hat geschneit"
+  }
+ ],
+ "83": [
+  {
+   "artikel": "der",
+   "wort": "Paketbote",
+   "plural": "Paketboten"
+  },
+  {
+   "artikel": "die",
+   "wort": "Hand",
+   "plural": "Hände"
+  },
+  {
+   "verb": "tun",
+   "formen": "tat · hat getan"
+  }
+ ],
+ "84": [
+  {
+   "artikel": "das",
+   "wort": "Haus",
+   "plural": "Häuser"
+  },
+  {
+   "verb": "ziehen",
+   "formen": "zog · ist gezogen"
+  }
+ ],
+ "85": [
+  {
+   "artikel": "die",
+   "wort": "Pizza",
+   "plural": "Pizzas"
+  },
+  {
+   "artikel": "der",
+   "wort": "Name",
+   "plural": "Namen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Hase",
+   "plural": "Hasen"
+  },
+  {
+   "verb": "wissen",
+   "formen": "wusste · hat gewusst"
+  }
+ ],
+ "86": [
+  {
+   "artikel": "der",
+   "wort": "Plan",
+   "plural": "Pläne"
+  },
+  {
+   "artikel": "die",
+   "wort": "Hand",
+   "plural": "Hände"
+  },
+  {
+   "artikel": "der",
+   "wort": "Fuß",
+   "plural": "Füße"
+  }
+ ],
+ "87": [
+  {
+   "artikel": "der",
+   "wort": "Kollege",
+   "plural": "Kollegen"
+  },
+  {
+   "verb": "riechen",
+   "formen": "roch · hat gerochen"
+  }
+ ],
+ "88": [
+  {
+   "artikel": "die",
+   "wort": "Kündigung",
+   "plural": "Kündigungen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Glocke",
+   "plural": "Glocken"
+  },
+  {
+   "verb": "hängen",
+   "formen": "hängte · hat gehängt"
+  }
+ ],
+ "89": [
+  {
+   "artikel": "das",
+   "wort": "Strandfoto",
+   "plural": "Strandfotos"
+  },
+  {
+   "artikel": "die",
+   "wort": "Lüge",
+   "plural": "Lügen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Bein",
+   "plural": "Beine"
+  },
+  {
+   "verb": "posten",
+   "formen": "postete · hat gepostet"
+  }
+ ],
+ "90": [
+  {
+   "artikel": "die",
+   "wort": "Kollegin",
+   "plural": "Kolleginnen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Wind",
+   "plural": "Winde"
+  },
+  {
+   "artikel": "das",
+   "wort": "Team",
+   "plural": "Teams"
+  },
+  {
+   "verb": "bringen",
+   "formen": "brachte · hat gebracht"
+  }
+ ],
+ "91": [
+  {
+   "artikel": "der",
+   "wort": "Honig",
+   "plural": "–"
+  },
+  {
+   "artikel": "der",
+   "wort": "Bart",
+   "plural": "Bärte"
+  },
+  {
+   "verb": "schmieren",
+   "formen": "schmierte · hat geschmiert"
+  },
+  {
+   "verb": "befördern",
+   "formen": "beförderte · hat befördert"
+  }
+ ],
+ "92": [
+  {
+   "artikel": "die",
+   "wort": "Reihe",
+   "plural": "Reihen"
+  },
+  {
+   "verb": "kriegen",
+   "formen": "kriegte · hat gekriegt"
+  }
+ ],
+ "93": [
+  {
+   "artikel": "der",
+   "wort": "Gang",
+   "plural": "Gänge"
+  },
+  {
+   "verb": "kommen",
+   "formen": "kam · ist gekommen"
+  }
+ ],
+ "94": [
+  {
+   "artikel": "die",
+   "wort": "Kita",
+   "plural": "Kitas"
+  },
+  {
+   "artikel": "der",
+   "wort": "Bezirk",
+   "plural": "Bezirke"
+  },
+  {
+   "artikel": "die",
+   "wort": "Naht",
+   "plural": "Nähte"
+  },
+  {
+   "verb": "platzen",
+   "formen": "platzte · ist geplatzt"
+  }
+ ],
+ "95": [
+  {
+   "artikel": "der",
+   "wort": "Busch",
+   "plural": "Büsche"
+  },
+  {
+   "verb": "tuscheln",
+   "formen": "tuschelte · hat getuschelt"
+  }
+ ],
+ "96": [
+  {
+   "artikel": "der",
+   "wort": "Kontrolleur",
+   "plural": "Kontrolleure"
+  },
+  {
+   "artikel": "das",
+   "wort": "Auge",
+   "plural": "Augen"
+  },
+  {
+   "verb": "zudrücken",
+   "formen": "drückte zu · hat zugedrückt"
+  },
+  {
+   "verb": "ablaufen",
+   "formen": "lief ab · ist abgelaufen"
+  }
+ ],
+ "97": [
+  {
+   "artikel": "der",
+   "wort": "Ball",
+   "plural": "Bälle"
+  },
+  {
+   "verb": "bleiben",
+   "formen": "blieb · ist geblieben"
+  }
+ ],
+ "98": [
+  {
+   "artikel": "die",
+   "wort": "Frist",
+   "plural": "Fristen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Maus",
+   "plural": "Mäuse"
+  },
+  {
+   "artikel": "der",
+   "wort": "Faden",
+   "plural": "Fäden"
+  },
+  {
+   "verb": "abbeißen",
+   "formen": "biss ab · hat abgebissen"
+  }
+ ],
+ "99": [
+  {
+   "artikel": "das",
+   "wort": "Museum",
+   "plural": "Museen"
+  },
+  {
+   "verb": "lassen",
+   "formen": "ließ · hat gelassen"
+  }
+ ],
+ "100": [
+  {
+   "artikel": "der",
+   "wort": "Arm",
+   "plural": "Arme"
+  },
+  {
+   "verb": "nehmen",
+   "formen": "nahm · hat genommen"
+  },
+  {
+   "verb": "gewinnen",
+   "formen": "gewann · hat gewonnen"
+  }
+ ],
+ "101": [
+  {
+   "artikel": "die",
+   "wort": "Kante",
+   "plural": "Kanten"
+  },
+  {
+   "verb": "legen",
+   "formen": "legte · hat gelegt"
+  }
+ ],
+ "102": [
+  {
+   "artikel": "die",
+   "wort": "Puppe",
+   "plural": "Puppen"
+  },
+  {
+   "verb": "feiern",
+   "formen": "feierte · hat gefeiert"
+  }
+ ],
+ "103": [
+  {
+   "artikel": "der",
+   "wort": "Opa",
+   "plural": "Opas"
+  },
+  {
+   "verb": "rasten",
+   "formen": "rastete · hat gerastet"
+  },
+  {
+   "verb": "rosten",
+   "formen": "rostete · ist gerostet"
+  }
+ ],
+ "104": [
+  {
+   "artikel": "der",
+   "wort": "Abwasch",
+   "plural": "–"
+  },
+  {
+   "artikel": "die",
+   "wort": "Kurve",
+   "plural": "Kurven"
+  },
+  {
+   "verb": "kratzen",
+   "formen": "kratzte · hat gekratzt"
+  }
+ ],
+ "105": [
+  {
+   "artikel": "die",
+   "wort": "Tür",
+   "plural": "Türen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Haus",
+   "plural": "Häuser"
+  },
+  {
+   "verb": "fallen",
+   "formen": "fiel · ist gefallen"
+  },
+  {
+   "verb": "leihen",
+   "formen": "lieh · hat geliehen"
+  }
+ ],
+ "106": [
+  {
+   "artikel": "der",
+   "wort": "Typ",
+   "plural": "Typen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kletterkurs",
+   "plural": "Kletterkurse"
+  },
+  {
+   "artikel": "das",
+   "wort": "Auge",
+   "plural": "Augen"
+  },
+  {
+   "verb": "werfen",
+   "formen": "warf · hat geworfen"
+  }
+ ],
+ "107": [
+  {
+   "artikel": "der",
+   "wort": "Abwasch",
+   "plural": "–"
+  },
+  {
+   "verb": "reden",
+   "formen": "redete · hat geredet"
+  }
+ ],
+ "108": [
+  {
+   "artikel": "die",
+   "wort": "Nummer",
+   "plural": "Nummern"
+  },
+  {
+   "artikel": "die",
+   "wort": "Bahn",
+   "plural": "Bahnen"
+  },
+  {
+   "verb": "gehen",
+   "formen": "ging · ist gegangen"
+  }
+ ],
+ "109": [
+  {
+   "artikel": "die",
+   "wort": "Gehaltskürzung",
+   "plural": "Gehaltskürzungen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Dienst",
+   "plural": "Dienste"
+  },
+  {
+   "artikel": "die",
+   "wort": "Vorschrift",
+   "plural": "Vorschriften"
+  },
+  {
+   "verb": "machen",
+   "formen": "machte · hat gemacht"
+  }
+ ],
+ "110": [
+  {
+   "artikel": "der",
+   "wort": "Markt",
+   "plural": "Märkte"
+  },
+  {
+   "artikel": "die",
+   "wort": "Ruhe",
+   "plural": "–"
+  },
+  {
+   "artikel": "der",
+   "wort": "Sturm",
+   "plural": "Stürme"
+  }
+ ],
+ "111": [
+  {
+   "artikel": "die",
+   "wort": "Fliege",
+   "plural": "Fliegen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Klappe",
+   "plural": "Klappen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Stau",
+   "plural": "Staus"
+  },
+  {
+   "verb": "schlagen",
+   "formen": "schlug · hat geschlagen"
+  }
+ ],
+ "112": [
+  {
+   "artikel": "der",
+   "wort": "Bauch",
+   "plural": "Bäuche"
+  },
+  {
+   "artikel": "die",
+   "wort": "Wohnung",
+   "plural": "Wohnungen"
+  },
+  {
+   "verb": "entscheiden",
+   "formen": "entschied · hat entschieden"
+  }
+ ],
+ "113": [
+  {
+   "artikel": "das",
+   "wort": "Glatteis",
+   "plural": "–"
+  },
+  {
+   "artikel": "die",
+   "wort": "Tasse",
+   "plural": "Tassen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Schrank",
+   "plural": "Schränke"
+  },
+  {
+   "verb": "fahren",
+   "formen": "fuhr · ist gefahren"
+  }
+ ],
+ "114": [
+  {
+   "artikel": "die",
+   "wort": "Wohnung",
+   "plural": "Wohnungen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Hals",
+   "plural": "Hälse"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kopf",
+   "plural": "Köpfe"
+  },
+  {
+   "verb": "umziehen",
+   "formen": "zog um · ist umgezogen"
+  }
+ ],
+ "115": [
+  {
+   "artikel": "der",
+   "wort": "Rat",
+   "plural": "–"
+  },
+  {
+   "verb": "kommen",
+   "formen": "kam · ist gekommen"
+  }
+ ],
+ "116": [
+  {
+   "artikel": "der",
+   "wort": "Schlips",
+   "plural": "Schlipse"
+  },
+  {
+   "verb": "treten",
+   "formen": "trat · hat getreten"
+  },
+  {
+   "verb": "kritisieren",
+   "formen": "kritisierte · hat kritisiert"
+  }
+ ],
+ "117": [
+  {
+   "artikel": "der",
+   "wort": "Faden",
+   "plural": "Fäden"
+  },
+  {
+   "artikel": "die",
+   "wort": "Assistentin",
+   "plural": "Assistentinnen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Hand",
+   "plural": "Hände"
+  },
+  {
+   "verb": "halten",
+   "formen": "hielt · hat gehalten"
+  }
+ ],
+ "118": [
+  {
+   "artikel": "die",
+   "wort": "Rushhour",
+   "plural": "Rushhours"
+  },
+  {
+   "artikel": "die",
+   "wort": "U-Bahn",
+   "plural": "U-Bahnen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Ölsardine",
+   "plural": "Ölsardinen"
+  },
+  {
+   "verb": "stehen",
+   "formen": "stand · hat gestanden"
+  }
+ ],
+ "119": [
+  {
+   "artikel": "die",
+   "wort": "Studentin",
+   "plural": "Studentinnen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Cent",
+   "plural": "Cents"
+  },
+  {
+   "verb": "umdrehen",
+   "formen": "drehte um · hat umgedreht"
+  }
+ ],
+ "120": [
+  {
+   "artikel": "das",
+   "wort": "Ticket",
+   "plural": "Tickets"
+  },
+  {
+   "artikel": "die",
+   "wort": "Semmel",
+   "plural": "Semmeln"
+  },
+  {
+   "verb": "weggehen",
+   "formen": "ging weg · ist weggegangen"
+  }
+ ],
+ "121": [
+  {
+   "artikel": "der",
+   "wort": "Fahrradunfall",
+   "plural": "Fahrradunfälle"
+  },
+  {
+   "artikel": "das",
+   "wort": "Unglück",
+   "plural": "Unglücke"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kratzer",
+   "plural": "Kratzer"
+  }
+ ],
+ "122": [
+  {
+   "artikel": "das",
+   "wort": "Wort",
+   "plural": "Wörter"
+  },
+  {
+   "verb": "fallen",
+   "formen": "fiel · ist gefallen"
+  }
+ ],
+ "123": [
+  {
+   "artikel": "der",
+   "wort": "Floh",
+   "plural": "Flöhe"
+  },
+  {
+   "artikel": "das",
+   "wort": "Ohr",
+   "plural": "Ohren"
+  },
+  {
+   "verb": "setzen",
+   "formen": "setzte · hat gesetzt"
+  },
+  {
+   "verb": "auswandern",
+   "formen": "wanderte aus · ist ausgewandert"
+  }
+ ],
+ "124": [
+  {
+   "artikel": "der",
+   "wort": "Schluss",
+   "plural": "Schlüsse"
+  },
+  {
+   "artikel": "die",
+   "wort": "Prüfung",
+   "plural": "Prüfungen"
+  },
+  {
+   "verb": "lernen",
+   "formen": "lernte · hat gelernt"
+  }
+ ],
+ "125": [
+  {
+   "artikel": "der",
+   "wort": "Kontrolleur",
+   "plural": "Kontrolleure"
+  },
+  {
+   "artikel": "der",
+   "wort": "Schwarzfahrer",
+   "plural": "Schwarzfahrer"
+  },
+  {
+   "artikel": "der",
+   "wort": "Schlich",
+   "plural": "Schliche"
+  },
+  {
+   "verb": "kommen",
+   "formen": "kam · ist gekommen"
+  }
+ ],
+ "126": [
+  {
+   "artikel": "die",
+   "wort": "Lieblingskneipe",
+   "plural": "Lieblingskneipen"
+  },
+  {
+   "verb": "dichtmachen",
+   "formen": "machte dicht · hat dichtgemacht"
+  }
+ ],
+ "127": [
+  {
+   "artikel": "der",
+   "wort": "Urlaub",
+   "plural": "Urlaube"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kopf",
+   "plural": "Köpfe"
+  },
+  {
+   "verb": "sich schlagen",
+   "formen": "schlug sich · hat sich geschlagen"
+  }
+ ],
+ "128": [
+  {
+   "artikel": "der",
+   "wort": "Dachausbau",
+   "plural": "Dachausbauten"
+  },
+  {
+   "artikel": "das",
+   "wort": "Eis",
+   "plural": "–"
+  },
+  {
+   "verb": "legen",
+   "formen": "legte · hat gelegt"
+  }
+ ],
+ "129": [
+  {
+   "artikel": "das",
+   "wort": "Lied",
+   "plural": "Lieder"
+  },
+  {
+   "artikel": "die",
+   "wort": "Gänsehaut",
+   "plural": "–"
+  },
+  {
+   "verb": "bekommen",
+   "formen": "bekam · hat bekommen"
+  }
+ ],
+ "130": [
+  {
+   "artikel": "die",
+   "wort": "Wohnung",
+   "plural": "Wohnungen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Gold",
+   "plural": "–"
+  },
+  {
+   "verb": "glänzen",
+   "formen": "glänzte · hat geglänzt"
+  }
+ ],
+ "131": [
+  {
+   "artikel": "der",
+   "wort": "Umzug",
+   "plural": "Umzüge"
+  },
+  {
+   "artikel": "der",
+   "wort": "Nachbar",
+   "plural": "Nachbarn"
+  },
+  {
+   "artikel": "der",
+   "wort": "Arm",
+   "plural": "Arme"
+  },
+  {
+   "verb": "greifen",
+   "formen": "griff · hat gegriffen"
+  }
+ ],
+ "132": [
+  {
+   "verb": "sich duzen",
+   "formen": "duzte sich · hat sich geduzt"
+  }
+ ],
+ "133": [
+  {
+   "artikel": "die",
+   "wort": "Ruhestörung",
+   "plural": "Ruhestörungen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Nachbar",
+   "plural": "Nachbarn"
+  },
+  {
+   "artikel": "die",
+   "wort": "Meinung",
+   "plural": "Meinungen"
+  },
+  {
+   "verb": "geigen",
+   "formen": "geigte · hat gegeigt"
+  }
+ ],
+ "134": [
+  {
+   "artikel": "der",
+   "wort": "Fehler",
+   "plural": "Fehler"
+  },
+  {
+   "artikel": "die",
+   "wort": "Suppe",
+   "plural": "Suppen"
+  },
+  {
+   "verb": "auslöffeln",
+   "formen": "löffelte aus · hat ausgelöffelt"
+  }
+ ],
+ "135": [
+  {
+   "artikel": "die",
+   "wort": "Hochzeit",
+   "plural": "Hochzeiten"
+  },
+  {
+   "artikel": "der",
+   "wort": "Stress",
+   "plural": "–"
+  },
+  {
+   "artikel": "die",
+   "wort": "Bühne",
+   "plural": "Bühnen"
+  },
+  {
+   "verb": "bringen",
+   "formen": "brachte · hat gebracht"
+  }
+ ],
+ "136": [
+  {
+   "artikel": "der",
+   "wort": "Kiez",
+   "plural": "Kieze"
+  },
+  {
+   "artikel": "der",
+   "wort": "Späti",
+   "plural": "Spätis"
+  },
+  {
+   "artikel": "der",
+   "wort": "Hund",
+   "plural": "Hunde"
+  }
+ ],
+ "137": [
+  {
+   "artikel": "die",
+   "wort": "Schuld",
+   "plural": "Schulden"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kopf",
+   "plural": "Köpfe"
+  },
+  {
+   "artikel": "der",
+   "wort": "Sand",
+   "plural": "–"
+  },
+  {
+   "verb": "stecken",
+   "formen": "steckte · hat gesteckt"
+  }
+ ],
+ "138": [
+  {
+   "artikel": "der",
+   "wort": "Geburtstag",
+   "plural": "Geburtstage"
+  },
+  {
+   "artikel": "der",
+   "wort": "Schwamm",
+   "plural": "Schwämme"
+  },
+  {
+   "verb": "vergessen",
+   "formen": "vergaß · hat vergessen"
+  }
+ ],
+ "139": [
+  {
+   "artikel": "der",
+   "wort": "Termin",
+   "plural": "Termine"
+  },
+  {
+   "artikel": "der",
+   "wort": "Zahnarzt",
+   "plural": "Zahnärzte"
+  },
+  {
+   "artikel": "der",
+   "wort": "Schirm",
+   "plural": "Schirme"
+  }
+ ],
+ "140": [
+  {
+   "artikel": "das",
+   "wort": "Start-up",
+   "plural": "Start-ups"
+  },
+  {
+   "artikel": "das",
+   "wort": "Handtuch",
+   "plural": "Handtücher"
+  },
+  {
+   "verb": "werfen",
+   "formen": "warf · hat geworfen"
+  }
+ ],
+ "141": [
+  {
+   "artikel": "der",
+   "wort": "Koch",
+   "plural": "Köche"
+  },
+  {
+   "artikel": "der",
+   "wort": "Brei",
+   "plural": "Breie"
+  },
+  {
+   "verb": "verderben",
+   "formen": "verdarb · hat verdorben"
+  }
+ ],
+ "142": [
+  {
+   "artikel": "die",
+   "wort": "Spülmaschine",
+   "plural": "Spülmaschinen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Haar",
+   "plural": "Haare"
+  },
+  {
+   "verb": "sich kriegen",
+   "formen": "kriegte sich · hat sich gekriegt"
+  }
+ ],
+ "143": [
+  {
+   "artikel": "der",
+   "wort": "Witz",
+   "plural": "Witze"
+  },
+  {
+   "artikel": "die",
+   "wort": "Vorstellungsrunde",
+   "plural": "Vorstellungsrunden"
+  },
+  {
+   "artikel": "das",
+   "wort": "Eis",
+   "plural": "–"
+  },
+  {
+   "verb": "brechen",
+   "formen": "brach · hat gebrochen"
+  }
+ ],
+ "144": [
+  {
+   "artikel": "die",
+   "wort": "Ferienwohnung",
+   "plural": "Ferienwohnungen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Vermieter",
+   "plural": "Vermieter"
+  },
+  {
+   "verb": "sich verdienen",
+   "formen": "verdiente sich · hat sich verdient"
+  }
+ ],
+ "145": [
+  {
+   "artikel": "der",
+   "wort": "Akkuschrauber",
+   "plural": "Akkuschrauber"
+  },
+  {
+   "artikel": "das",
+   "wort": "Regal",
+   "plural": "Regale"
+  },
+  {
+   "artikel": "das",
+   "wort": "Handumdrehen",
+   "plural": "–"
+  },
+  {
+   "verb": "aufbauen",
+   "formen": "baute auf · hat aufgebaut"
+  }
+ ],
+ "146": [
+  {
+   "artikel": "der",
+   "wort": "Koffer",
+   "plural": "Koffer"
+  },
+  {
+   "verb": "packen",
+   "formen": "packte · hat gepackt"
+  }
+ ],
+ "147": [
+  {
+   "artikel": "der",
+   "wort": "Schlüssel",
+   "plural": "Schlüssel"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kuckuck",
+   "plural": "Kuckucke"
+  },
+  {
+   "verb": "wissen",
+   "formen": "wusste · hat gewusst"
+  }
+ ],
+ "148": [
+  {
+   "artikel": "der",
+   "wort": "Kopf",
+   "plural": "Köpfe"
+  },
+  {
+   "artikel": "das",
+   "wort": "Geschenk",
+   "plural": "Geschenke"
+  },
+  {
+   "verb": "sich zerbrechen",
+   "formen": "zerbrach sich · hat sich zerbrochen"
+  }
+ ],
+ "149": [
+  {
+   "artikel": "der",
+   "wort": "Verteiler",
+   "plural": "Verteiler"
+  },
+  {
+   "artikel": "der",
+   "wort": "Bock",
+   "plural": "Böcke"
+  },
+  {
+   "verb": "schießen",
+   "formen": "schoss · hat geschossen"
+  }
+ ],
+ "150": [
+  {
+   "artikel": "der",
+   "wort": "Apfel",
+   "plural": "Äpfel"
+  },
+  {
+   "artikel": "die",
+   "wort": "Birne",
+   "plural": "Birnen"
+  },
+  {
+   "verb": "vergleichen",
+   "formen": "verglich · hat verglichen"
+  }
+ ],
+ "151": [
+  {
+   "artikel": "die",
+   "wort": "Beschwerde",
+   "plural": "Beschwerden"
+  },
+  {
+   "artikel": "der",
+   "wort": "Stein",
+   "plural": "Steine"
+  },
+  {
+   "verb": "bringen",
+   "formen": "brachte · hat gebracht"
+  }
+ ],
+ "152": [
+  {
+   "artikel": "der",
+   "wort": "Stich",
+   "plural": "Stiche"
+  },
+  {
+   "verb": "lassen",
+   "formen": "ließ · hat gelassen"
+  }
+ ],
+ "153": [
+  {
+   "artikel": "der",
+   "wort": "Club",
+   "plural": "Clubs"
+  },
+  {
+   "verb": "bestellen",
+   "formen": "bestellte · hat bestellt"
+  },
+  {
+   "verb": "abholen",
+   "formen": "holte ab · hat abgeholt"
+  }
+ ],
+ "154": [
+  {
+   "artikel": "der",
+   "wort": "Neffe",
+   "plural": "Neffen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Loch",
+   "plural": "Löcher"
+  },
+  {
+   "artikel": "der",
+   "wort": "Bauch",
+   "plural": "Bäuche"
+  },
+  {
+   "verb": "fragen",
+   "formen": "fragte · hat gefragt"
+  }
+ ],
+ "155": [
+  {
+   "artikel": "der",
+   "wort": "Nagel",
+   "plural": "Nägel"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kopf",
+   "plural": "Köpfe"
+  },
+  {
+   "artikel": "der",
+   "wort": "Mietvertrag",
+   "plural": "Mietverträge"
+  },
+  {
+   "verb": "machen",
+   "formen": "machte · hat gemacht"
+  },
+  {
+   "verb": "unterschreiben",
+   "formen": "unterschrieb · hat unterschrieben"
+  }
+ ],
+ "156": [
+  {
+   "artikel": "die",
+   "wort": "Kritik",
+   "plural": "Kritiken"
+  },
+  {
+   "artikel": "das",
+   "wort": "Herz",
+   "plural": "Herzen"
+  },
+  {
+   "verb": "sich nehmen",
+   "formen": "nahm sich · hat sich genommen"
+  }
+ ],
+ "157": [
+  {
+   "artikel": "die",
+   "wort": "Renovierung",
+   "plural": "Renovierungen"
+  },
+  {
+   "verb": "anfangen",
+   "formen": "fing an · hat angefangen"
+  },
+  {
+   "verb": "durchziehen",
+   "formen": "zog durch · hat durchgezogen"
+  }
+ ],
+ "158": [
+  {
+   "artikel": "die",
+   "wort": "Geschichte",
+   "plural": "Geschichten"
+  },
+  {
+   "artikel": "das",
+   "wort": "Bürgeramt",
+   "plural": "Bürgerämter"
+  },
+  {
+   "artikel": "der",
+   "wort": "Ast",
+   "plural": "Äste"
+  },
+  {
+   "verb": "sich lachen",
+   "formen": "lachte sich · hat sich gelacht"
+  }
+ ],
+ "159": [
+  {
+   "artikel": "der",
+   "wort": "Bock",
+   "plural": "Böcke"
+  },
+  {
+   "artikel": "der",
+   "wort": "Döner",
+   "plural": "Döner"
+  },
+  {
+   "verb": "kochen",
+   "formen": "kochte · hat gekocht"
+  }
+ ],
+ "160": [
+  {
+   "artikel": "das",
+   "wort": "Café",
+   "plural": "Cafés"
+  },
+  {
+   "artikel": "der",
+   "wort": "Pilz",
+   "plural": "Pilze"
+  },
+  {
+   "artikel": "der",
+   "wort": "Boden",
+   "plural": "Böden"
+  },
+  {
+   "verb": "schießen",
+   "formen": "schoss · ist geschossen"
+  }
+ ],
+ "161": [
+  {
+   "artikel": "die",
+   "wort": "Rosine",
+   "plural": "Rosinen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Rest",
+   "plural": "Reste"
+  },
+  {
+   "verb": "sich herauspicken",
+   "formen": "pickte sich heraus · hat sich herausgepickt"
+  },
+  {
+   "verb": "überlassen",
+   "formen": "überließ · hat überlassen"
+  }
+ ],
+ "162": [
+  {
+   "artikel": "der",
+   "wort": "Schlauch",
+   "plural": "Schläuche"
+  },
+  {
+   "verb": "stehen",
+   "formen": "stand · hat gestanden"
+  }
+ ],
+ "163": [
+  {
+   "artikel": "der",
+   "wort": "Katzensprung",
+   "plural": "Katzensprünge"
+  }
+ ],
+ "164": [
+  {
+   "artikel": "der",
+   "wort": "Kollege",
+   "plural": "Kollegen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Hand",
+   "plural": "Hände"
+  },
+  {
+   "artikel": "das",
+   "wort": "Feuer",
+   "plural": "Feuer"
+  },
+  {
+   "verb": "legen",
+   "formen": "legte · hat gelegt"
+  }
+ ],
+ "165": [
+  {
+   "artikel": "das",
+   "wort": "Wochenende",
+   "plural": "Wochenenden"
+  },
+  {
+   "artikel": "das",
+   "wort": "Outfit",
+   "plural": "Outfits"
+  },
+  {
+   "artikel": "das",
+   "wort": "Fenster",
+   "plural": "Fenster"
+  },
+  {
+   "verb": "hinauswerfen",
+   "formen": "warf hinaus · hat hinausgeworfen"
+  }
+ ],
+ "166": [
+  {
+   "artikel": "die",
+   "wort": "Eisenbahn",
+   "plural": "Eisenbahnen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Flieger",
+   "plural": "Flieger"
+  },
+  {
+   "verb": "verpassen",
+   "formen": "verpasste · hat verpasst"
+  }
+ ],
+ "167": [
+  {
+   "artikel": "der",
+   "wort": "Arzt",
+   "plural": "Ärzte"
+  },
+  {
+   "artikel": "der",
+   "wort": "Stein",
+   "plural": "Steine"
+  },
+  {
+   "artikel": "das",
+   "wort": "Herz",
+   "plural": "Herzen"
+  },
+  {
+   "verb": "fallen",
+   "formen": "fiel · ist gefallen"
+  }
+ ],
+ "168": [
+  {
+   "artikel": "die",
+   "wort": "Chefin",
+   "plural": "Chefinnen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Urlaub",
+   "plural": "Urlaube"
+  },
+  {
+   "artikel": "der",
+   "wort": "Laden",
+   "plural": "Läden"
+  },
+  {
+   "verb": "schmeißen",
+   "formen": "schmiss · hat geschmissen"
+  }
+ ],
+ "169": [
+  {
+   "artikel": "das",
+   "wort": "Land",
+   "plural": "Länder"
+  },
+  {
+   "artikel": "die",
+   "wort": "Sitte",
+   "plural": "Sitten"
+  },
+  {
+   "verb": "essen",
+   "formen": "aß · hat gegessen"
+  }
+ ],
+ "170": [
+  {
+   "artikel": "das",
+   "wort": "Fernweh",
+   "plural": "–"
+  }
+ ],
+ "171": [
+  {
+   "artikel": "der",
+   "wort": "Schimmer",
+   "plural": "–"
+  },
+  {
+   "artikel": "die",
+   "wort": "Waschmaschine",
+   "plural": "Waschmaschinen"
+  },
+  {
+   "verb": "funktionieren",
+   "formen": "funktionierte · hat funktioniert"
+  }
+ ],
+ "172": [
+  {
+   "artikel": "das",
+   "wort": "Interview",
+   "plural": "Interviews"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kopf",
+   "plural": "Köpfe"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kragen",
+   "plural": "Kragen"
+  },
+  {
+   "verb": "sich reden",
+   "formen": "redete sich · hat sich geredet"
+  }
+ ],
+ "173": [
+  {
+   "artikel": "das",
+   "wort": "Thema",
+   "plural": "Themen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Elefant",
+   "plural": "Elefanten"
+  },
+  {
+   "artikel": "der",
+   "wort": "Porzellanladen",
+   "plural": "Porzellanläden"
+  },
+  {
+   "verb": "sich benehmen",
+   "formen": "benahm sich · hat sich benommen"
+  }
+ ],
+ "174": [
+  {
+   "verb": "wohnen",
+   "formen": "wohnte · hat gewohnt"
+  }
+ ],
+ "175": [
+  {
+   "artikel": "die",
+   "wort": "Nachtschicht",
+   "plural": "Nachtschichten"
+  },
+  {
+   "verb": "sich fühlen",
+   "formen": "fühlte sich · hat sich gefühlt"
+  },
+  {
+   "verb": "rädern",
+   "formen": "räderte · hat gerädert"
+  }
+ ],
+ "176": [
+  {
+   "artikel": "die",
+   "wort": "Radtour",
+   "plural": "Radtouren"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kohldampf",
+   "plural": "–"
+  }
+ ],
+ "177": [
+  {
+   "artikel": "die",
+   "wort": "Zimmerverteilung",
+   "plural": "Zimmerverteilungen"
+  },
+  {
+   "artikel": "die",
+   "wort": "WG",
+   "plural": "WGs"
+  },
+  {
+   "verb": "ziehen",
+   "formen": "zog · hat gezogen"
+  }
+ ],
+ "178": [
+  {
+   "artikel": "die",
+   "wort": "Unterschrift",
+   "plural": "Unterschriften"
+  },
+  {
+   "artikel": "der",
+   "wort": "Käufer",
+   "plural": "Käufer"
+  },
+  {
+   "artikel": "der",
+   "wort": "Fuß",
+   "plural": "Füße"
+  },
+  {
+   "verb": "bekommen",
+   "formen": "bekam · hat bekommen"
+  }
+ ],
+ "179": [
+  {
+   "artikel": "der",
+   "wort": "Handwerker",
+   "plural": "Handwerker"
+  },
+  {
+   "artikel": "die",
+   "wort": "Matte",
+   "plural": "Matten"
+  },
+  {
+   "verb": "stehen",
+   "formen": "stand · hat gestanden"
+  }
+ ],
+ "180": [
+  {
+   "artikel": "das",
+   "wort": "Angebot",
+   "plural": "Angebote"
+  },
+  {
+   "artikel": "der",
+   "wort": "Wald",
+   "plural": "Wälder"
+  },
+  {
+   "artikel": "der",
+   "wort": "Baum",
+   "plural": "Bäume"
+  },
+  {
+   "verb": "sehen",
+   "formen": "sah · hat gesehen"
+  }
+ ],
+ "181": [
+  {
+   "artikel": "die",
+   "wort": "Schule",
+   "plural": "Schulen"
+  },
+  {
+   "verb": "gehen",
+   "formen": "ging · ist gegangen"
+  }
+ ],
+ "182": [
+  {
+   "artikel": "der",
+   "wort": "Schuh",
+   "plural": "Schuhe"
+  },
+  {
+   "verb": "drücken",
+   "formen": "drückte · hat gedrückt"
+  }
+ ],
+ "183": [
+  {
+   "artikel": "der",
+   "wort": "Spieleabend",
+   "plural": "Spieleabende"
+  },
+  {
+   "artikel": "die",
+   "wort": "Strichliste",
+   "plural": "Strichlisten"
+  },
+  {
+   "artikel": "die",
+   "wort": "Ordnung",
+   "plural": "Ordnungen"
+  }
+ ],
+ "184": [
+  {
+   "artikel": "der",
+   "wort": "Kratzer",
+   "plural": "Kratzer"
+  },
+  {
+   "artikel": "die",
+   "wort": "Mücke",
+   "plural": "Mücken"
+  },
+  {
+   "artikel": "der",
+   "wort": "Elefant",
+   "plural": "Elefanten"
+  },
+  {
+   "verb": "machen",
+   "formen": "machte · hat gemacht"
+  }
+ ],
+ "185": [
+  {
+   "artikel": "der",
+   "wort": "Laptop",
+   "plural": "Laptops"
+  },
+  {
+   "artikel": "die",
+   "wort": "Stange",
+   "plural": "Stangen"
+  },
+  {
+   "verb": "kosten",
+   "formen": "kostete · hat gekostet"
+  }
+ ],
+ "186": [
+  {
+   "artikel": "die",
+   "wort": "Hilfe",
+   "plural": "Hilfen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Hand",
+   "plural": "Hände"
+  },
+  {
+   "verb": "brauchen",
+   "formen": "brauchte · hat gebraucht"
+  }
+ ],
+ "187": [
+  {
+   "artikel": "der",
+   "wort": "Handwerker",
+   "plural": "Handwerker"
+  },
+  {
+   "verb": "warten",
+   "formen": "wartete · hat gewartet"
+  }
+ ],
+ "188": [
+  {
+   "artikel": "die",
+   "wort": "Nase",
+   "plural": "Nasen"
+  },
+  {
+   "verb": "ziehen",
+   "formen": "zog · hat gezogen"
+  }
+ ],
+ "189": [
+  {
+   "artikel": "der",
+   "wort": "Termin",
+   "plural": "Termine"
+  },
+  {
+   "artikel": "das",
+   "wort": "Bürgeramt",
+   "plural": "Bürgerämter"
+  },
+  {
+   "artikel": "die",
+   "wort": "Maus",
+   "plural": "Mäuse"
+  }
+ ],
+ "190": [
+  {
+   "artikel": "der",
+   "wort": "Braten",
+   "plural": "Braten"
+  },
+  {
+   "verb": "riechen",
+   "formen": "roch · hat gerochen"
+  }
+ ],
+ "191": [
+  {
+   "artikel": "die",
+   "wort": "Prüfung",
+   "plural": "Prüfungen"
+  },
+  {
+   "verb": "bestehen",
+   "formen": "bestand · hat bestanden"
+  }
+ ],
+ "192": [
+  {
+   "artikel": "das",
+   "wort": "Wetter",
+   "plural": "–"
+  },
+  {
+   "artikel": "der",
+   "wort": "See",
+   "plural": "Seen"
+  },
+  {
+   "verb": "blaumachen",
+   "formen": "machte blau · hat blaugemacht"
+  }
+ ],
+ "193": [
+  {
+   "artikel": "der",
+   "wort": "Bus",
+   "plural": "Busse"
+  },
+  {
+   "artikel": "das",
+   "wort": "Rad",
+   "plural": "Räder"
+  },
+  {
+   "verb": "verpassen",
+   "formen": "verpasste · hat verpasst"
+  }
+ ],
+ "194": [
+  {
+   "artikel": "der",
+   "wort": "Yogakurs",
+   "plural": "Yogakurse"
+  },
+  {
+   "artikel": "der",
+   "wort": "Hahn",
+   "plural": "Hähne"
+  },
+  {
+   "artikel": "der",
+   "wort": "Korb",
+   "plural": "Körbe"
+  }
+ ],
+ "195": [
+  {
+   "artikel": "die",
+   "wort": "Steuererklärung",
+   "plural": "Steuererklärungen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Auge",
+   "plural": "Augen"
+  },
+  {
+   "verb": "helfen",
+   "formen": "half · hat geholfen"
+  }
+ ],
+ "196": [
+  {
+   "artikel": "das",
+   "wort": "Mountainbike",
+   "plural": "Mountainbikes"
+  },
+  {
+   "artikel": "der",
+   "wort": "Stock",
+   "plural": "Stöcke"
+  },
+  {
+   "artikel": "der",
+   "wort": "Stein",
+   "plural": "Steine"
+  }
+ ],
+ "197": [
+  {
+   "artikel": "der",
+   "wort": "Plattenladen",
+   "plural": "Plattenläden"
+  },
+  {
+   "artikel": "der",
+   "wort": "Zweig",
+   "plural": "Zweige"
+  },
+  {
+   "verb": "kommen",
+   "formen": "kam · ist gekommen"
+  }
+ ],
+ "198": [
+  {
+   "artikel": "die",
+   "wort": "Ärztin",
+   "plural": "Ärztinnen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Apfel",
+   "plural": "Äpfel"
+  },
+  {
+   "artikel": "der",
+   "wort": "Stamm",
+   "plural": "Stämme"
+  },
+  {
+   "verb": "fallen",
+   "formen": "fiel · ist gefallen"
+  }
+ ],
+ "199": [
+  {
+   "artikel": "das",
+   "wort": "Pärchen",
+   "plural": "Pärchen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Rad",
+   "plural": "Räder"
+  },
+  {
+   "artikel": "der",
+   "wort": "Wagen",
+   "plural": "Wagen"
+  },
+  {
+   "verb": "sich fühlen",
+   "formen": "fühlte sich · hat sich gefühlt"
+  }
+ ],
+ "200": [
+  {
+   "artikel": "die",
+   "wort": "Rechnung",
+   "plural": "Rechnungen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Licht",
+   "plural": "Lichter"
+  },
+  {
+   "verb": "aufgehen",
+   "formen": "ging auf · ist aufgegangen"
+  }
+ ],
+ "201": [
+  {
+   "artikel": "der",
+   "wort": "Herd",
+   "plural": "Herde"
+  },
+  {
+   "verb": "anlassen",
+   "formen": "ließ an · hat angelassen"
+  }
+ ],
+ "202": [
+  {
+   "artikel": "das",
+   "wort": "Gespräch",
+   "plural": "Gespräche"
+  },
+  {
+   "verb": "halten",
+   "formen": "hielt · hat gehalten"
+  }
+ ],
+ "203": [
+  {
+   "artikel": "die",
+   "wort": "Butter",
+   "plural": "–"
+  },
+  {
+   "artikel": "der",
+   "wort": "Fisch",
+   "plural": "Fische"
+  },
+  {
+   "artikel": "das",
+   "wort": "Konzert",
+   "plural": "Konzerte"
+  },
+  {
+   "verb": "mitkommen",
+   "formen": "kam mit · ist mitgekommen"
+  }
+ ],
+ "204": [
+  {
+   "artikel": "die",
+   "wort": "Steuerprüfung",
+   "plural": "Steuerprüfungen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Auge",
+   "plural": "Augen"
+  },
+  {
+   "verb": "davonkommen",
+   "formen": "kam davon · ist davongekommen"
+  }
+ ],
+ "205": [
+  {
+   "artikel": "die",
+   "wort": "Unpünktlichkeit",
+   "plural": "–"
+  },
+  {
+   "artikel": "die",
+   "wort": "Palme",
+   "plural": "Palmen"
+  },
+  {
+   "verb": "bringen",
+   "formen": "brachte · hat gebracht"
+  }
+ ],
+ "206": [
+  {
+   "artikel": "der",
+   "wort": "Winter",
+   "plural": "Winter"
+  },
+  {
+   "verb": "sagen",
+   "formen": "sagte · hat gesagt"
+  }
+ ],
+ "207": [
+  {
+   "artikel": "das",
+   "wort": "Ohr",
+   "plural": "Ohren"
+  },
+  {
+   "verb": "erzählen",
+   "formen": "erzählte · hat erzählt"
+  }
+ ],
+ "208": [
+  {
+   "artikel": "der",
+   "wort": "Minijob",
+   "plural": "Minijobs"
+  },
+  {
+   "artikel": "die",
+   "wort": "Runde",
+   "plural": "Runden"
+  },
+  {
+   "verb": "kommen",
+   "formen": "kam · ist gekommen"
+  }
+ ],
+ "209": [
+  {
+   "artikel": "der",
+   "wort": "Flug",
+   "plural": "Flüge"
+  },
+  {
+   "artikel": "die",
+   "wort": "Mitternacht",
+   "plural": "–"
+  },
+  {
+   "verb": "vergehen",
+   "formen": "verging · ist vergangen"
+  }
+ ],
+ "210": [
+  {
+   "artikel": "das",
+   "wort": "Abendessen",
+   "plural": "Abendessen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Katze",
+   "plural": "Katzen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Sack",
+   "plural": "Säcke"
+  },
+  {
+   "verb": "lassen",
+   "formen": "ließ · hat gelassen"
+  }
+ ],
+ "211": [
+  {
+   "artikel": "die",
+   "wort": "Sorge",
+   "plural": "Sorgen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Meister",
+   "plural": "Meister"
+  },
+  {
+   "artikel": "der",
+   "wort": "Himmel",
+   "plural": "Himmel"
+  },
+  {
+   "verb": "fallen",
+   "formen": "fiel · ist gefallen"
+  }
+ ],
+ "212": [
+  {
+   "artikel": "der",
+   "wort": "Hausmeister",
+   "plural": "Hausmeister"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kieker",
+   "plural": "Kieker"
+  },
+  {
+   "artikel": "der",
+   "wort": "Flur",
+   "plural": "Flure"
+  },
+  {
+   "verb": "abstellen",
+   "formen": "stellte ab · hat abgestellt"
+  }
+ ],
+ "213": [
+  {
+   "artikel": "der",
+   "wort": "Staub",
+   "plural": "–"
+  },
+  {
+   "verb": "sich machen",
+   "formen": "machte sich · hat sich gemacht"
+  },
+  {
+   "verb": "bezahlen",
+   "formen": "bezahlte · hat bezahlt"
+  }
+ ],
+ "214": [
+  {
+   "artikel": "die",
+   "wort": "Wohnung",
+   "plural": "Wohnungen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kiez",
+   "plural": "Kieze"
+  },
+  {
+   "artikel": "der",
+   "wort": "Tropfen",
+   "plural": "Tropfen"
+  }
+ ],
+ "215": [
+  {
+   "artikel": "der",
+   "wort": "Nachbar",
+   "plural": "Nachbarn"
+  },
+  {
+   "artikel": "das",
+   "wort": "Hoffest",
+   "plural": "Hoffeste"
+  },
+  {
+   "artikel": "das",
+   "wort": "Bein",
+   "plural": "Beine"
+  },
+  {
+   "verb": "stellen",
+   "formen": "stellte · hat gestellt"
+  }
+ ],
+ "216": [
+  {
+   "artikel": "das",
+   "wort": "Ohr",
+   "plural": "Ohren"
+  },
+  {
+   "artikel": "die",
+   "wort": "Kollegin",
+   "plural": "Kolleginnen"
+  },
+  {
+   "verb": "sich verlieben",
+   "formen": "verliebte sich · hat sich verliebt"
+  }
+ ],
+ "217": [
+  {
+   "artikel": "die",
+   "wort": "Wohnung",
+   "plural": "Wohnungen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Tee",
+   "plural": "Tees"
+  },
+  {
+   "verb": "abwarten",
+   "formen": "wartete ab · hat abgewartet"
+  }
+ ],
+ "218": [
+  {
+   "artikel": "das",
+   "wort": "Fahrrad",
+   "plural": "Fahrräder"
+  },
+  {
+   "artikel": "das",
+   "wort": "Loch",
+   "plural": "Löcher"
+  },
+  {
+   "verb": "pfeifen",
+   "formen": "pfiff · hat gepfiffen"
+  }
+ ],
+ "219": [
+  {
+   "artikel": "das",
+   "wort": "Leben",
+   "plural": "Leben"
+  },
+  {
+   "artikel": "der",
+   "wort": "Ponyhof",
+   "plural": "Ponyhöfe"
+  },
+  {
+   "artikel": "die",
+   "wort": "Miete",
+   "plural": "Mieten"
+  },
+  {
+   "verb": "bezahlen",
+   "formen": "bezahlte · hat bezahlt"
+  }
+ ],
+ "220": [
+  {
+   "artikel": "der",
+   "wort": "Riemen",
+   "plural": "Riemen"
+  },
+  {
+   "verb": "sich reißen",
+   "formen": "riss sich · hat sich gerissen"
+  }
+ ],
+ "221": [
+  {
+   "artikel": "das",
+   "wort": "Dorf",
+   "plural": "Dörfer"
+  },
+  {
+   "artikel": "der",
+   "wort": "Fuchs",
+   "plural": "Füchse"
+  },
+  {
+   "artikel": "der",
+   "wort": "Hase",
+   "plural": "Hasen"
+  },
+  {
+   "verb": "sagen",
+   "formen": "sagte · hat gesagt"
+  }
+ ],
+ "222": [
+  {
+   "verb": "sagen",
+   "formen": "sagte · hat gesagt"
+  },
+  {
+   "verb": "ziehen",
+   "formen": "zog · ist gezogen"
+  }
+ ],
+ "223": [
+  {
+   "artikel": "die",
+   "wort": "Bar",
+   "plural": "Bars"
+  },
+  {
+   "artikel": "der",
+   "wort": "Geheimtipp",
+   "plural": "Geheimtipps"
+  },
+  {
+   "verb": "kennen",
+   "formen": "kannte · hat gekannt"
+  }
+ ],
+ "224": [
+  {
+   "verb": "unterschreiben",
+   "formen": "unterschrieb · hat unterschrieben"
+  }
+ ],
+ "225": [
+  {
+   "artikel": "die",
+   "wort": "Stelle",
+   "plural": "Stellen"
+  },
+  {
+   "verb": "sich bewerben",
+   "formen": "bewarb sich · hat sich beworben"
+  },
+  {
+   "verb": "wagen",
+   "formen": "wagte · hat gewagt"
+  }
+ ],
+ "226": [
+  {
+   "artikel": "der",
+   "wort": "Arbeitstag",
+   "plural": "Arbeitstage"
+  },
+  {
+   "artikel": "das",
+   "wort": "Wasser",
+   "plural": "Wasser"
+  },
+  {
+   "verb": "werfen",
+   "formen": "warf · hat geworfen"
+  }
+ ],
+ "227": [
+  {
+   "artikel": "der",
+   "wort": "Gebrauchtwagenkauf",
+   "plural": "Gebrauchtwagenkäufe"
+  },
+  {
+   "artikel": "das",
+   "wort": "Ohr",
+   "plural": "Ohren"
+  },
+  {
+   "verb": "hauen",
+   "formen": "haute · hat gehauen"
+  }
+ ],
+ "228": [
+  {
+   "artikel": "die",
+   "wort": "Kreide",
+   "plural": "Kreiden"
+  },
+  {
+   "verb": "stehen",
+   "formen": "stand · hat gestanden"
+  }
+ ],
+ "229": [
+  {
+   "artikel": "das",
+   "wort": "Projekt",
+   "plural": "Projekte"
+  },
+  {
+   "verb": "biegen",
+   "formen": "bog · hat gebogen"
+  },
+  {
+   "verb": "brechen",
+   "formen": "brach · hat gebrochen"
+  }
+ ],
+ "230": [
+  {
+   "artikel": "die",
+   "wort": "Stunde",
+   "plural": "Stunden"
+  },
+  {
+   "artikel": "das",
+   "wort": "Café",
+   "plural": "Cafés"
+  },
+  {
+   "verb": "versetzen",
+   "formen": "versetzte · hat versetzt"
+  }
+ ],
+ "231": [
+  {
+   "artikel": "der",
+   "wort": "Strang",
+   "plural": "Stränge"
+  },
+  {
+   "verb": "ziehen",
+   "formen": "zog · hat gezogen"
+  },
+  {
+   "verb": "schaffen",
+   "formen": "schaffte · hat geschafft"
+  }
+ ],
+ "232": [
+  {
+   "artikel": "die",
+   "wort": "WG",
+   "plural": "WGs"
+  },
+  {
+   "artikel": "das",
+   "wort": "Wasser",
+   "plural": "Wasser"
+  },
+  {
+   "verb": "reichen",
+   "formen": "reichte · hat gereicht"
+  }
+ ],
+ "233": [
+  {
+   "artikel": "die",
+   "wort": "Bemerkung",
+   "plural": "Bemerkungen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Fass",
+   "plural": "Fässer"
+  },
+  {
+   "verb": "bringen",
+   "formen": "brachte · hat gebracht"
+  },
+  {
+   "verb": "überlaufen",
+   "formen": "lief über · ist übergelaufen"
+  }
+ ],
+ "234": [
+  {
+   "artikel": "das",
+   "wort": "Start-up",
+   "plural": "Start-ups"
+  },
+  {
+   "artikel": "der",
+   "wort": "Sand",
+   "plural": "–"
+  },
+  {
+   "verb": "setzen",
+   "formen": "setzte · hat gesetzt"
+  }
+ ],
+ "235": [
+  {
+   "artikel": "der",
+   "wort": "Busfahrer",
+   "plural": "Busfahrer"
+  },
+  {
+   "artikel": "die",
+   "wort": "Laus",
+   "plural": "Läuse"
+  },
+  {
+   "artikel": "die",
+   "wort": "Leber",
+   "plural": "Lebern"
+  },
+  {
+   "verb": "anschnauzen",
+   "formen": "schnauzte an · hat angeschnauzt"
+  },
+  {
+   "verb": "laufen",
+   "formen": "lief · ist gelaufen"
+  }
+ ],
+ "236": [
+  {
+   "artikel": "das",
+   "wort": "Ding",
+   "plural": "Dinge"
+  },
+  {
+   "verb": "hören",
+   "formen": "hörte · hat gehört"
+  }
+ ],
+ "237": [
+  {
+   "artikel": "der",
+   "wort": "Platten",
+   "plural": "Platten"
+  },
+  {
+   "artikel": "das",
+   "wort": "Unglück",
+   "plural": "Unglücke"
+  },
+  {
+   "verb": "kommen",
+   "formen": "kam · ist gekommen"
+  }
+ ],
+ "238": [
+  {
+   "artikel": "die",
+   "wort": "Mauer",
+   "plural": "Mauern"
+  },
+  {
+   "artikel": "die",
+   "wort": "Haut",
+   "plural": "Häute"
+  },
+  {
+   "verb": "gehen",
+   "formen": "ging · ist gegangen"
+  }
+ ],
+ "239": [
+  {
+   "artikel": "die",
+   "wort": "Ringbahn",
+   "plural": "Ringbahnen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Bahnsteig",
+   "plural": "Bahnsteige"
+  },
+  {
+   "verb": "nerven",
+   "formen": "nervte · hat genervt"
+  }
+ ],
+ "240": [
+  {
+   "artikel": "der",
+   "wort": "Ärmel",
+   "plural": "Ärmel"
+  },
+  {
+   "artikel": "der",
+   "wort": "Umzug",
+   "plural": "Umzüge"
+  },
+  {
+   "verb": "hochkrempeln",
+   "formen": "krempelte hoch · hat hochgekrempelt"
+  }
+ ],
+ "241": [
+  {
+   "artikel": "die",
+   "wort": "Pauke",
+   "plural": "Pauken"
+  },
+  {
+   "verb": "hauen",
+   "formen": "haute · hat gehauen"
+  }
+ ],
+ "242": [
+  {
+   "artikel": "das",
+   "wort": "Hühnchen",
+   "plural": "Hühnchen"
+  },
+  {
+   "verb": "rupfen",
+   "formen": "rupfte · hat gerupft"
+  }
+ ],
+ "243": [
+  {
+   "artikel": "die",
+   "wort": "Extrawurst",
+   "plural": "Extrawürste"
+  },
+  {
+   "verb": "bekommen",
+   "formen": "bekam · hat bekommen"
+  }
+ ],
+ "244": [
+  {
+   "artikel": "der",
+   "wort": "Hopfen",
+   "plural": "–"
+  },
+  {
+   "artikel": "das",
+   "wort": "Malz",
+   "plural": "–"
+  },
+  {
+   "verb": "verlieren",
+   "formen": "verlor · hat verloren"
+  }
+ ],
+ "245": [
+  {
+   "artikel": "der",
+   "wort": "Schmetterling",
+   "plural": "Schmetterlinge"
+  },
+  {
+   "artikel": "der",
+   "wort": "Bauch",
+   "plural": "Bäuche"
+  },
+  {
+   "verb": "haben",
+   "formen": "hatte · hat gehabt"
+  }
+ ],
+ "246": [
+  {
+   "artikel": "die",
+   "wort": "Haut",
+   "plural": "Häute"
+  },
+  {
+   "verb": "fahren",
+   "formen": "fuhr · ist gefahren"
+  }
+ ],
+ "247": [
+  {
+   "artikel": "der",
+   "wort": "Chef",
+   "plural": "Chefs"
+  },
+  {
+   "artikel": "die",
+   "wort": "Schule",
+   "plural": "Schulen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Dorf",
+   "plural": "Dörfer"
+  },
+  {
+   "verb": "kennen",
+   "formen": "kannte · hat gekannt"
+  }
+ ],
+ "248": [
+  {
+   "artikel": "der",
+   "wort": "Fehler",
+   "plural": "Fehler"
+  },
+  {
+   "artikel": "der",
+   "wort": "Schuh",
+   "plural": "Schuhe"
+  },
+  {
+   "verb": "schieben",
+   "formen": "schob · hat geschoben"
+  }
+ ],
+ "249": [
+  {
+   "artikel": "das",
+   "wort": "Bier",
+   "plural": "Biere"
+  },
+  {
+   "verb": "gehen",
+   "formen": "ging · ist gegangen"
+  }
+ ],
+ "250": [
+  {
+   "artikel": "der",
+   "wort": "Punkt",
+   "plural": "Punkte"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kollege",
+   "plural": "Kollegen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Maurer",
+   "plural": "Maurer"
+  }
+ ],
+ "251": [
+  {
+   "artikel": "das",
+   "wort": "Picknick",
+   "plural": "Picknicks"
+  },
+  {
+   "artikel": "das",
+   "wort": "Gewitter",
+   "plural": "Gewitter"
+  },
+  {
+   "verb": "fallen",
+   "formen": "fiel · ist gefallen"
+  }
+ ],
+ "252": [
+  {
+   "artikel": "der",
+   "wort": "Kopf",
+   "plural": "Köpfe"
+  },
+  {
+   "verb": "sich machen",
+   "formen": "machte sich · hat sich gemacht"
+  },
+  {
+   "verb": "hinkriegen",
+   "formen": "kriegte hin · hat hingekriegt"
+  }
+ ],
+ "253": [
+  {
+   "artikel": "das",
+   "wort": "Grillen",
+   "plural": "–"
+  },
+  {
+   "verb": "aufschieben",
+   "formen": "schob auf · hat aufgeschoben"
+  },
+  {
+   "verb": "aufheben",
+   "formen": "hob auf · hat aufgehoben"
+  }
+ ],
+ "254": [
+  {
+   "artikel": "das",
+   "wort": "Formular",
+   "plural": "Formulare"
+  },
+  {
+   "artikel": "das",
+   "wort": "Bürgeramt",
+   "plural": "Bürgerämter"
+  },
+  {
+   "artikel": "der",
+   "wort": "Zahn",
+   "plural": "Zähne"
+  },
+  {
+   "verb": "sich ausbeißen",
+   "formen": "biss sich aus · hat sich ausgebissen"
+  }
+ ],
+ "255": [
+  {
+   "artikel": "der",
+   "wort": "Streit",
+   "plural": "–"
+  },
+  {
+   "artikel": "die",
+   "wort": "Urlaubsplanung",
+   "plural": "Urlaubsplanungen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Luft",
+   "plural": "Lüfte"
+  }
+ ],
+ "256": [
+  {
+   "artikel": "die",
+   "wort": "Überraschung",
+   "plural": "Überraschungen"
+  },
+  {
+   "verb": "haben",
+   "formen": "hatte · hat gehabt"
+  }
+ ],
+ "257": [
+  {
+   "artikel": "die",
+   "wort": "Grippe",
+   "plural": "Grippen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Schulter",
+   "plural": "Schultern"
+  },
+  {
+   "verb": "nehmen",
+   "formen": "nahm · hat genommen"
+  }
+ ],
+ "258": [
+  {
+   "artikel": "die",
+   "wort": "Freundin",
+   "plural": "Freundinnen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Pferd",
+   "plural": "Pferde"
+  },
+  {
+   "verb": "stehlen",
+   "formen": "stahl · hat gestohlen"
+  }
+ ],
+ "259": [
+  {
+   "artikel": "der",
+   "wort": "Schirm",
+   "plural": "Schirme"
+  },
+  {
+   "artikel": "der",
+   "wort": "Salat",
+   "plural": "Salate"
+  },
+  {
+   "verb": "mitnehmen",
+   "formen": "nahm mit · hat mitgenommen"
+  }
+ ],
+ "260": [
+  {
+   "artikel": "der",
+   "wort": "Vermieter",
+   "plural": "Vermieter"
+  },
+  {
+   "artikel": "das",
+   "wort": "Licht",
+   "plural": "Lichter"
+  },
+  {
+   "artikel": "der",
+   "wort": "Balkon",
+   "plural": "Balkone"
+  },
+  {
+   "verb": "geben",
+   "formen": "gab · hat gegeben"
+  }
+ ],
+ "261": [
+  {
+   "artikel": "der",
+   "wort": "Betrüger",
+   "plural": "Betrüger"
+  },
+  {
+   "artikel": "der",
+   "wort": "Leim",
+   "plural": "Leime"
+  },
+  {
+   "verb": "gehen",
+   "formen": "ging · ist gegangen"
+  }
+ ],
+ "262": [
+  {
+   "artikel": "der",
+   "wort": "Job",
+   "plural": "Jobs"
+  },
+  {
+   "artikel": "der",
+   "wort": "Tapetenwechsel",
+   "plural": "Tapetenwechsel"
+  },
+  {
+   "verb": "brauchen",
+   "formen": "brauchte · hat gebraucht"
+  }
+ ],
+ "263": [
+  {
+   "artikel": "das",
+   "wort": "Ohr",
+   "plural": "Ohren"
+  },
+  {
+   "verb": "sich melden",
+   "formen": "meldete sich · hat sich gemeldet"
+  }
+ ],
+ "264": [
+  {
+   "artikel": "die",
+   "wort": "Sorte",
+   "plural": "Sorten"
+  },
+  {
+   "artikel": "die",
+   "wort": "Wahl",
+   "plural": "Wahlen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Qual",
+   "plural": "Qualen"
+  },
+  {
+   "verb": "haben",
+   "formen": "hatte · hat gehabt"
+  }
+ ],
+ "265": [
+  {
+   "artikel": "der",
+   "wort": "Gemeinschaftsgarten",
+   "plural": "Gemeinschaftsgärten"
+  },
+  {
+   "artikel": "das",
+   "wort": "Feuer",
+   "plural": "Feuer"
+  },
+  {
+   "artikel": "die",
+   "wort": "Flamme",
+   "plural": "Flammen"
+  }
+ ],
+ "266": [
+  {
+   "artikel": "der",
+   "wort": "Gebrauchtwagenhändler",
+   "plural": "Gebrauchtwagenhändler"
+  },
+  {
+   "artikel": "das",
+   "wort": "Wasser",
+   "plural": "Wasser"
+  },
+  {
+   "verb": "waschen",
+   "formen": "wusch · hat gewaschen"
+  }
+ ],
+ "267": [
+  {
+   "artikel": "die",
+   "wort": "Kryptowährung",
+   "plural": "Kryptowährungen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Finger",
+   "plural": "Finger"
+  },
+  {
+   "verb": "sich verbrennen",
+   "formen": "verbrannte sich · hat sich verbrannt"
+  }
+ ],
+ "268": [
+  {
+   "artikel": "das",
+   "wort": "Urlaubsgeld",
+   "plural": "Urlaubsgelder"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kopf",
+   "plural": "Köpfe"
+  },
+  {
+   "verb": "hauen",
+   "formen": "haute · hat gehauen"
+  }
+ ],
+ "269": [
+  {
+   "artikel": "der",
+   "wort": "Späti",
+   "plural": "Spätis"
+  },
+  {
+   "artikel": "die",
+   "wort": "Ecke",
+   "plural": "Ecken"
+  },
+  {
+   "artikel": "die",
+   "wort": "Uhr",
+   "plural": "Uhren"
+  },
+  {
+   "verb": "öffnen",
+   "formen": "öffnete · hat geöffnet"
+  }
+ ],
+ "270": [
+  {
+   "artikel": "der",
+   "wort": "Urlaub",
+   "plural": "Urlaube"
+  },
+  {
+   "artikel": "die",
+   "wort": "Seele",
+   "plural": "Seelen"
+  },
+  {
+   "verb": "baumeln",
+   "formen": "baumelte · hat gebaumelt"
+  },
+  {
+   "verb": "lassen",
+   "formen": "ließ · hat gelassen"
+  }
+ ],
+ "271": [
+  {
+   "artikel": "die",
+   "wort": "Stammkneipe",
+   "plural": "Stammkneipen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Spatz",
+   "plural": "Spatzen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Dach",
+   "plural": "Dächer"
+  },
+  {
+   "verb": "pfeifen",
+   "formen": "pfiff · hat gepfiffen"
+  }
+ ],
+ "272": [
+  {
+   "artikel": "das",
+   "wort": "Glas",
+   "plural": "Gläser"
+  },
+  {
+   "artikel": "das",
+   "wort": "Nähkästchen",
+   "plural": "Nähkästchen"
+  },
+  {
+   "verb": "plaudern",
+   "formen": "plauderte · hat geplaudert"
+  }
+ ],
+ "273": [
+  {
+   "artikel": "die",
+   "wort": "Pleite",
+   "plural": "Pleiten"
+  },
+  {
+   "artikel": "die",
+   "wort": "Firma",
+   "plural": "Firmen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Brötchen",
+   "plural": "Brötchen"
+  },
+  {
+   "verb": "backen",
+   "formen": "backte · hat gebacken"
+  }
+ ],
+ "274": [
+  {
+   "artikel": "das",
+   "wort": "Schimmelproblem",
+   "plural": "Schimmelprobleme"
+  },
+  {
+   "artikel": "der",
+   "wort": "Griff",
+   "plural": "Griffe"
+  },
+  {
+   "verb": "bekommen",
+   "formen": "bekam · hat bekommen"
+  }
+ ],
+ "275": [
+  {
+   "artikel": "die",
+   "wort": "Anmeldung",
+   "plural": "Anmeldungen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Pflicht",
+   "plural": "Pflichten"
+  },
+  {
+   "artikel": "der",
+   "wort": "Weg",
+   "plural": "Wege"
+  },
+  {
+   "verb": "vorbeiführen",
+   "formen": "führte vorbei · hat vorbeigeführt"
+  }
+ ],
+ "276": [
+  {
+   "verb": "vormachen",
+   "formen": "machte vor · hat vorgemacht"
+  }
+ ],
+ "277": [
+  {
+   "artikel": "der",
+   "wort": "Nagel",
+   "plural": "Nägel"
+  },
+  {
+   "artikel": "der",
+   "wort": "Bürojob",
+   "plural": "Bürojobs"
+  },
+  {
+   "artikel": "der",
+   "wort": "Koch",
+   "plural": "Köche"
+  },
+  {
+   "verb": "hängen",
+   "formen": "hängte · hat gehängt"
+  }
+ ],
+ "278": [
+  {
+   "artikel": "die",
+   "wort": "Decke",
+   "plural": "Decken"
+  },
+  {
+   "artikel": "der",
+   "wort": "Makler",
+   "plural": "Makler"
+  },
+  {
+   "artikel": "der",
+   "wort": "Vermieter",
+   "plural": "Vermieter"
+  },
+  {
+   "verb": "stecken",
+   "formen": "steckte · hat gesteckt"
+  }
+ ],
+ "279": [
+  {
+   "artikel": "die",
+   "wort": "Gelegenheit",
+   "plural": "Gelegenheiten"
+  },
+  {
+   "artikel": "der",
+   "wort": "Dieb",
+   "plural": "Diebe"
+  },
+  {
+   "artikel": "das",
+   "wort": "Fahrrad",
+   "plural": "Fahrräder"
+  },
+  {
+   "verb": "abschließen",
+   "formen": "schloss ab · hat abgeschlossen"
+  }
+ ],
+ "280": [
+  {
+   "artikel": "die",
+   "wort": "Tochter",
+   "plural": "Töchter"
+  },
+  {
+   "artikel": "der",
+   "wort": "Finger",
+   "plural": "Finger"
+  },
+  {
+   "verb": "wickeln",
+   "formen": "wickelte · hat gewickelt"
+  }
+ ],
+ "281": [
+  {
+   "artikel": "der",
+   "wort": "Bammel",
+   "plural": "–"
+  },
+  {
+   "artikel": "die",
+   "wort": "Wurzelbehandlung",
+   "plural": "Wurzelbehandlungen"
+  },
+  {
+   "verb": "haben",
+   "formen": "hatte · hat gehabt"
+  }
+ ],
+ "282": [
+  {
+   "artikel": "der",
+   "wort": "Rutsch",
+   "plural": "Rutsche"
+  },
+  {
+   "verb": "wiedersehen",
+   "formen": "sah wieder · hat wiedergesehen"
+  }
+ ],
+ "283": [
+  {
+   "artikel": "die",
+   "wort": "Schnecke",
+   "plural": "Schnecken"
+  },
+  {
+   "artikel": "der",
+   "wort": "Chef",
+   "plural": "Chefs"
+  },
+  {
+   "artikel": "die",
+   "wort": "Verspätung",
+   "plural": "Verspätungen"
+  },
+  {
+   "verb": "machen",
+   "formen": "machte · hat gemacht"
+  }
+ ],
+ "284": [
+  {
+   "artikel": "das",
+   "wort": "Fenster",
+   "plural": "Fenster"
+  },
+  {
+   "artikel": "die",
+   "wort": "Hechtsuppe",
+   "plural": "Hechtsuppen"
+  },
+  {
+   "verb": "ziehen",
+   "formen": "zog · hat gezogen"
+  },
+  {
+   "verb": "zumachen",
+   "formen": "machte zu · hat zugemacht"
+  }
+ ],
+ "285": [
+  {
+   "artikel": "der",
+   "wort": "Draht",
+   "plural": "Drähte"
+  },
+  {
+   "artikel": "die",
+   "wort": "Kollegin",
+   "plural": "Kolleginnen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Problem",
+   "plural": "Probleme"
+  },
+  {
+   "verb": "erkennen",
+   "formen": "erkannte · hat erkannt"
+  }
+ ],
+ "286": [
+  {
+   "artikel": "die",
+   "wort": "Altbauwohnung",
+   "plural": "Altbauwohnungen"
+  },
+  {
+   "verb": "sich abschminken",
+   "formen": "schminkte sich ab · hat sich abgeschminkt"
+  }
+ ],
+ "287": [
+  {
+   "artikel": "die",
+   "wort": "Wohnungssuche",
+   "plural": "Wohnungssuchen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Bewerbungsmappe",
+   "plural": "Bewerbungsmappen"
+  }
+ ],
+ "288": [
+  {
+   "artikel": "die",
+   "wort": "Tochter",
+   "plural": "Töchter"
+  },
+  {
+   "artikel": "der",
+   "wort": "Mund",
+   "plural": "Münder"
+  },
+  {
+   "artikel": "die",
+   "wort": "Antwort",
+   "plural": "Antworten"
+  },
+  {
+   "verb": "fallen",
+   "formen": "fiel · ist gefallen"
+  }
+ ],
+ "289": [
+  {
+   "artikel": "das",
+   "wort": "Zugticket",
+   "plural": "Zugtickets"
+  },
+  {
+   "verb": "tun",
+   "formen": "tat · hat getan"
+  },
+  {
+   "verb": "buchen",
+   "formen": "buchte · hat gebucht"
+  }
+ ],
+ "290": [
+  {
+   "artikel": "das",
+   "wort": "Angebot",
+   "plural": "Angebote"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kopf",
+   "plural": "Köpfe"
+  },
+  {
+   "verb": "lassen",
+   "formen": "ließ · hat gelassen"
+  }
+ ],
+ "291": [
+  {
+   "artikel": "der",
+   "wort": "Ton",
+   "plural": "Töne"
+  },
+  {
+   "verb": "machen",
+   "formen": "machte · hat gemacht"
+  }
+ ],
+ "292": [
+  {
+   "artikel": "der",
+   "wort": "Strich",
+   "plural": "Striche"
+  },
+  {
+   "artikel": "der",
+   "wort": "Umzug",
+   "plural": "Umzüge"
+  },
+  {
+   "verb": "sich lohnen",
+   "formen": "lohnte sich · hat sich gelohnt"
+  }
+ ],
+ "293": [
+  {
+   "artikel": "die",
+   "wort": "Fahrprüfung",
+   "plural": "Fahrprüfungen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Anhieb",
+   "plural": "–"
+  },
+  {
+   "verb": "bestehen",
+   "formen": "bestand · hat bestanden"
+  }
+ ],
+ "294": [
+  {
+   "artikel": "die",
+   "wort": "Münze",
+   "plural": "Münzen"
+  },
+  {
+   "verb": "nehmen",
+   "formen": "nahm · hat genommen"
+  }
+ ],
+ "295": [
+  {
+   "artikel": "die",
+   "wort": "Aussicht",
+   "plural": "Aussichten"
+  },
+  {
+   "artikel": "die",
+   "wort": "Dachterrasse",
+   "plural": "Dachterrassen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Bauklotz",
+   "plural": "Bauklötze"
+  },
+  {
+   "verb": "staunen",
+   "formen": "staunte · hat gestaunt"
+  }
+ ],
+ "296": [
+  {
+   "artikel": "das",
+   "wort": "Huhn",
+   "plural": "Hühner"
+  },
+  {
+   "verb": "lachen",
+   "formen": "lachte · hat gelacht"
+  }
+ ],
+ "297": [
+  {
+   "artikel": "der",
+   "wort": "Kommentar",
+   "plural": "Kommentare"
+  },
+  {
+   "artikel": "der",
+   "wort": "Hals",
+   "plural": "Hälse"
+  },
+  {
+   "verb": "bekommen",
+   "formen": "bekam · hat bekommen"
+  }
+ ],
+ "298": [
+  {
+   "artikel": "die",
+   "wort": "Frage",
+   "plural": "Fragen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Urlaubsplan",
+   "plural": "Urlaubspläne"
+  },
+  {
+   "artikel": "der",
+   "wort": "Nagel",
+   "plural": "Nägel"
+  },
+  {
+   "verb": "brennen",
+   "formen": "brannte · hat gebrannt"
+  }
+ ],
+ "299": [
+  {
+   "artikel": "die",
+   "wort": "Kneipe",
+   "plural": "Kneipen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Hose",
+   "plural": "Hosen"
+  }
+ ],
+ "300": [
+  {
+   "artikel": "der",
+   "wort": "Chor",
+   "plural": "Chöre"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kopf",
+   "plural": "Köpfe"
+  },
+  {
+   "verb": "verdrehen",
+   "formen": "verdrehte · hat verdreht"
+  }
+ ],
+ "301": [
+  {
+   "artikel": "der",
+   "wort": "Hut",
+   "plural": "Hüte"
+  },
+  {
+   "verb": "bringen",
+   "formen": "brachte · hat gebracht"
+  }
+ ],
+ "302": [
+  {
+   "artikel": "die",
+   "wort": "Leberwurst",
+   "plural": "Leberwürste"
+  },
+  {
+   "artikel": "der",
+   "wort": "Witz",
+   "plural": "Witze"
+  },
+  {
+   "verb": "spielen",
+   "formen": "spielte · hat gespielt"
+  },
+  {
+   "verb": "beleidigen",
+   "formen": "beleidigte · hat beleidigt"
+  }
+ ],
+ "303": [
+  {
+   "artikel": "die",
+   "wort": "Matheaufgabe",
+   "plural": "Matheaufgaben"
+  },
+  {
+   "verb": "lösen",
+   "formen": "löste · hat gelöst"
+  }
+ ],
+ "304": [
+  {
+   "artikel": "der",
+   "wort": "Marathon",
+   "plural": "Marathons"
+  },
+  {
+   "artikel": "das",
+   "wort": "Kaiserwetter",
+   "plural": "–"
+  }
+ ],
+ "305": [
+  {
+   "artikel": "das",
+   "wort": "Bouldern",
+   "plural": "–"
+  },
+  {
+   "verb": "probieren",
+   "formen": "probierte · hat probiert"
+  },
+  {
+   "verb": "gefallen",
+   "formen": "gefiel · hat gefallen"
+  }
+ ],
+ "306": [
+  {
+   "artikel": "das",
+   "wort": "Thema",
+   "plural": "Themen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Meeting",
+   "plural": "Meetings"
+  },
+  {
+   "artikel": "die",
+   "wort": "Sprache",
+   "plural": "Sprachen"
+  },
+  {
+   "verb": "bringen",
+   "formen": "brachte · hat gebracht"
+  }
+ ],
+ "307": [
+  {
+   "artikel": "die",
+   "wort": "Bühne",
+   "plural": "Bühnen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Fisch",
+   "plural": "Fische"
+  },
+  {
+   "verb": "sich fühlen",
+   "formen": "fühlte sich · hat sich gefühlt"
+  }
+ ],
+ "308": [
+  {
+   "artikel": "der",
+   "wort": "Daumen",
+   "plural": "Daumen"
+  },
+  {
+   "verb": "brauchen",
+   "formen": "brauchte · hat gebraucht"
+  }
+ ],
+ "309": [
+  {
+   "artikel": "der",
+   "wort": "Blick",
+   "plural": "Blicke"
+  },
+  {
+   "artikel": "die",
+   "wort": "Linie",
+   "plural": "Linien"
+  }
+ ],
+ "310": [
+  {
+   "artikel": "die",
+   "wort": "Wohnung",
+   "plural": "Wohnungen"
+  }
+ ],
+ "311": [
+  {
+   "artikel": "das",
+   "wort": "Büro",
+   "plural": "Büros"
+  },
+  {
+   "artikel": "der",
+   "wort": "Flur",
+   "plural": "Flure"
+  },
+  {
+   "artikel": "die",
+   "wort": "Mahlzeit",
+   "plural": "Mahlzeiten"
+  },
+  {
+   "verb": "treffen",
+   "formen": "traf · hat getroffen"
+  }
+ ],
+ "312": [
+  {
+   "artikel": "die",
+   "wort": "Nebenkostenabrechnung",
+   "plural": "Nebenkostenabrechnungen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Wolke",
+   "plural": "Wolken"
+  },
+  {
+   "verb": "fallen",
+   "formen": "fiel · ist gefallen"
+  }
+ ],
+ "313": [
+  {
+   "artikel": "das",
+   "wort": "Moos",
+   "plural": "–"
+  },
+  {
+   "verb": "mitkommen",
+   "formen": "kam mit · ist mitgekommen"
+  }
+ ],
+ "314": [
+  {
+   "artikel": "die",
+   "wort": "Wohnung",
+   "plural": "Wohnungen"
+  },
+  {
+   "verb": "wohnen",
+   "formen": "wohnte · hat gewohnt"
+  }
+ ],
+ "315": [
+  {
+   "artikel": "die",
+   "wort": "Angst",
+   "plural": "Ängste"
+  },
+  {
+   "artikel": "die",
+   "wort": "Prüfung",
+   "plural": "Prüfungen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Bohne",
+   "plural": "Bohnen"
+  }
+ ],
+ "316": [
+  {
+   "artikel": "der",
+   "wort": "Käsekuchen",
+   "plural": "Käsekuchen"
+  }
+ ],
+ "317": [
+  {
+   "artikel": "die",
+   "wort": "Vokabel",
+   "plural": "Vokabeln"
+  },
+  {
+   "artikel": "der",
+   "wort": "Fleiß",
+   "plural": "–"
+  },
+  {
+   "artikel": "der",
+   "wort": "Preis",
+   "plural": "Preise"
+  }
+ ],
+ "318": [
+  {
+   "artikel": "die",
+   "wort": "Miete",
+   "plural": "Mieten"
+  },
+  {
+   "artikel": "die",
+   "wort": "Hand",
+   "plural": "Hände"
+  },
+  {
+   "verb": "liegen",
+   "formen": "lag · hat gelegen"
+  },
+  {
+   "verb": "steigen",
+   "formen": "stieg · ist gestiegen"
+  }
+ ],
+ "319": [
+  {
+   "artikel": "der",
+   "wort": "Kommentar",
+   "plural": "Kommentare"
+  },
+  {
+   "artikel": "das",
+   "wort": "Öl",
+   "plural": "Öle"
+  },
+  {
+   "artikel": "das",
+   "wort": "Feuer",
+   "plural": "Feuer"
+  },
+  {
+   "verb": "gießen",
+   "formen": "goss · hat gegossen"
+  }
+ ],
+ "320": [
+  {
+   "artikel": "der",
+   "wort": "Makler",
+   "plural": "Makler"
+  },
+  {
+   "artikel": "der",
+   "wort": "Himmel",
+   "plural": "Himmel"
+  },
+  {
+   "verb": "versprechen",
+   "formen": "versprach · hat versprochen"
+  }
+ ],
+ "321": [
+  {
+   "artikel": "die",
+   "wort": "Verhandlung",
+   "plural": "Verhandlungen"
+  },
+  {
+   "artikel": "die",
+   "wort": "Kuh",
+   "plural": "Kühe"
+  },
+  {
+   "artikel": "das",
+   "wort": "Eis",
+   "plural": "–"
+  },
+  {
+   "verb": "holen",
+   "formen": "holte · hat geholt"
+  }
+ ],
+ "322": [
+  {
+   "verb": "sagen",
+   "formen": "sagte · hat gesagt"
+  },
+  {
+   "verb": "gehen",
+   "formen": "ging · ist gegangen"
+  }
+ ],
+ "323": [
+  {
+   "artikel": "das",
+   "wort": "Formular",
+   "plural": "Formulare"
+  },
+  {
+   "artikel": "der",
+   "wort": "Anwohnerparkausweis",
+   "plural": "Anwohnerparkausweise"
+  },
+  {
+   "artikel": "der",
+   "wort": "Amtsschimmel",
+   "plural": "–"
+  },
+  {
+   "verb": "wiehern",
+   "formen": "wieherte · hat gewiehert"
+  }
+ ],
+ "324": [
+  {
+   "artikel": "der",
+   "wort": "Umzug",
+   "plural": "Umzüge"
+  },
+  {
+   "artikel": "die",
+   "wort": "Steuer",
+   "plural": "Steuern"
+  },
+  {
+   "artikel": "die",
+   "wort": "Hand",
+   "plural": "Hände"
+  },
+  {
+   "verb": "waschen",
+   "formen": "wusch · hat gewaschen"
+  }
+ ],
+ "325": [
+  {
+   "artikel": "die",
+   "wort": "Röhre",
+   "plural": "Röhren"
+  },
+  {
+   "artikel": "das",
+   "wort": "Ticket",
+   "plural": "Tickets"
+  },
+  {
+   "verb": "gucken",
+   "formen": "guckte · hat geguckt"
+  }
+ ],
+ "326": [
+  {
+   "artikel": "die",
+   "wort": "Ausrede",
+   "plural": "Ausreden"
+  },
+  {
+   "artikel": "der",
+   "wort": "Stau",
+   "plural": "Staus"
+  },
+  {
+   "verb": "abkaufen",
+   "formen": "kaufte ab · hat abgekauft"
+  }
+ ],
+ "327": [
+  {
+   "artikel": "die",
+   "wort": "Reservierung",
+   "plural": "Reservierungen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Wunder",
+   "plural": "Wunder"
+  },
+  {
+   "verb": "erleben",
+   "formen": "erlebte · hat erlebt"
+  }
+ ],
+ "328": [
+  {
+   "artikel": "die",
+   "wort": "Arbeit",
+   "plural": "Arbeiten"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kopf",
+   "plural": "Köpfe"
+  },
+  {
+   "verb": "wachsen",
+   "formen": "wuchs · ist gewachsen"
+  }
+ ],
+ "329": [
+  {
+   "artikel": "der",
+   "wort": "Kinderwagen",
+   "plural": "Kinderwagen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Aufzug",
+   "plural": "Aufzüge"
+  },
+  {
+   "artikel": "das",
+   "wort": "Zuckerschlecken",
+   "plural": "–"
+  }
+ ],
+ "330": [
+  {
+   "artikel": "der",
+   "wort": "Bus",
+   "plural": "Busse"
+  },
+  {
+   "artikel": "der",
+   "wort": "Beinbruch",
+   "plural": "Beinbrüche"
+  },
+  {
+   "verb": "verpassen",
+   "formen": "verpasste · hat verpasst"
+  }
+ ],
+ "331": [
+  {
+   "artikel": "der",
+   "wort": "Fehler",
+   "plural": "Fehler"
+  },
+  {
+   "artikel": "das",
+   "wort": "Kind",
+   "plural": "Kinder"
+  },
+  {
+   "artikel": "das",
+   "wort": "Bad",
+   "plural": "Bäder"
+  },
+  {
+   "verb": "ausschütten",
+   "formen": "schüttete aus · hat ausgeschüttet"
+  },
+  {
+   "verb": "streichen",
+   "formen": "strich · hat gestrichen"
+  }
+ ],
+ "332": [
+  {
+   "artikel": "die",
+   "wort": "Renovierung",
+   "plural": "Renovierungen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Ding",
+   "plural": "Dinge"
+  },
+  {
+   "artikel": "die",
+   "wort": "Weile",
+   "plural": "–"
+  },
+  {
+   "verb": "dauern",
+   "formen": "dauerte · hat gedauert"
+  }
+ ],
+ "333": [
+  {
+   "artikel": "das",
+   "wort": "Handy",
+   "plural": "Handys"
+  },
+  {
+   "artikel": "der",
+   "wort": "Pump",
+   "plural": "–"
+  },
+  {
+   "verb": "kaufen",
+   "formen": "kaufte · hat gekauft"
+  }
+ ],
+ "334": [
+  {
+   "artikel": "das",
+   "wort": "Tattoo",
+   "plural": "Tattoos"
+  },
+  {
+   "artikel": "das",
+   "wort": "Schaf",
+   "plural": "Schafe"
+  },
+  {
+   "artikel": "die",
+   "wort": "Familie",
+   "plural": "Familien"
+  },
+  {
+   "verb": "gelten",
+   "formen": "galt · hat gegolten"
+  }
+ ],
+ "335": [
+  {
+   "artikel": "die",
+   "wort": "Party",
+   "plural": "Partys"
+  },
+  {
+   "artikel": "das",
+   "wort": "Auge",
+   "plural": "Augen"
+  },
+  {
+   "verb": "zutun",
+   "formen": "tat zu · hat zugetan"
+  }
+ ],
+ "336": [
+  {
+   "artikel": "die",
+   "wort": "Anmeldung",
+   "plural": "Anmeldungen"
+  },
+  {
+   "verb": "laufen",
+   "formen": "lief · ist gelaufen"
+  }
+ ],
+ "337": [
+  {
+   "artikel": "die",
+   "wort": "Abgabe",
+   "plural": "Abgaben"
+  },
+  {
+   "artikel": "das",
+   "wort": "Wasser",
+   "plural": "Wasser"
+  },
+  {
+   "artikel": "der",
+   "wort": "Hals",
+   "plural": "Hälse"
+  },
+  {
+   "verb": "stehen",
+   "formen": "stand · hat gestanden"
+  }
+ ],
+ "338": [
+  {
+   "artikel": "die",
+   "wort": "Wohnungssuche",
+   "plural": "Wohnungssuchen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Nerv",
+   "plural": "Nerven"
+  }
+ ],
+ "339": [
+  {
+   "artikel": "der",
+   "wort": "Vorschlag",
+   "plural": "Vorschläge"
+  },
+  {
+   "artikel": "die",
+   "wort": "Tür",
+   "plural": "Türen"
+  },
+  {
+   "verb": "einrennen",
+   "formen": "rannte ein · hat eingerannt"
+  }
+ ],
+ "340": [
+  {
+   "artikel": "die",
+   "wort": "Brille",
+   "plural": "Brillen"
+  },
+  {
+   "verb": "sehen",
+   "formen": "sah · hat gesehen"
+  },
+  {
+   "verb": "sich verlieben",
+   "formen": "verliebte sich · hat sich verliebt"
+  }
+ ],
+ "341": [
+  {
+   "artikel": "der",
+   "wort": "Laufpass",
+   "plural": "–"
+  },
+  {
+   "verb": "geben",
+   "formen": "gab · hat gegeben"
+  }
+ ],
+ "342": [
+  {
+   "artikel": "das",
+   "wort": "Meeting",
+   "plural": "Meetings"
+  },
+  {
+   "artikel": "der",
+   "wort": "Film",
+   "plural": "Filme"
+  },
+  {
+   "verb": "sich verkleiden",
+   "formen": "verkleidete sich · hat sich verkleidet"
+  }
+ ],
+ "343": [
+  {
+   "artikel": "der",
+   "wort": "Wein",
+   "plural": "Weine"
+  },
+  {
+   "verb": "predigen",
+   "formen": "predigte · hat gepredigt"
+  },
+  {
+   "verb": "naschen",
+   "formen": "naschte · hat genascht"
+  }
+ ],
+ "344": [
+  {
+   "artikel": "der",
+   "wort": "Fuß",
+   "plural": "Füße"
+  },
+  {
+   "verb": "fassen",
+   "formen": "fasste · hat gefasst"
+  }
+ ],
+ "345": [
+  {
+   "artikel": "das",
+   "wort": "Kleinvieh",
+   "plural": "–"
+  },
+  {
+   "artikel": "der",
+   "wort": "Mist",
+   "plural": "–"
+  },
+  {
+   "verb": "sparen",
+   "formen": "sparte · hat gespart"
+  }
+ ],
+ "346": [
+  {
+   "artikel": "der",
+   "wort": "Artikel",
+   "plural": "Artikel"
+  },
+  {
+   "artikel": "die",
+   "wort": "Eselsbrücke",
+   "plural": "Eselsbrücken"
+  },
+  {
+   "verb": "bauen",
+   "formen": "baute · hat gebaut"
+  }
+ ],
+ "347": [
+  {
+   "artikel": "der",
+   "wort": "Gang",
+   "plural": "Gänge"
+  },
+  {
+   "verb": "zurückschalten",
+   "formen": "schaltete zurück · hat zurückgeschaltet"
+  }
+ ],
+ "348": [
+  {
+   "artikel": "der",
+   "wort": "Zahn",
+   "plural": "Zähne"
+  },
+  {
+   "artikel": "der",
+   "wort": "Anfang",
+   "plural": "Anfänge"
+  },
+  {
+   "verb": "zulegen",
+   "formen": "legte zu · hat zugelegt"
+  }
+ ],
+ "349": [
+  {
+   "artikel": "die",
+   "wort": "Altbauwohnung",
+   "plural": "Altbauwohnungen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Arbeitsweg",
+   "plural": "Arbeitswege"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kauf",
+   "plural": "Käufe"
+  },
+  {
+   "verb": "nehmen",
+   "formen": "nahm · hat genommen"
+  }
+ ],
+ "350": [
+  {
+   "artikel": "das",
+   "wort": "Café",
+   "plural": "Cafés"
+  },
+  {
+   "artikel": "der",
+   "wort": "Zug",
+   "plural": "Züge"
+  },
+  {
+   "verb": "aufspringen",
+   "formen": "sprang auf · ist aufgesprungen"
+  }
+ ],
+ "351": [
+  {
+   "verb": "glauben",
+   "formen": "glaubte · hat geglaubt"
+  },
+  {
+   "verb": "joggen",
+   "formen": "joggte · ist gejoggt"
+  }
+ ],
+ "352": [
+  {
+   "artikel": "die",
+   "wort": "Sanierung",
+   "plural": "Sanierungen"
+  },
+  {
+   "artikel": "das",
+   "wort": "Fass",
+   "plural": "Fässer"
+  },
+  {
+   "artikel": "der",
+   "wort": "Boden",
+   "plural": "Böden"
+  }
+ ],
+ "353": [
+  {
+   "artikel": "die",
+   "wort": "Rolle",
+   "plural": "Rollen"
+  },
+  {
+   "verb": "spielen",
+   "formen": "spielte · hat gespielt"
+  }
+ ],
+ "354": [
+  {
+   "artikel": "das",
+   "wort": "Holz",
+   "plural": "Hölzer"
+  },
+  {
+   "verb": "klopfen",
+   "formen": "klopfte · hat geklopft"
+  }
+ ],
+ "355": [
+  {
+   "artikel": "die",
+   "wort": "Rede",
+   "plural": "Reden"
+  },
+  {
+   "artikel": "der",
+   "wort": "Sinn",
+   "plural": "Sinne"
+  },
+  {
+   "verb": "ziehen",
+   "formen": "zog · ist gezogen"
+  }
+ ],
+ "356": [
+  {
+   "artikel": "der",
+   "wort": "Makler",
+   "plural": "Makler"
+  },
+  {
+   "artikel": "der",
+   "wort": "Weg",
+   "plural": "Wege"
+  },
+  {
+   "verb": "trauen",
+   "formen": "traute · hat getraut"
+  }
+ ],
+ "357": [
+  {
+   "artikel": "die",
+   "wort": "Musik",
+   "plural": "–"
+  },
+  {
+   "verb": "werden",
+   "formen": "wurde · ist geworden"
+  }
+ ],
+ "358": [
+  {
+   "artikel": "die",
+   "wort": "S-Bahn",
+   "plural": "S-Bahnen"
+  },
+  {
+   "verb": "denken",
+   "formen": "dachte · hat gedacht"
+  }
+ ],
+ "359": [
+  {
+   "artikel": "die",
+   "wort": "Bewerbung",
+   "plural": "Bewerbungen"
+  },
+  {
+   "artikel": "der",
+   "wort": "Zug",
+   "plural": "Züge"
+  },
+  {
+   "verb": "abfahren",
+   "formen": "fuhr ab · ist abgefahren"
+  }
+ ],
+ "360": [
+  {
+   "artikel": "das",
+   "wort": "Leid",
+   "plural": "–"
+  },
+  {
+   "verb": "teilen",
+   "formen": "teilte · hat geteilt"
+  },
+  {
+   "verb": "erzählen",
+   "formen": "erzählte · hat erzählt"
+  }
+ ],
+ "361": [
+  {
+   "artikel": "die",
+   "wort": "Hausaufgabe",
+   "plural": "Hausaufgaben"
+  },
+  {
+   "artikel": "der",
+   "wort": "Bärendienst",
+   "plural": "Bärendienste"
+  },
+  {
+   "verb": "erweisen",
+   "formen": "erwies · hat erwiesen"
+  }
+ ],
+ "362": [
+  {
+   "artikel": "der",
+   "wort": "Mist",
+   "plural": "–"
+  },
+  {
+   "artikel": "der",
+   "wort": "Termin",
+   "plural": "Termine"
+  },
+  {
+   "artikel": "das",
+   "wort": "Finanzamt",
+   "plural": "Finanzämter"
+  },
+  {
+   "verb": "bauen",
+   "formen": "baute · hat gebaut"
+  }
+ ],
+ "363": [
+  {
+   "artikel": "die",
+   "wort": "Decke",
+   "plural": "Decken"
+  },
+  {
+   "artikel": "der",
+   "wort": "Kopf",
+   "plural": "Köpfe"
+  },
+  {
+   "verb": "fallen",
+   "formen": "fiel · ist gefallen"
+  }
+ ],
+ "364": [
+  {
+   "artikel": "der",
+   "wort": "Umzug",
+   "plural": "Umzüge"
+  },
+  {
+   "artikel": "das",
+   "wort": "Land",
+   "plural": "Länder"
+  },
+  {
+   "verb": "infrage kommen",
+   "formen": "kam infrage · ist infrage gekommen"
+  }
+ ]
+}

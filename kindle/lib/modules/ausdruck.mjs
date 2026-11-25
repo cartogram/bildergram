@@ -1,23 +1,33 @@
 // ============================================================
-// Module: Ausdruck des Tages (Phase 8)
-// One German expression a day (B2): the expression, its English
-// meaning, and an example sentence. Entries live in
-// kindle/data/ausdruecke.json and rotate in order, one per day.
+// Module: Ausdruck des Tages (Phase 8; a card since Phase 14)
+// One German expression a day (B2) as a card, everything centred: the
+// English meaning as the title, the expression, the example sentence,
+// and at the bottom the example's Wörter (nouns with article and plural,
+// verbs with their past forms) as a left-aligned stream. Entries live in
+// kindle/data/ausdruecke.json, their Wörter in kindle/data/woerter.json
+// (by index); they rotate in order, one per day.
 //
 // Cadence: daily (deterministic, no network needed).
-// Variants: "wide" (a band across the screen), "full" (whole screen),
-// "card" (a tile: the expression and meaning centred).
 // ============================================================
 
 import { readFileSync } from "node:fs";
-import { firstBaseline, INK, sectionTitle, text, TILE_INK, TILE_TYPE, TITLE_SPACE, TYPE, width } from "../design.mjs";
+import { firstBaseline, text, TILE_INK, TILE_TYPE, width } from "../design.mjs";
 import { wrap } from "../eink.mjs";
 
 export const id = "ausdruck";
 export const cadence = "daily";
 
+const readData = (file) => JSON.parse(readFileSync(new URL(`../../data/${file}`, import.meta.url), "utf8"));
+
+/** The 365 entries, each with its Wörter (kindle/data/woerter.json, by index) when there are any. */
 export function loadEntries() {
-  return JSON.parse(readFileSync(new URL("../../data/ausdruecke.json", import.meta.url), "utf8"));
+  let woerter = {};
+  try {
+    woerter = readData("woerter.json");
+  } catch {
+    // No Wörter yet: the cards show without them.
+  }
+  return readData("ausdruecke.json").map((e, i) => (woerter[i] ? { ...e, woerter: woerter[i] } : e));
 }
 
 /** The entry for a Berlin date (YYYY-MM-DD): days since 2026-01-01, modulo the list. */
@@ -27,73 +37,40 @@ export function entryFor(date, entries = loadEntries()) {
   return entries[((days % entries.length) + entries.length) % entries.length];
 }
 
-const quoted = (s) => `„${s}“`;
-
-/** Lines of `str` at `size`, stacked from baseline y; returns { svg, y } with y after the last line. */
-function block(str, x, y, size, maxW, maxLines, opts = {}) {
-  const style = { ...(opts.style ?? TYPE.body), size };
-  const lines = wrap(str, size * (style.weight === "bold" ? 1.07 : 1), maxW, maxLines);
-  const lead = Math.round(size * 1.18);
+/** Centred lines of `str` from baseline y; returns { svg, y } with y the last line's baseline. */
+function block(str, y, style, maxW, maxLines) {
+  const lines = wrap(str, style.size * (style.weight === "bold" ? 1.07 : 1), maxW, maxLines);
+  const lead = Math.round(style.size * 1.18);
   let svg = "";
   lines.forEach((l, i) => {
-    svg += text(opts.center ? x + maxW / 2 : x, y + i * lead, l, style, opts.center ? { anchor: "middle" } : {});
+    svg += text(maxW / 2, y + i * lead, l, style, { anchor: "middle" });
   });
   return { svg, y: y + (lines.length - 1) * lead };
 }
 
-/** The text stack at scale `k` (1 = design size); y values relative to the first baseline. */
-function stack(box, entry, full, k, quote = true) {
-  const S = full
-    ? { head: TYPE.label.size, mean: TYPE.caption.size, ex: TYPE.body.size, headLines: 3, gapMean: 52, gapEx: 70 }
-    : { head: TYPE.label.size, mean: TYPE.caption.size, ex: TYPE.body.size, headLines: 2, gapMean: 52, gapEx: 70 };
-  const r = (n) => Math.round(n * k);
-  // A card (Phase 14): everything centred; the English meaning is the
-  // card's title, then the expression (no quotes) and the example under it.
-  const card = box.variant === "card";
-  if (card) {
-    const title = block(entry.bedeutung, 0, 0, r(TILE_TYPE.label.size), box.w, 2, { style: TILE_TYPE.label, center: true });
-    // No quotes on a card; the example follows at its own line spacing.
-    const head = block(entry.ausdruck, 0, title.y + r(64), r(S.head), box.w, S.headLines, { style: TYPE.strong, center: true });
-    const ex = block(entry.beispiel, 0, head.y + r(Math.round(S.ex * 1.18)), r(S.ex), box.w, 4, { center: true });
-    return { svg: title.svg + head.svg + ex.svg, ascent: r(TILE_TYPE.label.size * 0.8), bottom: ex.y + r(S.ex * 0.3), headSize: r(TILE_TYPE.label.size) };
-  }
-  const head = block(quote ? quoted(entry.ausdruck) : entry.ausdruck, 0, 0, r(S.head), box.w, S.headLines, { style: TYPE.strong, center: card });
-  const mean = block(entry.bedeutung, 0, head.y + r(S.gapMean), r(S.mean), box.w, 2, { style: TYPE.caption, center: card });
-  const exY = mean.y + r(card ? 104 : S.gapEx);
-  // Up to four example lines where the column is narrow (half the screen).
-  const ex = block(entry.beispiel, 0, exY, r(S.ex), box.w, box.w < 900 ? 4 : full ? 3 : 2, { center: card });
-  let svg = head.svg + mean.svg + ex.svg;
-
-  return { svg, ascent: r(S.head * 0.8), bottom: ex.y + r(S.ex * 0.3), headSize: r(S.head) };
+/** The card's text at scale `k` (1 = the type scale); baselines from the first line (0). */
+function stack(box, entry, k) {
+  const at = (style) => ({ ...style, size: Math.round(style.size * k) });
+  const title = block(entry.bedeutung, 0, at(TILE_TYPE.label), box.w, 2);
+  const head = block(entry.ausdruck, title.y + Math.round(56 * k), at(TILE_TYPE.heading), box.w, 3);
+  const body = at(TILE_TYPE.body);
+  const ex = block(entry.beispiel, head.y + Math.round(body.size * 1.18), body, box.w, 4);
+  return { svg: title.svg + head.svg + ex.svg, bottom: ex.y + Math.round(body.size * 0.3), first: firstBaseline(at(TILE_TYPE.label).size) };
 }
 
 /**
- * `title` and `quote` let other "… des Tages" modules (praeposition)
- * reuse this layout: { ausdruck, bedeutung, beispiel } entries.
+ * The card for `entry` ({ ausdruck, bedeutung, beispiel, woerter? }); the
+ * text shrinks (down to 80 %) until it fits above the Wörter.
  */
-export function render(box, entry, { title = "Ausdruck des Tages", quote = true } = {}) {
-  const full = box.variant === "full";
-  const card = box.variant === "card";
-  const top = 72; // below the module label
-
-  // A card with words (Phase 14, mock data so far): they sit at the bottom,
-  // the stack fits above them.
-  const words = card && entry.woerter?.length ? woerter(box, entry.woerter) : null;
-  const room = box.h - (words ? words.h + 28 : 0);
-
-  // Full screen: centre the stack under the label. A band: start just below
-  // the label, shrinking the text until long entries fit the box.
-  // A card's first line starts at FIRST_CAP like every tile's.
-  const startAt = (st) => (card ? TITLE_SPACE + firstBaseline(st.headSize) : 112);
+export function render(box, entry) {
+  const words = entry.woerter?.length ? woerter(box, entry.woerter) : null;
+  const room = box.h - (words ? words.h + 24 : 0);
   let s;
-  for (const k of full ? [1] : [1, 0.9, 0.82, 0.75]) {
-    s = stack(box, entry, full, k, quote);
-    if (full || startAt(s) + s.bottom <= room) break;
+  for (const k of [1, 0.92, 0.86, 0.8]) {
+    s = stack(box, entry, k);
+    if (s.first + s.bottom <= room) break;
   }
-  const first = card ? startAt(s) : full
-    ? top + Math.max(0, Math.round((box.h - top - s.bottom - s.ascent) / 2)) + s.ascent
-    : 112;
-  return sectionTitle(title) + `<g transform="translate(0 ${first})">${s.svg}</g>` + (words?.svg ?? "");
+  return `<g transform="translate(0 ${s.first})">${s.svg}</g>` + (words?.svg ?? "");
 }
 
 /**
@@ -105,15 +82,15 @@ export function render(box, entry, { title = "Ausdruck des Tages", quote = true 
  */
 const GROUP_GAP = 36;
 function woerter(box, list) {
-  const size = 26;
-  const lead = 38;
+  const size = TILE_TYPE.small.size;
+  const lead = 34;
   const bold = { size, weight: "bold" };
   const plain = { size };
   // Each group as runs of [text, style]; runs within a group are a space apart.
   const groups = list.map((w) =>
     w.verb
-      ? [[w.verb, bold], [w.formen, { size, ink: INK.secondary }]]
-      : [[w.artikel, bold], [w.wort, plain], [w.plural, { size, ink: INK.tertiary }]],
+      ? [[w.verb, bold], [w.formen, { size, ink: TILE_INK.muted }]]
+      : [[w.artikel, bold], [w.wort, plain], [w.plural, { size, ink: TILE_INK.faint }]],
   );
   const space = Math.ceil(width(" ", plain));
   const groupW = (g) => g.reduce((sum, [t, st]) => sum + Math.ceil(width(t, st)), 0) + (g.length - 1) * space;

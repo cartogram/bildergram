@@ -1,9 +1,8 @@
 // ============================================================
 // kindle/samples.mjs — sample data for design review (Phase 14),
 // shared by the gallery and the design system page: a cinema
-// listing (yorck.de drops screenings once they start), an Ausdruck
-// with mock Wörter (the real ones are not written yet) and two
-// people's exercise minutes.
+// listing (yorck.de drops screenings once they start) and two people's
+// exercise minutes.
 // ============================================================
 
 import { parseFitness, weekOf } from "./lib/modules/fitness.mjs";
@@ -20,31 +19,6 @@ export const sampleProgramme = (date) => ({
     sessions: rows.map(([time, title]) => ({ date, time, title, film: null, formats: [] })),
   })),
 });
-
-/** An Ausdruck with mock Wörter. */
-export const mockAusdruck = {
-  ausdruck: "sein blaues Wunder erleben",
-  bedeutung: "to be in for a nasty surprise",
-  beispiel: "Wer an Silvester ohne Reservierung kommt, wird sein blaues Wunder erleben.",
-  woerter: [
-    { artikel: "das", wort: "Silvester", plural: "–" },
-    { artikel: "die", wort: "Reservierung", plural: "-en" },
-    { artikel: "das", wort: "Wunder", plural: "–" },
-    { verb: "erleben", formen: "erlebte · hat erlebt" },
-  ],
-};
-
-/** A second Ausdruck with mock Wörter: a plural with an umlaut (written out) and a strong verb. */
-export const mockAusdruck2 = {
-  ausdruck: "etwas auf die lange Bank schieben",
-  bedeutung: "to put something off",
-  beispiel: "Die Steuererklärung habe ich schon viel zu lange auf die lange Bank geschoben.",
-  woerter: [
-    { artikel: "die", wort: "Steuererklärung", plural: "-en" },
-    { artikel: "die", wort: "Bank", plural: "Bänke" },
-    { verb: "schieben", formen: "schob · hat geschoben" },
-  ],
-};
 
 /** Matt and Fiona's minutes for the week of `date` (up to that day), synced at `syncedAt` (ISO). */
 export function sampleFitness(date, syncedAt) {
