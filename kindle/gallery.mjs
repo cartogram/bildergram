@@ -14,6 +14,8 @@ import { fetchProgramme } from "./lib/kino.mjs";
 import { entryFor, loadEntries as loadAusdruecke } from "./lib/modules/ausdruck.mjs";
 import { parseFitness, weekOf } from "./lib/modules/fitness.mjs";
 import { entryFor as praepositionFor } from "./lib/modules/praeposition.mjs";
+import { entryFor as wortFor } from "./lib/modules/wort.mjs";
+import { moonState } from "./lib/modules/mond.mjs";
 import { fetchWeather } from "./lib/modules/wetter.mjs";
 import { berlinParts, berlinToUtc, buildSchedule, tempelhofState } from "./lib/schedule.mjs";
 import { SCREENS, boxSvg, moduleBox, moduleSvg, screenSvg, tileAt } from "./lib/screens.mjs";
@@ -41,6 +43,9 @@ const base = {
   kino: { programme, from: "18:00", updated: `${deTime(programme.fetchedAt)}` },
   ausdruck: entryFor(date),
   praeposition: praepositionFor(date),
+  wort: wortFor(date),
+  fondfolio: { count: 7 },
+  mond: moonState(now),
   tempelhof: tempelhofState(events, now),
 };
 

@@ -46,11 +46,11 @@ export const cell = (col, row, cols = 1, rows = 1) => ({
  * Tile sizes (Phase 16; spans for the 3 × 3 grid, Phase 17), named by
  * span: small 1 × 1 (the date, the Feld, the small Ausdruck), medium
  * 1 × 2 (Wetter, Kino, Bewegung), tall 1 × 3 (a full column: Kino),
- * large 2 × 2. A tile
+ * wide 2 × 1 (Mond), large 2 × 2. A tile
  * gets its size from its span (screens.mjs T()); each module lists the
  * sizes it draws (`sizes`), so a layout can't put a card where it won't fit.
  */
-export const TILE_SIZES = { small: [1, 1], medium: [1, 2], tall: [1, 3], large: [2, 2] };
+export const TILE_SIZES = { small: [1, 1], medium: [1, 2], tall: [1, 3], wide: [2, 1], large: [2, 2] };
 export const tileSize = (cols, rows) => Object.keys(TILE_SIZES).find((k) => TILE_SIZES[k][0] === cols && TILE_SIZES[k][1] === rows);
 
 /**
@@ -64,6 +64,8 @@ export const firstBaseline = (size) => FIRST_CAP + Math.round(size * 0.716);
 export const TILE_TYPE = {
   /** The one big figure on a tile: the temperature, the day of the month. */
   display: { size: 104, weight: "bold" },
+  /** Figures side by side in a tile's columns (Phase 17): the Zeit card's day and week. */
+  figure: { size: 64, weight: "bold" },
   /** The body size in bold: the Ausdruck, the month; its lines `lead` apart like body's. */
   heading: { size: 36, weight: "bold", lead: 48 },
   /** Sentences (the cards' examples) and the large Kino listing (time bold), lines and rows `lead` apart. */
@@ -92,10 +94,13 @@ export const TILE_INK_DARK = { ink: "#ffffff", muted: "#aaaaaa", faint: "#777777
  * A pill: short bold text, light on a dark rounded bar (Phase 14: the
  * Feld's times, the cinemas, the battery). The text's baseline is at y;
  * `right` puts the pill's right edge at x. `fill`/`ink` invert it on a
- * dark tile. Returns { svg, x, y, w, h } (the pill's rect).
+ * dark tile; `outline` (Phase 17: the Kino's language versions) draws it
+ * the other way round, dark text on paper inside an inset dark border.
+ * Returns { svg, x, y, w, h } (the pill's rect).
  */
 export const PILL = { size: 24, h: 32, padX: 10, above: 23 };
-export function pill(x, y, str, { right = false, fill = INK.primary, ink = INK.paper, size = PILL.size } = {}) {
+export function pill(x, y, str, { right = false, fill = INK.primary, ink = INK.paper, size = PILL.size, outline = false } = {}) {
+  if (outline) [fill, ink] = [ink, fill];
   const k = size / PILL.size;
   const h = Math.round(PILL.h * k);
   const padX = Math.round(PILL.padX * k);
@@ -103,7 +108,12 @@ export function pill(x, y, str, { right = false, fill = INK.primary, ink = INK.p
   const w = Math.ceil(exactWidth(str, style)) + 2 * padX;
   const left = right ? x - w : x;
   const top = y - Math.round(PILL.above * k);
-  const svg = `<rect x="${left}" y="${top}" width="${w}" height="${h}" rx="${h / 2}" fill="${fill}"/>` + text(left + padX, y, str, style);
+  // The outline's border sits inside the pill's rect, so outlined and filled pills are the same size.
+  const t = RULE.hair;
+  const shape = outline
+    ? `<rect x="${left + t / 2}" y="${top + t / 2}" width="${w - t}" height="${h - t}" rx="${(h - t) / 2}" fill="${fill}" stroke="${ink}" stroke-width="${t}"/>`
+    : `<rect x="${left}" y="${top}" width="${w}" height="${h}" rx="${h / 2}" fill="${fill}"/>`;
+  const svg = shape + text(left + padX, y, str, style);
   return { svg, x: left, y: top, w, h };
 }
 

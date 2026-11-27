@@ -9,6 +9,7 @@
 import { handleDesignAdmin } from "./routes/design";
 import { handleFitnessAdmin, handleFitnessPhone } from "./routes/fitness";
 import { handleKindleAdmin, handleKindleDevice } from "./routes/kindle";
+import { handlePhotoForRenderer, handlePhotosAdmin } from "./routes/photos";
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -25,6 +26,12 @@ export default {
     }
     if (path === "/api/admin/fitness") {
       return handleFitnessAdmin(request, env);
+    }
+    if (path === "/api/admin/photos" || path.startsWith("/api/admin/photos/")) {
+      return handlePhotosAdmin(request, env);
+    }
+    if (path.startsWith("/api/photos/")) {
+      return handlePhotoForRenderer(request, env);
     }
     if (path === "/api/admin/design" || path.startsWith("/api/admin/design/")) {
       return handleDesignAdmin(request, env);

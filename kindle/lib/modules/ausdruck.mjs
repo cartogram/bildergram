@@ -34,9 +34,9 @@ export function loadEntries() {
 }
 
 /** The entry for a Berlin date (YYYY-MM-DD): days since 2026-01-01, modulo the list. */
-export function entryFor(date, entries = loadEntries()) {
+export function entryFor(date, entries = loadEntries(), offset = 0) {
   const [y, m, d] = date.split("-").map(Number);
-  const days = Math.floor((Date.UTC(y, m - 1, d) - Date.UTC(2026, 0, 1)) / 86_400_000);
+  const days = Math.floor((Date.UTC(y, m - 1, d) - Date.UTC(2026, 0, 1)) / 86_400_000) + offset;
   return entries[((days % entries.length) + entries.length) % entries.length];
 }
 

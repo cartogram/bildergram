@@ -16,12 +16,17 @@ import { svgOpen, W, H } from "./eink.mjs";
 import * as ausdruck from "./modules/ausdruck.mjs";
 import * as datum from "./modules/datum.mjs";
 import * as fitness from "./modules/fitness.mjs";
+import * as fondfolio from "./modules/fondfolio.mjs";
+import * as foto from "./modules/foto.mjs";
 import * as kino from "./modules/kino.mjs";
+import * as mond from "./modules/mond.mjs";
 import * as praeposition from "./modules/praeposition.mjs";
 import * as tempelhof from "./modules/tempelhof.mjs";
 import * as wetter from "./modules/wetter.mjs";
+import * as wort from "./modules/wort.mjs";
+import * as zeit from "./modules/zeit.mjs";
 
-export const MODULES = { ausdruck, datum, fitness, kino, praeposition, tempelhof, wetter };
+export const MODULES = { ausdruck, datum, fitness, fondfolio, foto, kino, mond, praeposition, tempelhof, wetter, wort, zeit };
 
 /**
  * A tile at cell (col, row) spanning cols × rows: `tile` is its rect (on
@@ -61,17 +66,22 @@ export const SCREENS = {
     name: "Matt",
     boxes: [
       DATE, FELD,
-      T("kino", [1, 0, 1, 2], { tone: "light" }),
+      // A photo for now; the Zeit card (day and week of the year) comes back later.
+      T("foto", [0, 2], { tone: "bleed" }),
+      T("kino", [1, 0, 1, 3], { tone: "light" }),
       T("fitness", [2, 0, 1, 2], { variant: "person", person: "Matt", tone: "dark" }),
+      T("wort", [2, 2], { tone: "light", offset: 183 }),
     ],
   },
   fiona: {
     name: "Fiona",
     boxes: [
       DATE,
-      T("ausdruck", [0, 1], { tone: "light" }),
+      T("wort", [0, 1], { tone: "light" }),
       T("wetter", [1, 0, 1, 2], { variant: "mixed", tone: "fill" }),
       T("fitness", [2, 0, 1, 2], { variant: "person", person: "Fiona", tone: "dark" }),
+      T("fondfolio", [2, 2], { tone: "light" }),
+      T("mond", [0, 2, 2, 1], { tone: "light" }),
     ],
   },
 };
@@ -79,13 +89,13 @@ export const SCREENS = {
 /** Modules the Kindle draws itself (prebuilt, updated every minute); the rest come from the server. */
 export const DEVICE_MODULES = new Set(["tempelhof"]);
 
-const LABELS = { datum: "Datum", wetter: "Wetter", kino: "Im Kino", ausdruck: "Ausdruck des Tages", tempelhof: "Tempelhofer Feld", fitness: "Bewegung", praeposition: "Präposition des Tages" };
+const LABELS = { datum: "Datum", wetter: "Wetter", kino: "Im Kino", ausdruck: "Ausdruck des Tages", tempelhof: "Tempelhofer Feld", fitness: "Bewegung", praeposition: "Präposition des Tages", wort: "Wort des Tages", fondfolio: "Fondfolio", mond: "Mond", zeit: "Zeit", foto: "Foto" };
 
 /** Screens whose content goes stale within the hour (weather, fitness) — the Kindle checks in on the interval. */
 export const HOURLY_SCREENS = Object.keys(SCREENS).filter((id) => SCREENS[id].boxes.some((b) => MODULES[b.module].cadence === "hourly"));
 
 /** The box a module lays out in: its content box, origin at the top left. The build uses it too. */
-export const moduleBox = (b) => ({ w: b.w, h: b.h, size: b.size, variant: b.variant, tone: b.tone, person: b.person, bleed: b.bleed ?? 0 });
+export const moduleBox = (b) => ({ w: b.w, h: b.h, size: b.size, variant: b.variant, tone: b.tone, person: b.person, born: b.born, bleed: b.bleed ?? 0 });
 
 /** The Kindle-drawn boxes of a screen. */
 export const deviceBoxes = (id) => SCREENS[id].boxes.filter((b) => DEVICE_MODULES.has(b.module));
@@ -110,6 +120,12 @@ export function moduleSvg(b, data, mode = "full") {
   if (b.module === "wetter") return wetter.render(box, data.wetter);
   if (b.module === "ausdruck") return ausdruck.render(box, data.ausdruck);
   if (b.module === "praeposition") return praeposition.render(box, data.praeposition);
+  // A tile with an `offset` reads its own word (days further along the list); otherwise the screen's.
+  if (b.module === "foto") return foto.render(box, data.foto);
+  if (b.module === "zeit") return zeit.render(box, { date: data.date });
+  if (b.module === "mond") return mond.render(box, data.mond);
+  if (b.module === "fondfolio") return fondfolio.render(box, data.fondfolio);
+  if (b.module === "wort") return wort.render(box, b.offset && data.date ? wort.entryFor(data.date, undefined, b.offset) : data.wort);
   if (b.module === "fitness") return fitness.render(box, data.fitness, { date: data.date });
   if (b.module === "kino") return kino.render(box, data.kino.programme, { date: data.kino.date ?? data.date, day: data.kino.day ?? "heute", from: data.kino.from });
   return "";
@@ -121,7 +137,7 @@ export const tileAt = (module, rect, opts) => T(module, rect, opts);
 /**
  * Render a screen to SVG. `data` supplies each module's input:
  * { date, battery, tempelhof: state, wetter: weather, kino: { programme, from, updated },
- *   ausdruck: entry, praeposition: entry, fitness: { people } }
+ *   ausdruck: entry, praeposition: entry, wort: entry, fitness: { people } }
  *
  * mode "full"     — everything (gallery, admin preview)
  *      "base"     — Kindle-drawn tiles left blank (the server's image for the Kindle)

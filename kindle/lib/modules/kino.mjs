@@ -1,20 +1,20 @@
 // ============================================================
 // Module: Im Kino (Phase 8; a tile since Phase 14)
 // The evening's screenings at the chosen Yorck cinemas in one list by
-// time: the time (bold), the title, the cinema's letter in a circle; as
+// time, latest first (Phase 17): the time (bold), the title, the cinema's letter in a circle; as
 // many as fit, then "+ n weitere". From 22:00 Berlin time the tile shows
 // tomorrow's listing ("morgen ab 18:00" — render.mjs kinoDay).
 // Medium (Phase 16) and tall (a full column, Phase 17) say just "heute"
 // or "morgen" in the header. Medium has one line per screening: the time
 // (label), the title at 28 regular in faint ink, cut just short of the
 // cinema's letter. Tall has two: the time with its language version
-// (OmU, OmeU, OV …) and the letter, then the title on its own line.
+// and, at the right, the language versions (OmU, OmeU, OV …) in outlined pills and the letter, then the title on its own line.
 //
 // Cadence: daily (rendered at check-in for the slot's date).
 // Data: kindle/lib/kino.mjs → fetchProgramme(slugs).
 // ============================================================
 
-import { CIRCLE_LABEL, circleLabel, clipText, exactWidth, firstBaseline, STAT, text, TILE_INK, TILE_TYPE, width } from "../design.mjs";
+import { CIRCLE_LABEL, circleLabel, clipText, exactWidth, firstBaseline, pill, STAT, text, TILE_INK, TILE_TYPE, width } from "../design.mjs";
 import { wrap } from "../eink.mjs";
 
 export const id = "kino";
@@ -33,7 +33,8 @@ const MORE = 40;
 export function render(box, programme, { date, day = "heute", from = "18:00" } = {}) {
   const rows = programme.cinemas
     .flatMap((c) => c.sessions.filter((s) => s.date === date && s.time >= from).map((s) => ({ ...s, cinema: c.name })))
-    .sort((a, b) => a.time.localeCompare(b.time) || a.title.localeCompare(b.title));
+    // Latest first (Phase 17), then by title.
+    .sort((a, b) => b.time.localeCompare(a.time) || a.title.localeCompare(b.title));
   const medium = box.size !== "large";
   const y1 = firstBaseline(TILE_TYPE.label.size);
   let svg = text(0, y1, "Im Kino", TILE_TYPE.label) + text(box.w, y1, medium ? day : `${day} ab ${from}`, SMALL, { anchor: "end" });
@@ -103,7 +104,7 @@ function rowsMedium(box, rows, letters) {
  * carry series names, such as "Festival" or "Creepy C", which are left out).
  */
 const VERSIONS = ["OV", "OmU", "OmeU", "OmdU", "DF"];
-const versions = (r) => (r.formats ?? []).filter((f) => VERSIONS.includes(f)).join(" · ");
+const versions = (r) => (r.formats ?? []).filter((f) => VERSIONS.includes(f));
 
 /** Tall: a screening's title sits TALL_DROP below its time; screenings are TALL_LEAD apart. */
 const TALL_DROP = 34;
@@ -111,8 +112,8 @@ const TALL_LEAD = 84;
 
 /**
  * Tall (a full column, Phase 17): two lines per screening — the time in
- * the label style with its language version beside it (small, muted) and
- * the cinema's letter at the right, then the title on its own line
+ * the label style, then at the right its language versions in outlined
+ * pills and the cinema's letter (all on the time's baseline), then the title on its own line
  * (28 regular, faint, cut with clipText at the column's width).
  */
 function rowsTall(box, rows, letters) {
@@ -124,12 +125,20 @@ function rowsTall(box, rows, letters) {
   let fit = fitting(box.h);
   if (fit < rows.length) fit = fitting(box.h - MORE);
   let svg = "";
+  // The right of each time line: its language versions in outlined pills, then the cinema's letter
+  // at the right edge (one column, so the letters line up row to row); the pills end just before it.
+  const letterX = box.w - CIRCLE_LABEL.d / 2;
   rows.slice(0, fit).forEach((r, i) => {
     const y = ROWS_TOP + i * TALL_LEAD;
+    // The time, the pills and the letter share one baseline, y.
     svg += text(0, y, r.time, time);
-    const v = versions(r);
-    if (v) svg += text(timeW, y, v, SMALL);
-    svg += circleLabel(box.w - CIRCLE_LABEL.d / 2, y - Math.round(time.size * 0.36), letters.get(r.cinema));
+    svg += circleLabel(letterX, y - Math.round(CIRCLE_LABEL.size * 0.36), letters.get(r.cinema));
+    let px = box.w - CIRCLE_LABEL.d - 6;
+    for (const v of versions(r).reverse()) {
+      const p = pill(px, y, v, { outline: true, right: true });
+      svg += p.svg;
+      px = p.x - 6;
+    }
     svg += clipText(0, y + TALL_DROP, r.title, title, box.w);
   });
   if (fit < rows.length) svg += text(0, box.h, `+ ${rows.length - fit} weitere`, SMALL);

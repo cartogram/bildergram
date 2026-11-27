@@ -528,11 +528,13 @@ interface DesignInfo {
 
 let designUrls: string[] = [];
 
-/** The top-level views: the Kindles (default) and the Design. */
-function navHtml(active: "kindles" | "design"): string {
-  const link = (href: string, view: "kindles" | "design", label: string) =>
+type View = "kindles" | "fotos" | "design";
+
+/** The top-level views: the Kindles (default), the photos and the Design. */
+function navHtml(active: View): string {
+  const link = (href: string, view: View, label: string) =>
     `<a href="${href}" class="view${active === view ? " active" : ""}"${active === view ? ' aria-current="page"' : ""}>${label}</a>`;
-  return `<nav class="views" aria-label="View">${link("#", "kindles", "Kindles")}${link("#design", "design", "Design")}</nav>`;
+  return `<nav class="views" aria-label="View">${link("#", "kindles", "Kindles")}${link("#fotos", "fotos", "Photos")}${link("#design", "design", "Design")}</nav>`;
 }
 
 const table = (head: string[], rows: string[][]) =>
@@ -638,9 +640,191 @@ async function loadDesign(): Promise<void> {
   }
 }
 
+// ------------------------------------------------------------------
+// Photos (#fotos, Phase 17)
+// ------------------------------------------------------------------
+
+interface Photo {
+  id: string;
+  name: string;
+  added: string;
+}
+
+/** The Foto tile's pixels on the Paperwhite 3 (a small tile, 1 × 1 on the 3 × 3 grid). */
+const PHOTO_W = 468;
+const PHOTO_H = 344;
+
+let photoUrls: string[] = [];
+let photoSource: HTMLImageElement | null = null;
+
+/**
+ * The photo as the Kindle shows it, drawn into `canvas`: cropped to the
+ * tile (`fx`/`fy` place the crop, 0–1), grayscale with a little contrast,
+ * then Floyd–Steinberg dithered to the panel's 16 grays (multiples of 17),
+ * so soft backgrounds don't band.
+ */
+function preparePhoto(img: HTMLImageElement, canvas: HTMLCanvasElement, fx: number, fy: number): void {
+  canvas.width = PHOTO_W;
+  canvas.height = PHOTO_H;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+  const scale = Math.max(PHOTO_W / img.naturalWidth, PHOTO_H / img.naturalHeight);
+  const sw = PHOTO_W / scale, sh = PHOTO_H / scale;
+  const sx = (img.naturalWidth - sw) * fx, sy = (img.naturalHeight - sh) * fy;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, PHOTO_W, PHOTO_H);
+  const im = ctx.getImageData(0, 0, PHOTO_W, PHOTO_H);
+  const d = im.data;
+  const px = new Float32Array(PHOTO_W * PHOTO_H);
+  for (let i = 0; i < px.length; i++) {
+    const y = 0.299 * d[4 * i] + 0.587 * d[4 * i + 1] + 0.114 * d[4 * i + 2];
+    px[i] = 1.12 * y - 12;
+  }
+  for (let y = 0; y < PHOTO_H; y++) {
+    for (let x = 0; x < PHOTO_W; x++) {
+      const i = y * PHOTO_W + x;
+      const q = Math.max(0, Math.min(255, Math.round(px[i] / 17) * 17));
+      const e = px[i] - q;
+      px[i] = q;
+      if (x + 1 < PHOTO_W) px[i + 1] += (e * 7) / 16;
+      if (y + 1 < PHOTO_H) {
+        if (x > 0) px[i + PHOTO_W - 1] += (e * 3) / 16;
+        px[i + PHOTO_W] += (e * 5) / 16;
+        if (x + 1 < PHOTO_W) px[i + PHOTO_W + 1] += e / 16;
+      }
+    }
+  }
+  for (let i = 0; i < px.length; i++) {
+    d[4 * i] = d[4 * i + 1] = d[4 * i + 2] = px[i];
+    d[4 * i + 3] = 255;
+  }
+  ctx.putImageData(im, 0, 0);
+}
+
+function photosHtml(photos: Photo[]): string {
+  return `
+    <section class="card">
+      <h2>Add a photo</h2>
+      <p class="muted">Shown in the Foto tile on Matt's screen, one photo a day. It's prepared here as the Kindle will show it: cropped to the tile (${PHOTO_W} × ${PHOTO_H}), grayscale and dithered to the 16 grays.</p>
+      <label class="inline">Photo <input type="file" id="photo-file" accept="image/*"></label>
+      <div id="photo-edit" hidden>
+        <canvas id="photo-canvas" class="photo-preview" width="${PHOTO_W}" height="${PHOTO_H}"></canvas>
+        <label class="inline">Crop left–right <input type="range" id="photo-x" min="0" max="100" value="50"></label>
+        <label class="inline">Crop top–bottom <input type="range" id="photo-y" min="0" max="100" value="30"></label>
+        <button type="button" id="photo-upload">Upload</button>
+        <span class="muted" id="photo-status"></span>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Photos <span class="muted">(${photos.length})</span></h2>
+      ${photos.length ? `<ul class="photos">${photos
+        .map((p) => `<li><div class="photo-thumb" id="thumb-${escapeHtml(p.id)}"></div>
+          <span>${escapeHtml(p.name || "Photo")}</span> <span class="muted">${escapeHtml(berlinTime(p.added))}</span>
+          <button type="button" class="ghost" data-delete="${escapeHtml(p.id)}">Delete</button></li>`)
+        .join("")}</ul>` : `<p class="muted">No photos yet: the tile shows its placeholder.</p>`}
+    </section>`;
+}
+
+async function loadFotos(): Promise<void> {
+  if (!sessionToken) {
+    renderLogin();
+    return;
+  }
+  for (const u of photoUrls) URL.revokeObjectURL(u);
+  photoUrls = [];
+  photoSource = null;
+  app.innerHTML = `
+    <main>
+      <header class="top">
+        <h1>Kindle dashboard</h1>
+        ${navHtml("fotos")}
+        <button type="button" class="ghost" id="logout">Forget token</button>
+      </header>
+      <div id="fotos"><p class="muted">Loading the photos…</p></div>
+    </main>`;
+  document.getElementById("logout")!.addEventListener("click", () => {
+    setToken(null);
+    renderLogin();
+  });
+  const box = document.getElementById("fotos")!;
+  let photos: Photo[];
+  try {
+    const res = await api("/api/admin/photos");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    photos = (await res.json()) as Photo[];
+  } catch (err) {
+    if ((err as Error).message !== "unauthorized") box.innerHTML = `<p class="error">Photos unavailable: ${escapeHtml((err as Error).message)}</p>`;
+    return;
+  }
+  box.innerHTML = photosHtml(photos);
+
+  // Adding: pick a file, adjust the crop, upload the prepared PNG.
+  const file = document.getElementById("photo-file") as HTMLInputElement;
+  const canvas = document.getElementById("photo-canvas") as HTMLCanvasElement;
+  const sx = document.getElementById("photo-x") as HTMLInputElement;
+  const sy = document.getElementById("photo-y") as HTMLInputElement;
+  const status = document.getElementById("photo-status")!;
+  const redraw = () => {
+    if (photoSource) preparePhoto(photoSource, canvas, Number(sx.value) / 100, Number(sy.value) / 100);
+  };
+  file.addEventListener("change", () => {
+    const f = file.files?.[0];
+    if (!f) return;
+    const img = new Image();
+    img.onload = () => {
+      photoSource = img;
+      document.getElementById("photo-edit")!.hidden = false;
+      redraw();
+    };
+    img.onerror = () => (status.textContent = "That file couldn't be read as an image.");
+    img.src = URL.createObjectURL(f);
+  });
+  sx.addEventListener("input", redraw);
+  sy.addEventListener("input", redraw);
+  document.getElementById("photo-upload")!.addEventListener("click", async () => {
+    if (!photoSource) return;
+    status.textContent = "Uploading…";
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/png"));
+    if (!blob) {
+      status.textContent = "Couldn't prepare the photo.";
+      return;
+    }
+    try {
+      const name = (file.files?.[0]?.name ?? "").replace(/\.[^.]+$/, "");
+      const res = await api(`/api/admin/photos?name=${encodeURIComponent(name)}`, { method: "POST", headers: { "content-type": "image/png" }, body: blob });
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 120)}`);
+      void loadFotos();
+    } catch (err) {
+      if ((err as Error).message !== "unauthorized") status.textContent = `Upload failed: ${(err as Error).message}`;
+    }
+  });
+
+  // The list: thumbnails (they need the auth header) and delete buttons.
+  for (const p of photos) {
+    void api(`/api/admin/photos/${p.id}.png`).then(async (res) => {
+      const el = document.getElementById(`thumb-${p.id}`);
+      if (!res.ok || !el) return;
+      const url = URL.createObjectURL(await res.blob());
+      photoUrls.push(url);
+      el.innerHTML = `<img src="${url}" alt="${escapeHtml(p.name || "Photo")}" width="${PHOTO_W}" height="${PHOTO_H}">`;
+    }).catch(() => {});
+  }
+  for (const btn of box.querySelectorAll<HTMLButtonElement>("[data-delete]")) {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Delete this photo?")) return;
+      try {
+        await api(`/api/admin/photos/${btn.dataset.delete}`, { method: "DELETE" });
+        void loadFotos();
+      } catch {
+        // unauthorized is handled by api()
+      }
+    });
+  }
+}
+
 /** Show the view the URL names. */
 function route(): void {
   if (location.hash === "#design") void loadDesign();
+  else if (location.hash === "#fotos") void loadFotos();
   else void load();
 }
 

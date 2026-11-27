@@ -16,6 +16,8 @@ import { svgOpen, W } from "./eink.mjs";
 import * as datum from "./modules/datum.mjs";
 import { entryFor, fit, loadEntries as loadAusdruecke } from "./modules/ausdruck.mjs";
 import { entryFor as praepositionFor, loadEntries as loadPraepositionen } from "./modules/praeposition.mjs";
+import { entryFor as wortFor, loadEntries as loadWoerter } from "./modules/wort.mjs";
+import { moonState, phaseTime } from "./modules/mond.mjs";
 import { GAUGE_STEPS } from "./modules/tempelhof.mjs";
 import { fetchWeather } from "./modules/wetter.mjs";
 import { berlinDate } from "./render.mjs";
@@ -29,6 +31,7 @@ import { boxSvg, moduleBox, moduleSvg, MODULES, SCREENS, tileAt } from "./screen
 
 const TYPE_USE = {
   display: "The one big figure: the temperature. (The day of the month is 88: at 104 it would touch the Akku pill.)",
+  figure: "Figures side by side in a tile's columns: the Zeit card's day and week.",
   heading: "The body size, bold, lines lead apart: the expression and the Präposition on the cards; the month.",
   body: "Sentences and the large Kino listing, lines and rows lead apart (time bold): the cards' example sentences.",
   label: "A tile's title and field labels (Tempelhof, Im Kino, Matt, Niederschlag), the card titles, the weekday, the Feld lines and countdown; the medium Kino times; the cards' English meaning, wrapped lines lead apart.",
@@ -58,6 +61,7 @@ export function designTokens() {
       ...GRID,
       cols: GRID.cols,
       rows: GRID.rows,
+      margin: GRID.marginX,
       pad: TILE_PAD,
       firstCap: FIRST_CAP,
       canvas: { w: 1448, h: 1072 },
@@ -107,6 +111,9 @@ export async function designData(now = Date.now()) {
     kino: { programme: sampleProgramme(date), from: "18:00" },
     ausdruck: entryFor(date),
     praeposition: praepositionFor(date),
+    wort: wortFor(date),
+    fondfolio: { count: 7 },
+    mond: moonState(now),
     fitness: sampleFitness(date, new Date(now).toISOString()),
   };
 }
@@ -144,6 +151,7 @@ export function designSpecimens(data) {
   // Type
   const samples = {
     display: "24 · 2°",
+    figure: "331 · 48",
     heading: "sein blaues Wunder erleben",
     body: "Wer an Silvester ohne Reservierung kommt, …",
     label: "Im Kino · Niederschlag · Matt",
@@ -272,6 +280,35 @@ export function designSpecimens(data) {
     ["kino", 1, 3, { tone: "light" }, data, "full", "kino · tall"],
     ["kino", 1, 3, { tone: "light" }, { ...data, kino: { ...data.kino, day: "morgen" } }, "full", "kino · tall, from 22:00"],
     ["kino", 1, 3, { tone: "light" }, noFilms, "full", "kino · tall, none"],
+  ]);
+  const woerter = loadWoerter();
+  const longestWort = woerter.reduce((a, b) => ((b.artikel ?? "").length + b.wort.length > (a.artikel ?? "").length + a.wort.length ? b : a));
+  cards("Wort des Tages", "Small (1 × 1), under the date on Fiona's screen: the word with its article, the English below", [
+    ["wort", 1, 1, { tone: "light" }, data, "full", "wort · today's"],
+    ["wort", 1, 1, { tone: "light" }, { ...data, wort: longestWort }, "full", "wort · longest"],
+    ["wort", 1, 1, { tone: "light" }, { ...data, wort: woerter.find((e) => !e.artikel) }, "full", "wort · not a noun"],
+  ]);
+  // The moon today, at the next full moon and at a waxing crescent.
+  const k = Math.round((data.now - phaseTime(0)) / (29.530588861 * 86_400_000));
+  cards("Mond", "Wide (2 × 1), at the bottom left of Fiona's screen: the moon in detail, its phase, how much is lit and its age, the next four phases", [
+    ["mond", 2, 1, { tone: "light" }, data, "full", "mond · today"],
+    ["mond", 2, 1, { tone: "light" }, { ...data, mond: moonState(phaseTime(k + 0.5)) }, "full", "mond · Vollmond"],
+  ]);
+  cards("Mond (2)", "Wide (2 × 1): a waxing crescent and the last quarter", [
+    ["mond", 2, 1, { tone: "light" }, { ...data, mond: moonState(phaseTime(k) + 4 * 86_400_000) }, "full", "mond · zunehmende Sichel"],
+    ["mond", 2, 1, { tone: "light" }, { ...data, mond: moonState(phaseTime(k + 0.75)) }, "full", "mond · Letztes Viertel"],
+  ]);
+  cards("Foto", "Any size, a bleed tile: a photo edge to edge with the tile's corners — a placeholder until photos can be uploaded", [
+    ["foto", 1, 1, { tone: "bleed" }, data, "full", "foto · placeholder (small)"],
+    ["foto", 2, 1, { tone: "bleed" }, data, "full", "foto · placeholder (wide)"],
+  ]);
+  cards("Zeit", "Small (1 × 1), under the Feld on Matt's screen: the day of the year and the calendar week, two centred columns", [
+    ["zeit", 1, 1, { tone: "light" }, data, "full", "zeit"],
+  ]);
+  cards("Fondfolio", "Small (1 × 1), under Fiona's rings: what Fondfolio says this month (a mock-up; the API comes later)", [
+    ["fondfolio", 1, 1, { tone: "light" }, data, "full", "fondfolio · 7"],
+    ["fondfolio", 1, 1, { tone: "light" }, { ...data, fondfolio: { count: 10 } }, "full", "fondfolio · 10"],
+    ["fondfolio", 1, 1, { tone: "light" }, { ...data, fondfolio: null }, "full", "fondfolio · no number yet"],
   ]);
   cards("Small Ausdruck", "Small (1 × 1), the word of the day under the date on Fiona's screen: the meaning and the expression", [
     ["ausdruck", 1, 1, { tone: "light" }, data, "full", "ausdruck · today's"],

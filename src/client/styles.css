@@ -441,3 +441,41 @@ input[type="text"] {
   border: 0;
   border-radius: 6px;
 }
+
+/* Photos (Phase 17): the prepared tile and the list of uploads. */
+.photo-preview {
+  display: block;
+  width: 100%;
+  max-width: 468px;
+  height: auto;
+  aspect-ratio: 468 / 344;
+  margin: 12px 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  image-rendering: pixelated;
+}
+.photos {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 16px;
+}
+.photos li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: baseline;
+}
+.photo-thumb {
+  width: 100%;
+  aspect-ratio: 468 / 344;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--border);
+}
+.photo-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

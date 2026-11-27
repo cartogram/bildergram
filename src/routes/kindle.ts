@@ -26,13 +26,17 @@ import { DEVICES, authenticateDevice, deviceById } from "../devices";
 import { adminAuthorized, readJson, writeJson } from "../state";
 import type { AppEnv } from "../types";
 import { fitnessParam } from "./fitness";
+import { photoFor } from "./photos";
 
 /** The screens kindle/lib/screens.mjs defines (ids, German names, what they show). */
 export const SCREENS = {
-  matt: { name: "Matt", shows: "Date, Feld gauge, Kino tonight, Matt's exercise rings" },
-  fiona: { name: "Fiona", shows: "Date, expression of the day, weather, Fiona's exercise rings" },
+  matt: { name: "Matt", shows: "Date, Feld gauge, a photo, Kino tonight, Matt's exercise rings, word of the day" },
+  fiona: { name: "Fiona", shows: "Date, word of the day, weather, Fiona's exercise rings, Fondfolio (mock-up), the moon" },
 } as const;
 export type Screen = keyof typeof SCREENS;
+
+/** Screens with a Foto tile (kindle/lib/screens.mjs): they get the day's photo. */
+const FOTO_SCREENS = new Set<string>(["matt"]);
 
 /** Screens showing the fitness module (kindle/lib/screens.mjs). */
 const FITNESS_SCREENS = new Set<string>(["matt", "fiona"]);
@@ -148,7 +152,7 @@ export function parseConfig(input: unknown): KindleConfig | string {
 // Vercel renderer
 // ------------------------------------------------------------------
 
-async function renderScreen(env: AppEnv, device: string, config: KindleConfig, params: Record<string, string>): Promise<Response> {
+async function renderScreen(env: AppEnv, device: string, config: KindleConfig, params: Record<string, string>, hub: string): Promise<Response> {
   if (!env.RENDERER_URL) return new Response("RENDERER_URL is not configured", { status: 503 });
   const url = new URL("/api/screen", env.RENDERER_URL);
   url.searchParams.set("device", device);
@@ -159,6 +163,11 @@ async function renderScreen(env: AppEnv, device: string, config: KindleConfig, p
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   // Screens with the fitness module get everyone's exercise minutes (the iPhones post them here).
   if (FITNESS_SCREENS.has(params.screen)) url.searchParams.set("fitness", await fitnessParam(env, params.date ?? berlinToday()));
+  // Screens with a Foto tile get the day's photo: the renderer fetches it from this hub with its token.
+  if (FOTO_SCREENS.has(params.screen)) {
+    const photo = await photoFor(env, device, params.date ?? berlinToday());
+    if (photo) url.searchParams.set("foto", `${hub}/api/photos/${photo}.png`);
+  }
   const res = await fetch(url, { headers: env.RENDERER_TOKEN ? { "x-renderer-token": env.RENDERER_TOKEN } : {} });
   return new Response(res.body, {
     status: res.status,
@@ -221,7 +230,7 @@ export async function handleKindleDevice(request: Request, env: AppEnv): Promise
     const day = DAY.test(q.get("day") ?? "") ? q.get("day")! : berlinToday();
     const params: Record<string, string> = { screen: m[1], date: day };
     if (/^\d{1,3}$/.test(q.get("battery") ?? "")) params.battery = q.get("battery")!;
-    return renderScreen(env, id, await readConfig(env, id), params);
+    return renderScreen(env, id, await readConfig(env, id), params, new URL(request.url).origin);
   }
 
   return new Response("not found", { status: 404 });
@@ -271,7 +280,7 @@ export async function handleKindleAdmin(request: Request, env: AppEnv): Promise<
     const status = await readJson<KindleStatus>(env, statusKey(id));
     const params: Record<string, string> = { screen, preview: "1", date: berlinToday() };
     if (status?.battery != null) params.battery = String(status.battery);
-    return renderScreen(env, id, await readConfig(env, id), params);
+    return renderScreen(env, id, await readConfig(env, id), params, new URL(request.url).origin);
   }
 
   if (url.pathname === "/api/admin/kindle/films" && request.method === "GET") {
