@@ -6,6 +6,8 @@
 // verbs with their past forms) as a left-aligned stream. Entries live in
 // kindle/data/ausdruecke.json, their Wörter in kindle/data/woerter.json
 // (by index); they rotate in order, one per day.
+// Medium (2 × 2, Phase 16): the same card at under half the width; the
+// Wörter only when they fit whole, and the example dropped as a last resort.
 //
 // Cadence: daily (deterministic, no network needed).
 // ============================================================
@@ -16,6 +18,7 @@ import { wrap } from "../eink.mjs";
 
 export const id = "ausdruck";
 export const cadence = "daily";
+export const sizes = ["medium", "large"];
 
 const readData = (file) => JSON.parse(readFileSync(new URL(`../../data/${file}`, import.meta.url), "utf8"));
 
@@ -37,7 +40,7 @@ export function entryFor(date, entries = loadEntries()) {
   return entries[((days % entries.length) + entries.length) % entries.length];
 }
 
-/** Centred lines of `str` from baseline y; returns { svg, y } with y the last line's baseline. */
+/** Centred lines of `str` from baseline y; returns { svg, y, cut } with y the last line's baseline and cut when it didn't all fit. */
 function block(str, y, style, maxW, maxLines) {
   const lines = wrap(str, style.size * (style.weight === "bold" ? 1.07 : 1), maxW, maxLines);
   const lead = Math.round(style.size * 1.18);
@@ -45,32 +48,61 @@ function block(str, y, style, maxW, maxLines) {
   lines.forEach((l, i) => {
     svg += text(maxW / 2, y + i * lead, l, style, { anchor: "middle" });
   });
-  return { svg, y: y + (lines.length - 1) * lead };
+  return { svg, y: y + (lines.length - 1) * lead, cut: lines[lines.length - 1].endsWith("…") };
 }
 
-/** The card's text at scale `k` (1 = the type scale); baselines from the first line (0). */
-function stack(box, entry, k) {
+/** Lines allowed per part, by size: the medium card is narrow, so its parts wrap further. */
+const LINES = { large: { title: 2, head: 3, example: 4 }, medium: { title: 3, head: 3, example: 6 } };
+
+/** The card's text at scale `k` (1 = the type scale); baselines from the first line (0). Without `example`, just the meaning and the expression. */
+function stack(box, entry, k, example = true) {
+  const caps = LINES[box.size] ?? LINES.large;
   const at = (style) => ({ ...style, size: Math.round(style.size * k) });
-  const title = block(entry.bedeutung, 0, at(TILE_TYPE.label), box.w, 2);
-  const head = block(entry.ausdruck, title.y + Math.round(56 * k), at(TILE_TYPE.heading), box.w, 3);
+  const title = block(entry.bedeutung, 0, at(TILE_TYPE.label), box.w, caps.title);
+  const head = block(entry.ausdruck, title.y + Math.round(56 * k), at(TILE_TYPE.heading), box.w, caps.head);
+  const first = firstBaseline(at(TILE_TYPE.label).size);
+  const cut = title.cut || head.cut;
+  if (!example) return { svg: title.svg + head.svg, bottom: head.y + Math.round(TILE_TYPE.heading.size * k * 0.3), first, cut };
   const body = at(TILE_TYPE.body);
-  const ex = block(entry.beispiel, head.y + Math.round(body.size * 1.18), body, box.w, 4);
-  return { svg: title.svg + head.svg + ex.svg, bottom: ex.y + Math.round(body.size * 0.3), first: firstBaseline(at(TILE_TYPE.label).size) };
+  const ex = block(entry.beispiel, head.y + Math.round(body.size * 1.18), body, box.w, caps.example);
+  return { svg: title.svg + head.svg + ex.svg, bottom: ex.y + Math.round(body.size * 0.3), first, cut: cut || ex.cut };
 }
+
+const SCALES = [1, 0.92, 0.86, 0.8];
 
 /**
- * The card for `entry` ({ ausdruck, bedeutung, beispiel, woerter? }); the
- * text shrinks (down to 80 %) until it fits above the Wörter.
+ * How the card for `entry` is laid out in `box`: the text shrinks (down
+ * to 80 %) until it fits above the Wörter, without cutting a line short.
+ * Large keeps the Wörter unless a group is wider than the card; medium
+ * shows them only when they fit whole at full size, and as a last resort
+ * drops the example. Returns { svg, k, words, example, fits, cut } — the
+ * build checks `fits` for every entry.
  */
-export function render(box, entry) {
-  const words = entry.woerter?.length ? woerter(box, entry.woerter) : null;
-  const room = box.h - (words ? words.h + 24 : 0);
-  let s;
-  for (const k of [1, 0.92, 0.86, 0.8]) {
-    s = stack(box, entry, k);
-    if (s.first + s.bottom <= room) break;
+export function fit(box, entry) {
+  const medium = box.size === "medium";
+  const list = entry.woerter?.length ? woerter(box, entry.woerter) : null;
+  const tries = [];
+  if (medium) {
+    if (list?.fits) tries.push({ k: 1, words: list });
+  } else if (list?.fits) {
+    for (const k of SCALES) tries.push({ k, words: list });
   }
-  return `<g transform="translate(0 ${s.first})">${s.svg}</g>` + (words?.svg ?? "");
+  for (const k of SCALES) tries.push({ k, words: null });
+  if (medium) for (const k of SCALES) tries.push({ k, words: null, example: false });
+  let out;
+  for (const t of tries) {
+    const s = stack(box, entry, t.k, t.example ?? true);
+    const room = box.h - (t.words ? t.words.h + 24 : 0);
+    const fits = s.first + s.bottom <= room && !s.cut;
+    out = { svg: `<g transform="translate(0 ${s.first})">${s.svg}</g>` + (t.words?.svg ?? ""), k: t.k, words: !!t.words, example: t.example ?? true, fits, cut: s.cut };
+    if (fits) break;
+  }
+  return out;
+}
+
+/** The card for `entry` ({ ausdruck, bedeutung, beispiel, woerter? }); see fit(). */
+export function render(box, entry) {
+  return fit(box, entry).svg;
 }
 
 /**
@@ -78,7 +110,8 @@ export function render(box, entry) {
  * stream: each word a group (a noun: article bold, the noun, its plural
  * ending faint; a verb: bold, then its past forms), groups set apart by
  * GROUP_GAP and never broken across lines; the last line on the bottom edge.
- * `list`: [{ artikel, wort, plural } | { verb, formen }]. Returns { svg, h }.
+ * `list`: [{ artikel, wort, plural } | { verb, formen }]. Returns { svg, h, fits },
+ * fits false when a group is wider than the box.
  */
 const GROUP_GAP = 36;
 function woerter(box, list) {
@@ -97,8 +130,10 @@ function woerter(box, list) {
   // Flow the groups into lines.
   const lines = [[]];
   let x = 0;
+  let fits = true;
   for (const g of groups) {
     const w = groupW(g);
+    if (w > box.w) fits = false;
     if (x > 0 && x + GROUP_GAP + w > box.w) {
       lines.push([]);
       x = 0;
@@ -119,5 +154,5 @@ function woerter(box, list) {
       }
     }
   });
-  return { svg, h };
+  return { svg, h, fits };
 }

@@ -18,6 +18,7 @@ import { deCountdown, firstBaseline, pill, PILL, text, TILE_INK, TILE_INK_DARK, 
 
 export const id = "tempelhof";
 export const cadence = "minute";
+export const sizes = ["small"];
 
 const LABEL = TILE_TYPE.label;
 const LEAD = 32;

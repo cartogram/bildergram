@@ -7,9 +7,11 @@
 // tiles in the same cells: the date (0, 0) — the "Aktualisiere …" piece
 // goes there — and the Feld (0, 1), so all screens share one set of
 // Kindle-drawn pieces.
+// Each tile's size (small, medium, large — design.mjs TILE_SIZES) follows
+// from its span, and must be one its module draws (Phase 16).
 // ============================================================
 
-import { cell, TILE_PAD, text, tile, TILE_INK, TILE_TYPE, firstBaseline } from "./design.mjs";
+import { cell, TILE_PAD, text, tile, TILE_INK, TILE_TYPE, tileSize, firstBaseline } from "./design.mjs";
 import { svgOpen, W, H } from "./eink.mjs";
 import * as ausdruck from "./modules/ausdruck.mjs";
 import * as datum from "./modules/datum.mjs";
@@ -26,10 +28,13 @@ export const MODULES = { ausdruck, datum, fitness, kino, praeposition, tempelhof
  * x/y/w/h its content (TILE_PAD inside). `tone` is the tile's style
  * (design.mjs tile()); a "bleed" tile has no container, and its module may
  * draw graphics into the padding (box.bleed) while text keeps the inset.
+ * `size` follows from the span; T() throws when the module doesn't draw it.
  */
 function T(module, [col, row, cols = 1, rows = 1], opts = {}) {
   const r = cell(col, row, cols, rows);
-  return { module, tile: r, x: r.x + TILE_PAD, y: r.y + TILE_PAD, w: r.w - 2 * TILE_PAD, h: r.h - 2 * TILE_PAD, bleed: opts.tone === "bleed" ? TILE_PAD : 0, ...opts };
+  const size = tileSize(cols, rows);
+  if (!MODULES[module].sizes.includes(size)) throw new Error(`${module} at ${cols} × ${rows}: draws ${MODULES[module].sizes.join(", ")}, not ${size ?? "this span"}`);
+  return { module, size, tile: r, x: r.x + TILE_PAD, y: r.y + TILE_PAD, w: r.w - 2 * TILE_PAD, h: r.h - 2 * TILE_PAD, bleed: opts.tone === "bleed" ? TILE_PAD : 0, ...opts };
 }
 
 // The tiles every screen shares.
@@ -66,7 +71,7 @@ const LABELS = { datum: "Datum", wetter: "Wetter", kino: "Im Kino", ausdruck: "A
 export const HOURLY_SCREENS = Object.keys(SCREENS).filter((id) => SCREENS[id].boxes.some((b) => MODULES[b.module].cadence === "hourly"));
 
 /** The box a module lays out in: its content box, origin at the top left. The build uses it too. */
-export const moduleBox = (b) => ({ w: b.w, h: b.h, variant: b.variant, tone: b.tone, person: b.person, bleed: b.bleed ?? 0 });
+export const moduleBox = (b) => ({ w: b.w, h: b.h, size: b.size, variant: b.variant, tone: b.tone, person: b.person, bleed: b.bleed ?? 0 });
 
 /** The Kindle-drawn boxes of a screen. */
 export const deviceBoxes = (id) => SCREENS[id].boxes.filter((b) => DEVICE_MODULES.has(b.module));

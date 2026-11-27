@@ -1,11 +1,11 @@
 // ============================================================
-// kindle/samples.mjs — sample data for design review (Phase 14),
+// kindle/lib/samples.mjs — sample data for design review (Phase 14),
 // shared by the gallery and the design system page: a cinema
 // listing (yorck.de drops screenings once they start) and two people's
 // exercise minutes.
 // ============================================================
 
-import { parseFitness, weekOf } from "./lib/modules/fitness.mjs";
+import { parseFitness, weekOf } from "./modules/fitness.mjs";
 
 /** A fixed evening at three cinemas on `date`. */
 export const sampleProgramme = (date) => ({

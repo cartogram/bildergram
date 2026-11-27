@@ -12,6 +12,7 @@ import { deDateLong, firstBaseline, pill, PILL, text, TILE_INK_DARK, TILE_TYPE }
 
 export const id = "datum";
 export const cadence = "daily";
+export const sizes = ["small"];
 
 /** The battery line, where "Aktualisiere …" goes. */
 export const updatingRect = (box) => ({ x: 0, y: box.h - PILL.h - 2, w: box.w, h: PILL.h + 4 });

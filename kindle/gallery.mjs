@@ -16,11 +16,11 @@ import { parseFitness, weekOf } from "./lib/modules/fitness.mjs";
 import { entryFor as praepositionFor } from "./lib/modules/praeposition.mjs";
 import { fetchWeather } from "./lib/modules/wetter.mjs";
 import { berlinParts, berlinToUtc, buildSchedule, tempelhofState } from "./lib/schedule.mjs";
-import { SCREENS, boxSvg, moduleBox, screenSvg } from "./lib/screens.mjs";
+import { SCREENS, boxSvg, moduleBox, moduleSvg, screenSvg, tileAt } from "./lib/screens.mjs";
 import { cell, TILE_PAD } from "./lib/design.mjs";
 import * as wetter from "./lib/modules/wetter.mjs";
 import { svgOpen, W, H } from "./lib/eink.mjs";
-import { sampleProgramme } from "./samples.mjs";
+import { sampleProgramme } from "./lib/samples.mjs";
 
 const OUT = fileURLToPath(new URL("./dist/gallery/", import.meta.url));
 mkdirSync(OUT, { recursive: true });
@@ -100,6 +100,26 @@ const cards = scenes.map((s, i) => {
   cards.push({ file, title: "Wetter tiles", sub: "details · days · mixed" });
 }
 
+// Medium cards (Phase 16) on a whole screen: one possible home with Kino, Ausdruck and Präposition at 2 × 2.
+{
+  const tiles = [
+    tileAt("datum", [0, 0, 2, 1], { tone: "dark" }),
+    tileAt("tempelhof", [0, 1, 2, 1], { variant: "feld", tone: "fill" }),
+    tileAt("wetter", [2, 0, 2, 2], { variant: "mixed", tone: "fill" }),
+    tileAt("ausdruck", [4, 0, 2, 2], { tone: "light" }),
+    tileAt("praeposition", [6, 0, 2, 2], { tone: "light" }),
+    tileAt("kino", [0, 2, 2, 2], { tone: "light" }),
+    tileAt("fitness", [2, 2, 2, 2], { variant: "person", person: "Matt", tone: "dark" }),
+    tileAt("fitness", [4, 2, 2, 2], { variant: "person", person: "Fiona", tone: "dark" }),
+    tileAt("wetter", [6, 2, 2, 2], { variant: "days", tone: "fill" }),
+  ];
+  const d = { ...full, tempelhof: feldAt(7, 30) };
+  const svg = svgOpen(W, H) + tiles.map((b) => boxSvg(b, moduleSvg(b, d))).join("") + "</svg>";
+  const file = `${String(cards.length + 1).padStart(2, "0")}-medium.png`;
+  writeFileSync(`${OUT}${file}`, encodePng(rasterize(svg)));
+  cards.push({ file, title: "Medium cards", sub: "Kino, Ausdruck and Präposition at 2 × 2 (a layout idea, not a screen)" });
+}
+
 writeFileSync(
   `${OUT}index.html`,
   `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -123,7 +143,7 @@ writeFileSync(
   .actual img { width: 1448px; max-width: none; image-rendering: pixelated; }
 </style>
 <main>
-  <h1>Kindle screens — Phase 14 design review</h1>
+  <h1>Kindle screens — Phase 16 design review</h1>
   <p>Rendered ${deDateLong(date)} from live data (Open-Meteo, yorck.de, Tempelhof schedule) at the Paperwhite 3's 1448 × 1072, 16 gray levels.</p>
   <div class="bar"><button id="fit" aria-pressed="true">Fit</button><button id="actual" aria-pressed="false">Actual pixels</button></div>
   <div class="grid">

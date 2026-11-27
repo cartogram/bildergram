@@ -35,6 +35,15 @@ export const cell = (col, row, cols = 1, rows = 1) => ({
 });
 
 /**
+ * Tile sizes (Phase 16), named by span: small 2 × 1 (the date, the Feld),
+ * medium 2 × 2 (Wetter, Bewegung), large 4 × 2 (Kino, Ausdruck). A tile
+ * gets its size from its span (screens.mjs T()); each module lists the
+ * sizes it draws (`sizes`), so a layout can't put a card where it won't fit.
+ */
+export const TILE_SIZES = { small: [2, 1], medium: [2, 2], large: [4, 2] };
+export const tileSize = (cols, rows) => Object.keys(TILE_SIZES).find((k) => TILE_SIZES[k][0] === cols && TILE_SIZES[k][1] === rows);
+
+/**
  * Tile spacing (Phase 14): a tile's first line puts its capitals FIRST_CAP
  * below the content box's top (baseline = FIRST_CAP + 0.716 × size, Arimo's
  * cap height); its last line sits on the content box's bottom edge.
@@ -108,6 +117,13 @@ export function circleLabel(cx, cy, str, { fill = INK.primary, ink = INK.paper }
  * weather's details and days and the exercise legend, so they read alike.
  */
 export const STAT = { value: { size: 28, weight: "bold" }, lead: 38 };
+
+/**
+ * List rows (Phase 16): the Kino listing and the weather's next days read
+ * alike — 36 px, 48 apart (the stat rows' 28/38 in proportion); the lead
+ * item (time, day) bold.
+ */
+export const LIST = { size: 36, lead: 48 };
 export function statRow(x, y, w, label, parts, { labelX = x, labelInk = TILE_INK.ink } = {}) {
   let svg = text(labelX, y, label, { ...TILE_TYPE.label, ink: labelInk });
   let right = x + w;
