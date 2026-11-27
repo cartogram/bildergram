@@ -54,12 +54,12 @@ export const firstBaseline = (size) => FIRST_CAP + Math.round(size * 0.716);
 export const TILE_TYPE = {
   /** The one big figure on a tile: the temperature, the day of the month. */
   display: { size: 104, weight: "bold" },
-  /** The body size in bold: the Ausdruck, the month. */
-  heading: { size: 32, weight: "bold" },
-  /** Sentences, list rows, values. */
-  body: { size: 32 },
-  /** A tile's title and field labels ("Im Kino", "Niederschlag", "Matt", the weekday). */
-  label: { size: 28, weight: "bold" },
+  /** The body size in bold: the Ausdruck, the month; its lines `lead` apart like body's. */
+  heading: { size: 36, weight: "bold", lead: 48 },
+  /** Sentences (the cards' examples) and the large Kino listing (time bold), lines and rows `lead` apart. */
+  body: { size: 36, lead: 48 },
+  /** A tile's title and field labels ("Im Kino", "Niederschlag", "Matt", the weekday); a title that wraps, `lead` apart. */
+  label: { size: 28, weight: "bold", lead: 38 },
   /** Secondary lines, legends, pills, the Feld line. */
   small: { size: 24 },
 };
@@ -118,12 +118,6 @@ export function circleLabel(cx, cy, str, { fill = INK.primary, ink = INK.paper }
  */
 export const STAT = { value: { size: 28, weight: "bold" }, lead: 38 };
 
-/**
- * List rows (Phase 16): the Kino listing and the weather's next days read
- * alike — 36 px, 48 apart (the stat rows' 28/38 in proportion); the lead
- * item (time, day) bold.
- */
-export const LIST = { size: 36, lead: 48 };
 export function statRow(x, y, w, label, parts, { labelX = x, labelInk = TILE_INK.ink } = {}) {
   let svg = text(labelX, y, label, { ...TILE_TYPE.label, ink: labelInk });
   let right = x + w;

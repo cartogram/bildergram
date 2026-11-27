@@ -9,7 +9,7 @@
 // ============================================================
 
 import {
-  cell, CIRCLE_LABEL, circleLabel, clipText, ELLIPSIS, exactWidth, FIRST_CAP, GRID, LIST, PILL, pill, STAT, text, tile,
+  cell, CIRCLE_LABEL, circleLabel, clipText, ELLIPSIS, exactWidth, FIRST_CAP, GRID, PILL, pill, STAT, text, tile,
   TILE_INK, TILE_INK_DARK, TILE_PAD, TILE_SIZES, TILE_TYPE,
 } from "./design.mjs";
 import { svgOpen, W } from "./eink.mjs";
@@ -29,9 +29,9 @@ import { boxSvg, moduleBox, moduleSvg, MODULES, SCREENS, tileAt } from "./screen
 
 const TYPE_USE = {
   display: "The one big figure: the temperature. (The day of the month is 88: at 104 it would touch the Akku pill.)",
-  heading: "The body size, bold: the expression and the Präposition on the cards; the month.",
-  body: "Sentences: the cards' example sentences.",
-  label: "A tile's title and field labels (Tempelhof, Im Kino, Matt, Niederschlag), the card titles, the weekday, the Feld lines and countdown; the medium Kino times.",
+  heading: "The body size, bold, lines lead apart: the expression and the Präposition on the cards; the month.",
+  body: "Sentences and the large Kino listing, lines and rows lead apart (time bold): the cards' example sentences.",
+  label: "A tile's title and field labels (Tempelhof, Im Kino, Matt, Niederschlag), the card titles, the weekday, the Feld lines and countdown; the medium Kino times; the cards' English meaning, wrapped lines lead apart.",
   small: "Secondary lines: “heute ab 18:00”, “+ 3 weitere”, the Wörter; the pills and cinema letters (bold).",
 };
 
@@ -68,10 +68,9 @@ export function designTokens() {
       return { name, cols, rows, w: r.w, h: r.h, modules: Object.keys(MODULES).filter((m) => MODULES[m].sizes.includes(name)) };
     }),
     type: [
-      ...Object.entries(TILE_TYPE).map(([name, s]) => ({ name, size: s.size, bold: s.weight === "bold", use: TYPE_USE[name] })),
-      { name: "list", size: LIST.size, bold: false, lead: LIST.lead, use: "List rows: the large Kino listing and the weather's next days (time and day bold)." },
+      ...Object.entries(TILE_TYPE).map(([name, s]) => ({ name, size: s.size, bold: s.weight === "bold", lead: s.lead, use: TYPE_USE[name] })),
       { name: "kino title", size: STAT.value.size, bold: false, lead: STAT.lead, use: "The medium Kino titles, faint and cut with clipText — the one 28 that isn't bold." },
-      { name: "stat value", size: STAT.value.size, bold: true, lead: STAT.lead, use: "Values: high/low, precipitation, wind, the exercise legend." },
+      { name: "stat value", size: STAT.value.size, bold: true, lead: STAT.lead, use: "Values: high/low, precipitation, wind, the next days' temperatures, the exercise legend." },
     ],
     inks: Object.entries(TILE_INK).map(([name, hex]) => ({ name, hex, dark: TILE_INK_DARK[name], use: INK_USE[name] })),
     extraGrays: [
@@ -84,7 +83,7 @@ export function designTokens() {
       { name: "pill(x, y, str, opts)", use: `Short bold text (${PILL.size}) in a ${PILL.h}-high rounded bar, light on dark (or inverted): the Feld's times, Akku.` },
       { name: "circleLabel(cx, cy, str)", use: `A letter in a ${CIRCLE_LABEL.d} circle at the pills' text size: a cinema.` },
       { name: "clipText(x, y, str, style, w)", use: `A line cut mid-word to fit w, ended in the ELLIPSIS: three periods set ${Math.abs(ELLIPSIS.spacing).toFixed(3)} em closer, about two thirds of the “…” glyph. The medium Kino titles.` },
-      { name: "statRow(x, y, w, label, parts)", use: `A label left, a bold value right (${STAT.value.size}, ${STAT.lead} apart): the exercise legend.` },
+      { name: "statRow(x, y, w, label, parts)", use: `A label left, a bold value right (${STAT.value.size}, ${STAT.lead} apart): the exercise legend; the weather's next days read the same.` },
       { name: "firstBaseline(size)", use: "Where a tile's first line goes, so every tile's top line aligns." },
       { name: "weatherIcon(code, x, y, size)", use: "The WMO weather icons, stroked, on a 100-unit grid." },
       { name: "Feld gauge", use: `${GAUGE_STEPS} dots on a half circle from the last opening/closing to the next, the time still to go in ink; an "n" when open, a "u" when closed. Pasted by the Kindle per step.` },
@@ -150,9 +149,8 @@ export function designSpecimens(data) {
   };
   const rows = [
     ...Object.entries(TILE_TYPE).map(([name, style]) => [name, style, samples[name]]),
-    ["list", { size: LIST.size }, "18:30  Das Lehrerzimmer · Sa  −3  0°"],
   ];
-  specimen("Type", "Type scale", "TILE_TYPE, plus the list rows (LIST); bold only where marked", 700, () => {
+  specimen("Type", "Type scale", "TILE_TYPE; bold only where marked", 700, () => {
     let y = 0, svg = "";
     for (const [name, style, sample] of rows) {
       y += Math.max(84, Math.round(style.size * 1.15) + 26);

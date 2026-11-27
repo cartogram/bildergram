@@ -40,10 +40,10 @@ export function entryFor(date, entries = loadEntries()) {
   return entries[((days % entries.length) + entries.length) % entries.length];
 }
 
-/** Centred lines of `str` from baseline y; returns { svg, y, cut } with y the last line's baseline and cut when it didn't all fit. */
+/** Centred lines of `str` from baseline y, `style.lead` apart (the type scale's lead); returns { svg, y, cut } with y the last line's baseline and cut when it didn't all fit. */
 function block(str, y, style, maxW, maxLines) {
   const lines = wrap(str, style.size * (style.weight === "bold" ? 1.07 : 1), maxW, maxLines);
-  const lead = Math.round(style.size * 1.18);
+  const lead = style.lead;
   let svg = "";
   lines.forEach((l, i) => {
     svg += text(maxW / 2, y + i * lead, l, style, { anchor: "middle" });
@@ -57,14 +57,14 @@ const LINES = { large: { title: 2, head: 3, example: 4 }, medium: { title: 3, he
 /** The card's text at scale `k` (1 = the type scale); baselines from the first line (0). Without `example`, just the meaning and the expression. */
 function stack(box, entry, k, example = true) {
   const caps = LINES[box.size] ?? LINES.large;
-  const at = (style) => ({ ...style, size: Math.round(style.size * k) });
+  const at = (style) => ({ ...style, size: Math.round(style.size * k), ...(style.lead ? { lead: Math.round(style.lead * k) } : {}) });
   const title = block(entry.bedeutung, 0, at(TILE_TYPE.label), box.w, caps.title);
   const head = block(entry.ausdruck, title.y + Math.round(56 * k), at(TILE_TYPE.heading), box.w, caps.head);
   const first = firstBaseline(at(TILE_TYPE.label).size);
   const cut = title.cut || head.cut;
   if (!example) return { svg: title.svg + head.svg, bottom: head.y + Math.round(TILE_TYPE.heading.size * k * 0.3), first, cut };
   const body = at(TILE_TYPE.body);
-  const ex = block(entry.beispiel, head.y + Math.round(body.size * 1.18), body, box.w, caps.example);
+  const ex = block(entry.beispiel, head.y + body.lead, body, box.w, caps.example);
   return { svg: title.svg + head.svg + ex.svg, bottom: ex.y + Math.round(body.size * 0.3), first, cut: cut || ex.cut };
 }
 
