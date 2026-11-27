@@ -33,7 +33,7 @@ import { W, encodePng, initRenderer, paste, rasterize, rotate, rotatedOrigin, sv
 import * as tempelhof from "./lib/modules/tempelhof.mjs";
 import { buildSchedule, hhmm, nextEvent } from "./lib/schedule.mjs";
 import * as datum from "./lib/modules/datum.mjs";
-import { HOURLY_SCREENS, SCREENS, boxSvg, deviceBoxes, moduleBox, screenSvg, tileAt } from "./lib/screens.mjs";
+import { HOURLY_SCREENS, SCREENS, boxSvg, deviceBoxes, moduleBox, screenSvg, tileAt, toScreen } from "./lib/screens.mjs";
 import { TILE_SIZES } from "./lib/design.mjs";
 import * as ausdruck from "./lib/modules/ausdruck.mjs";
 import * as praeposition from "./lib/modules/praeposition.mjs";
@@ -51,8 +51,7 @@ for (const [id, s] of Object.entries(SCREENS)) {
   if (!d || d.x !== DATE_TILE.x || d.y !== DATE_TILE.y || d.w !== DATE_TILE.w || d.h !== DATE_TILE.h) throw new Error(`screen ${id}: the date tile must sit where the first screen's does`);
 }
 const UPDATING = (() => {
-  const r = datum.updatingRect(moduleBox(DATE_TILE));
-  return { x: DATE_TILE.x + r.x, y: DATE_TILE.y + r.y, w: r.w, h: r.h };
+  return toScreen(DATE_TILE, datum.updatingRect(moduleBox(DATE_TILE)));
 })();
 
 function version() {
@@ -202,14 +201,13 @@ for (const deviceId of Object.keys(DEVICES)) {
   for (const id of Object.keys(SCREENS)) {
     for (const b of deviceBoxes(id)) {
       const box = moduleBox(b);
-      const top = b.y;
       const P = pixelRect(b.tile, s); // the whole tile: the base leaves it out
       // The countdown follows the sentence, so its position (and, at a
       // fractional scale, its anti-aliasing) differs per state.
       const C = {};
       for (const st of ["open", "closed"]) {
         const cb = tempelhof.countdownBox(box, st === "open");
-        C[st] = { cb, r: pixelRect({ x: b.x + cb.x, y: top + cb.y, w: cb.w, h: cb.h }, s) };
+        C[st] = { cb, r: pixelRect(toScreen(b, cb), s) };
       }
       // Pieces carry the tile itself (the base leaves the whole tile blank).
       const panelSvg = (state) => canvasSvg(boxSvg(b, tempelhof.render(box, state, { withCountdown: false, withGauge: false })));
@@ -220,7 +218,7 @@ for (const deviceId of Object.keys(DEVICES)) {
       if (gauge) {
         for (const st of ["open", "closed"]) {
           const gb = tempelhof.gaugeBox(box, st === "open");
-          G[st] = pixelRect({ x: b.x + gb.x, y: top + gb.y, w: gb.w, h: gb.h }, s);
+          G[st] = pixelRect(toScreen(b, gb), s);
         }
       }
       const gaugeSvg = (st, pair, step) => {

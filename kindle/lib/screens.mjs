@@ -4,14 +4,14 @@
 // 6 × 2 grid, Phase 17)
 // A screen is a set of tiles on the grid (design.mjs GRID, cell()), each
 // filled by a module. Tiles don't overlap, so on the Kindle each can be
-// pasted on its own cadence. Every screen has the date at (0, 0) — the
+// pasted on its own cadence; the bottom row is free for now. Every screen has the date at (0, 0) — the
 // "Aktualisiere …" piece goes there; the Feld, when a screen has it,
 // sits at (0, 1), so screens share one set of Kindle-drawn pieces.
 // Each tile's size (small, medium, large — design.mjs TILE_SIZES) follows
 // from its span, and must be one its module draws (Phase 16).
 // ============================================================
 
-import { cell, TILE_PAD, text, tile, TILE_INK, TILE_TYPE, tileSize, firstBaseline } from "./design.mjs";
+import { cell, GRID, TILE_PAD, text, tile, TILE_INK, TILE_TYPE, tileSize, firstBaseline } from "./design.mjs";
 import { svgOpen, W, H } from "./eink.mjs";
 import * as ausdruck from "./modules/ausdruck.mjs";
 import * as datum from "./modules/datum.mjs";
@@ -24,8 +24,10 @@ import * as wetter from "./modules/wetter.mjs";
 export const MODULES = { ausdruck, datum, fitness, kino, praeposition, tempelhof, wetter };
 
 /**
- * A tile at cell (col, row) spanning cols × rows: `tile` is its rect,
- * x/y/w/h its content (TILE_PAD inside). `tone` is the tile's style
+ * A tile at cell (col, row) spanning cols × rows: `tile` is its rect (on
+ * screen), x/y the content's top left on screen, w/h the content's size in
+ * drawing units — the tile draws at GRID.scale, TILE_PAD (drawing units)
+ * inside. toScreen() turns a rect in the content into screen pixels. `tone` is the tile's style
  * (design.mjs tile()); a "bleed" tile has no container, and its module may
  * draw graphics into the padding (box.bleed) while text keeps the inset.
  * `size` follows from the span; T() throws when the module doesn't draw it.
@@ -34,13 +36,17 @@ function T(module, [col, row, cols = 1, rows = 1], opts = {}) {
   const r = cell(col, row, cols, rows);
   const size = tileSize(cols, rows);
   if (!MODULES[module].sizes.includes(size)) throw new Error(`${module} at ${cols} × ${rows}: draws ${MODULES[module].sizes.join(", ")}, not ${size ?? "this span"}`);
-  return { module, size, tile: r, x: r.x + TILE_PAD, y: r.y + TILE_PAD, w: r.w - 2 * TILE_PAD, h: r.h - 2 * TILE_PAD, bleed: opts.tone === "bleed" ? TILE_PAD : 0, ...opts };
+  const k = GRID.scale;
+  return { module, size, tile: r, x: r.x + TILE_PAD * k, y: r.y + TILE_PAD * k, w: r.w / k - 2 * TILE_PAD, h: r.h / k - 2 * TILE_PAD, bleed: opts.tone === "bleed" ? TILE_PAD : 0, ...opts };
 }
 
+/** A rect in tile `b`'s content (drawing units) on screen, in pixels. */
+export const toScreen = (b, r) => ({ x: b.x + r.x * GRID.scale, y: b.y + r.y * GRID.scale, w: r.w * GRID.scale, h: r.h * GRID.scale });
+
 // The tiles every screen shares.
-const DATE = T("datum", [0, 0, 2, 1], { tone: "dark" });
+const DATE = T("datum", [0, 0], { tone: "dark" });
 /** Kindle-drawn: `variant` names its piece set; one set serves every screen (same cell, same tone). */
-const FELD = T("tempelhof", [0, 1, 2, 1], { variant: "feld", tone: "light" });
+const FELD = T("tempelhof", [0, 1], { variant: "feld", tone: "light" });
 
 /**
  * The screens, by id: name (shown on the admin page) and tiles. Each
@@ -55,17 +61,17 @@ export const SCREENS = {
     name: "Matt",
     boxes: [
       DATE, FELD,
-      T("kino", [2, 0, 2, 2], { tone: "light" }),
-      T("fitness", [4, 0, 2, 2], { variant: "person", person: "Matt", tone: "dark" }),
+      T("kino", [1, 0, 1, 2], { tone: "light" }),
+      T("fitness", [2, 0, 1, 2], { variant: "person", person: "Matt", tone: "dark" }),
     ],
   },
   fiona: {
     name: "Fiona",
     boxes: [
       DATE,
-      T("ausdruck", [0, 1, 2, 1], { tone: "light" }),
-      T("wetter", [2, 0, 2, 2], { variant: "mixed", tone: "fill" }),
-      T("fitness", [4, 0, 2, 2], { variant: "person", person: "Fiona", tone: "dark" }),
+      T("ausdruck", [0, 1], { tone: "light" }),
+      T("wetter", [1, 0, 1, 2], { variant: "mixed", tone: "fill" }),
+      T("fitness", [2, 0, 1, 2], { variant: "person", person: "Fiona", tone: "dark" }),
     ],
   },
 };
@@ -91,7 +97,7 @@ function placeholder(box, module) {
 
 /** A tile: its background, then `inner` (module coordinates) placed in its content box. */
 export function boxSvg(b, inner) {
-  return tile(b.tile, b.tone ?? "outline") + `<g transform="translate(${b.x} ${b.y})">${inner}</g>`;
+  return tile(b.tile, b.tone ?? "outline") + `<g transform="translate(${b.x} ${b.y}) scale(${GRID.scale})">${inner}</g>`;
 }
 
 /** One tile's content (module coordinates) for `data` in `mode` (see screenSvg). */

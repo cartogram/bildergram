@@ -75,12 +75,14 @@ const SCALES = [1, 0.92, 0.86, 0.8];
  * to 80 %) until it fits above the Wörter, without cutting a line short.
  * Large keeps the Wörter unless a group is wider than the card; medium
  * shows them only when they fit whole at full size, and as a last resort
- * drops the example. Returns { svg, k, words, example, fits, cut } — the
- * build checks `fits` for every entry.
+ * drops the example. Small (Phase 17, the word of the day) is the meaning
+ * and the expression only. Returns { svg, k, words, example, fits, cut } —
+ * the build checks `fits` for every entry.
  */
 export function fit(box, entry) {
-  // Medium and small keep the Wörter only when they fit whole, and may drop the example.
-  const medium = box.size !== "large";
+  if (box.size === "small") return firstFit(box, entry, SCALES.map((k) => ({ k, words: null, example: false })));
+  // Medium keeps the Wörter only when they fit whole, and may drop the example.
+  const medium = box.size === "medium";
   const list = entry.woerter?.length ? woerter(box, entry.woerter) : null;
   const tries = [];
   if (medium) {
@@ -90,6 +92,11 @@ export function fit(box, entry) {
   }
   for (const k of SCALES) tries.push({ k, words: null });
   if (medium) for (const k of SCALES) tries.push({ k, words: null, example: false });
+  return firstFit(box, entry, tries);
+}
+
+/** The first of `tries` ({ k, words, example }) that fits, or the last one. */
+function firstFit(box, entry, tries) {
   let out;
   for (const t of tries) {
     const s = stack(box, entry, t.k, t.example ?? true);

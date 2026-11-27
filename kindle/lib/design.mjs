@@ -21,28 +21,36 @@ export const INK = { primary: "#000000", paper: "#ffffff" };
 export const RULE = { hair: 3 };
 
 /**
- * Tile grid (Phase 14; 6 × 2 since Phase 17): 6 × 2 cells of 230 × 518,
- * 8 apart and 14 from the edges (14 + 6·230 + 5·8 + 14 = 1448;
- * 14 + 2·518 + 8 + 14 = 1072) — three medium tiles across, each the full
- * height. cell(col, row, cols, rows) is a tile's rect; its content sits
- * TILE_PAD inside.
+ * Tile grid (Phase 14; 3 × 3 since Phase 17): 3 × 3 cells of 468 × 344,
+ * 8 apart, 14 from the sides and 12 from top and bottom
+ * (14 + 3·468 + 2·8 + 14 = 1448; 12 + 3·344 + 2·8 + 12 = 1072).
+ * cell(col, row, cols, rows) is a tile's rect.
+ *
+ * `scale` (Phase 17): tiles draw their content at 4/3. A small tile's
+ * content is then 303 × 210 and a medium's 303 × 474 in drawing units —
+ * the 8 × 4 grid's tiles, which every module and token was designed for —
+ * so the whole system (type, spacing, pills, rings) grows with the cells.
+ * Token values are drawing units; on screen they're `scale` times larger
+ * (body 36 shows at 48). screens.mjs T() and boxSvg() apply it.
  */
-export const GRID = { cols: 6, rows: 2, col: 230, row: 518, gap: 8, margin: 14, radius: 32 };
+export const GRID = { cols: 3, rows: 3, col: 468, row: 344, gap: 8, marginX: 14, marginY: 12, radius: 32, scale: 4 / 3 };
 export const TILE_PAD = 24;
 export const cell = (col, row, cols = 1, rows = 1) => ({
-  x: GRID.margin + col * (GRID.col + GRID.gap),
-  y: GRID.margin + row * (GRID.row + GRID.gap),
+  x: GRID.marginX + col * (GRID.col + GRID.gap),
+  y: GRID.marginY + row * (GRID.row + GRID.gap),
   w: cols * GRID.col + (cols - 1) * GRID.gap,
   h: rows * GRID.row + (rows - 1) * GRID.gap,
 });
 
 /**
- * Tile sizes (Phase 16), named by span: small 2 × 1 (the date, the Feld,
- * the small Ausdruck), medium 2 × 2 (Wetter, Kino, Bewegung), large 4 × 2. A tile
+ * Tile sizes (Phase 16; spans for the 3 × 3 grid, Phase 17), named by
+ * span: small 1 × 1 (the date, the Feld, the small Ausdruck), medium
+ * 1 × 2 (Wetter, Kino, Bewegung), tall 1 × 3 (a full column: Kino),
+ * large 2 × 2. A tile
  * gets its size from its span (screens.mjs T()); each module lists the
  * sizes it draws (`sizes`), so a layout can't put a card where it won't fit.
  */
-export const TILE_SIZES = { small: [2, 1], medium: [2, 2], large: [4, 2] };
+export const TILE_SIZES = { small: [1, 1], medium: [1, 2], tall: [1, 3], large: [2, 2] };
 export const tileSize = (cols, rows) => Object.keys(TILE_SIZES).find((k) => TILE_SIZES[k][0] === cols && TILE_SIZES[k][1] === rows);
 
 /**

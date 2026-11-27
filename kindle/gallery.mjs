@@ -90,11 +90,10 @@ const cards = scenes.map((s, i) => {
 
 // The weather tile's variants side by side.
 {
-  const tiles = [["details", [0, 0, 2, 2]], ["days", [2, 0, 2, 2]], ["mixed", [4, 0, 2, 2]]];
+  const tiles = [["details", [0, 0, 1, 2]], ["days", [1, 0, 1, 2]], ["mixed", [2, 0, 1, 2]]];
   let svg = svgOpen(W, H);
-  for (const [variant, [c, r, n, m]] of tiles) {
-    const t = cell(c, r, n, m);
-    const b = { module: "wetter", variant, tone: "fill", tile: t, x: t.x + TILE_PAD, y: t.y + TILE_PAD, w: t.w - 2 * TILE_PAD, h: t.h - 2 * TILE_PAD };
+  for (const [variant, rect] of tiles) {
+    const b = tileAt("wetter", rect, { variant, tone: "fill" });
     svg += boxSvg(b, wetter.render(moduleBox(b), weather));
   }
   const file = `${String(cards.length + 1).padStart(2, "0")}-wetter.png`;

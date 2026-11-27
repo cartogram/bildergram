@@ -127,7 +127,7 @@ export function designSpecimens(data) {
 
   // Grid
   for (const [id, screen] of Object.entries(SCREENS)) {
-    specimen("Grid", `${GRID.cols} × ${GRID.rows} cells · ${screen.name}`, `${GRID.col} × ${GRID.row} cells, ${GRID.gap} gutters, ${GRID.margin} margin; content ${TILE_PAD} inside (the ${id} screen's tiles outlined)`, 1072, () => {
+    specimen("Grid", `${GRID.cols} × ${GRID.rows} cells · ${screen.name}`, `${GRID.col} × ${GRID.row} cells, ${GRID.gap} gutters, ${GRID.marginX} / ${GRID.marginY} margins; content drawn at ${(GRID.scale).toFixed(2)}×, ${TILE_PAD} drawing units inside (the ${id} screen's tiles outlined)`, 1072, () => {
       let svg = "";
       for (let c = 0; c < GRID.cols; c++) for (let r = 0; r < GRID.rows; r++) {
         const q = cell(c, r);
@@ -216,7 +216,7 @@ export function designSpecimens(data) {
   };
   const cardLine = (title, sub, list) => {
     const rs = Math.max(...list.map((c) => c[2]));
-    const h = cell(0, 0, 1, rs).h + 2 * GRID.margin + 34;
+    const h = cell(0, 0, 1, rs).h + 2 * GRID.marginY + 34;
     specimen("Cards", title, sub, h, () => {
       let svg = "";
       let col = 0;
@@ -232,29 +232,29 @@ export function designSpecimens(data) {
   };
 
   const feld = (ms) => ({ ...data, tempelhof: tempelhofState(events, ms) });
-  cards("Datum and Feld", "Small (2 × 1); the Feld is drawn on the Kindle (gauge pieces per state)", [
-    ["datum", 2, 1, { tone: "dark" }, data, "full", "datum"],
-    ["datum", 2, 1, { tone: "dark", updating: true }, data, "full", "datum · during a check-in"],
-    ["tempelhof", 2, 1, { variant: "feld", tone: "light" }, feld(at(14, 5)), "full", "tempelhof · open"],
-    ["tempelhof", 2, 1, { variant: "feld", tone: "light" }, feld(at(5, 30)), "full", "tempelhof · closed"],
+  cards("Datum and Feld", "Small (1 × 1); the Feld is drawn on the Kindle (gauge pieces per state)", [
+    ["datum", 1, 1, { tone: "dark" }, data, "full", "datum"],
+    ["datum", 1, 1, { tone: "dark", updating: true }, data, "full", "datum · during a check-in"],
+    ["tempelhof", 1, 1, { variant: "feld", tone: "light" }, feld(at(14, 5)), "full", "tempelhof · open"],
+    ["tempelhof", 1, 1, { variant: "feld", tone: "light" }, feld(at(5, 30)), "full", "tempelhof · closed"],
   ]);
-  cards("Wetter", "Medium (2 × 2); the three variants", [
-    ["wetter", 2, 2, { variant: "mixed", tone: "fill" }, data, "full", "mixed (Fiona's screen)"],
-    ["wetter", 2, 2, { variant: "details", tone: "fill" }, data, "full", "details"],
-    ["wetter", 2, 2, { variant: "days", tone: "fill" }, data, "full", "days"],
-    ["datum", 2, 1, { tone: "dark" }, {}, "fallback", "datum · no connection"],
+  cards("Wetter", "Medium (1 × 2); the three variants", [
+    ["wetter", 1, 2, { variant: "mixed", tone: "fill" }, data, "full", "mixed (Fiona's screen)"],
+    ["wetter", 1, 2, { variant: "details", tone: "fill" }, data, "full", "details"],
+    ["wetter", 1, 2, { variant: "days", tone: "fill" }, data, "full", "days"],
+    ["datum", 1, 1, { tone: "dark" }, {}, "fallback", "datum · no connection"],
   ]);
-  cards("Im Kino and Präposition", "Large (4 × 2; sample listing); the Präposition uses the Ausdruck card", [
-    ["kino", 4, 2, { tone: "light" }, data, "full", "kino"],
-    ["praeposition", 4, 2, { tone: "light" }, data, "full", "praeposition"],
+  cards("Im Kino and Präposition", "Large (2 × 2; sample listing); the Präposition uses the Ausdruck card", [
+    ["kino", 2, 2, { tone: "light" }, data, "full", "kino"],
+    ["praeposition", 2, 2, { tone: "light" }, data, "full", "praeposition"],
   ]);
   const ausdruecke = loadAusdruecke();
-  cards("Ausdruck", "Large (4 × 2): two expressions with their Wörter", [
-    ["ausdruck", 4, 2, { tone: "light" }, data, "full", "today's"],
-    ["ausdruck", 4, 2, { tone: "light" }, { ...data, ausdruck: ausdruecke[3] }, "full", "etwas auf die lange Bank schieben"],
+  cards("Ausdruck", "Large (2 × 2): two expressions with their Wörter", [
+    ["ausdruck", 2, 2, { tone: "light" }, data, "full", "today's"],
+    ["ausdruck", 2, 2, { tone: "light" }, { ...data, ausdruck: ausdruecke[3] }, "full", "etwas auf die lange Bank schieben"],
   ]);
   // Medium cards: the longest entry, one that keeps its Wörter, a Präposition that shrinks.
-  const mediumBox = moduleBox(tileAt("ausdruck", [0, 0, 2, 2]));
+  const mediumBox = moduleBox(tileAt("ausdruck", [0, 0, 1, 2]));
   const praepositionen = loadPraepositionen();
   const asCard = (e) => ({ ausdruck: e.wort, bedeutung: `+ ${e.kasus} · ${e.bedeutung}`, beispiel: e.beispiel });
   const longest = ausdruecke.reduce((a, b) => (b.bedeutung.length + b.ausdruck.length + b.beispiel.length > a.bedeutung.length + a.ausdruck.length + a.beispiel.length ? b : a));
@@ -262,29 +262,32 @@ export function designSpecimens(data) {
   const shrunk = praepositionen.find((e) => fit(mediumBox, asCard(e)).k < 1) ?? praepositionen[0];
   const noFilms = { ...data, kino: { programme: { cinemas: [] }, from: "18:00" } };
   const longTitles = { ...data, kino: { from: "18:00", programme: { cinemas: [{ name: "Rollberg", sessions: ["Aki Kaurismäki: Fallende Blätter", "Die Theorie von Allem", "Godzilla Minus One", "Anatomie eines Falls", "The Zone of Interest"].map((title, i) => ({ date: data.date, time: `${18 + i}:00`, title, film: null, formats: [] })) }, { name: "Passage", sessions: [] }] } } };
-  cards("Medium Im Kino", "Medium (2 × 2): just heute or morgen; one line per screening — the time (label), the title 28 regular faint, cut with clipText just short of the cinema's letter", [
-    ["kino", 2, 2, { tone: "light" }, data, "full", "kino · medium"],
-    ["kino", 2, 2, { tone: "light" }, { ...data, kino: { ...data.kino, day: "morgen" } }, "full", "kino · from 22:00"],
-    ["kino", 2, 2, { tone: "light" }, longTitles, "full", "kino · long titles"],
-    ["kino", 2, 2, { tone: "light" }, noFilms, "full", "kino · none"],
+  cards("Medium Im Kino", "Medium (1 × 2): just heute or morgen; one line per screening — the time (label), the title 28 regular faint, cut with clipText just short of the cinema's letter", [
+    ["kino", 1, 2, { tone: "light" }, data, "full", "kino · medium"],
+    ["kino", 1, 2, { tone: "light" }, { ...data, kino: { ...data.kino, day: "morgen" } }, "full", "kino · from 22:00"],
+    ["kino", 1, 2, { tone: "light" }, longTitles, "full", "kino · long titles"],
+    ["kino", 1, 2, { tone: "light" }, noFilms, "full", "kino · none"],
   ]);
-  const smallBox = moduleBox(tileAt("ausdruck", [0, 0, 2, 1]));
-  const smallWords = ausdruecke.find((e) => fit(smallBox, e).words) ?? ausdruecke[0];
-  cards("Small Ausdruck", "Small (2 × 1), under the date on Fiona's screen: Wörter only when they fit whole", [
-    ["ausdruck", 2, 1, { tone: "light" }, data, "full", "ausdruck · today's"],
-    ["ausdruck", 2, 1, { tone: "light" }, { ...data, ausdruck: longest }, "full", "ausdruck · longest"],
-    ["ausdruck", 2, 1, { tone: "light" }, { ...data, ausdruck: smallWords }, "full", "ausdruck · with Wörter"],
+  cards("Tall Im Kino", "Tall (1 × 3, a full column): the medium layout with room for more screenings", [
+    ["kino", 1, 3, { tone: "light" }, data, "full", "kino · tall"],
+    ["kino", 1, 3, { tone: "light" }, { ...data, kino: { ...data.kino, day: "morgen" } }, "full", "kino · tall, from 22:00"],
+    ["kino", 1, 3, { tone: "light" }, noFilms, "full", "kino · tall, none"],
   ]);
-  cards("Medium Ausdruck and Präposition", "Medium (2 × 2): Wörter only when they fit whole; the build checks every entry fits", [
-    ["ausdruck", 2, 2, { tone: "light" }, data, "full", "ausdruck · today's"],
-    ["ausdruck", 2, 2, { tone: "light" }, { ...data, ausdruck: longest }, "full", "ausdruck · longest"],
-    ["ausdruck", 2, 2, { tone: "light" }, { ...data, ausdruck: withWords }, "full", "ausdruck · with Wörter"],
-    ["praeposition", 2, 2, { tone: "light" }, { ...data, praeposition: shrunk }, "full", "praeposition · shrunk"],
+  cards("Small Ausdruck", "Small (1 × 1), the word of the day under the date on Fiona's screen: the meaning and the expression", [
+    ["ausdruck", 1, 1, { tone: "light" }, data, "full", "ausdruck · today's"],
+    ["ausdruck", 1, 1, { tone: "light" }, { ...data, ausdruck: longest }, "full", "ausdruck · longest"],
+    ["praeposition", 1, 1, { tone: "light" }, data, "full", "praeposition · today's"],
   ]);
-  cards("Bewegung", "Medium (2 × 2), one per person (sample minutes)", [
-    ["fitness", 2, 2, { variant: "person", person: "Matt", tone: "dark" }, data, "full", "Matt"],
-    ["fitness", 2, 2, { variant: "person", person: "Fiona", tone: "dark" }, data, "full", "Fiona"],
-    ["fitness", 2, 2, { variant: "person", person: "Matt", tone: "dark" }, { ...data, fitness: { people: [] } }, "full", "no data yet"],
+  cards("Medium Ausdruck and Präposition", "Medium (1 × 2): Wörter only when they fit whole; the build checks every entry fits", [
+    ["ausdruck", 1, 2, { tone: "light" }, data, "full", "ausdruck · today's"],
+    ["ausdruck", 1, 2, { tone: "light" }, { ...data, ausdruck: longest }, "full", "ausdruck · longest"],
+    ["ausdruck", 1, 2, { tone: "light" }, { ...data, ausdruck: withWords }, "full", "ausdruck · with Wörter"],
+    ["praeposition", 1, 2, { tone: "light" }, { ...data, praeposition: shrunk }, "full", "praeposition · shrunk"],
+  ]);
+  cards("Bewegung", "Medium (1 × 2), one per person (sample minutes)", [
+    ["fitness", 1, 2, { variant: "person", person: "Matt", tone: "dark" }, data, "full", "Matt"],
+    ["fitness", 1, 2, { variant: "person", person: "Fiona", tone: "dark" }, data, "full", "Fiona"],
+    ["fitness", 1, 2, { variant: "person", person: "Matt", tone: "dark" }, { ...data, fitness: { people: [] } }, "full", "no data yet"],
   ]);
   return out;
 }

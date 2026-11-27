@@ -7,16 +7,16 @@
 
 import { parseFitness, weekOf } from "./modules/fitness.mjs";
 
-/** A fixed evening at three cinemas on `date`. */
+/** A fixed evening at three cinemas on `date`, with language versions (OmU, OmeU, OV) like yorck.de's. */
 export const sampleProgramme = (date) => ({
   cinemas: [
-    ["Rollberg", [["18:00", "Perfect Days"], ["18:45", "Anatomie eines Falls"], ["20:30", "The Zone of Interest"], ["21:15", "Past Lives"]]],
-    ["Passage", [["18:30", "Das Lehrerzimmer"], ["19:00", "Poor Things"], ["20:45", "Oppenheimer"]]],
-    ["Neues Off", [["19:15", "Die Theorie von Allem"], ["21:00", "Aki Kaurismäki: Fallende Blätter"], ["22:30", "Godzilla Minus One"]]],
+    ["Rollberg", [["18:00", "Perfect Days", "OmU"], ["18:45", "Anatomie eines Falls", "OmeU"], ["20:30", "The Zone of Interest", "OmU"], ["21:15", "Past Lives", "OV"]]],
+    ["Passage", [["18:30", "Das Lehrerzimmer"], ["19:00", "Poor Things", "OmU"], ["20:45", "Oppenheimer", "OV"]]],
+    ["Neues Off", [["19:15", "Die Theorie von Allem"], ["21:00", "Aki Kaurismäki: Fallende Blätter", "OmU"], ["22:30", "Godzilla Minus One", "OmeU"]]],
   ].map(([name, rows]) => ({
     slug: name.toLowerCase().replace(" ", "-"),
     name,
-    sessions: rows.map(([time, title]) => ({ date, time, title, film: null, formats: [] })),
+    sessions: rows.map(([time, title, format]) => ({ date, time, title, film: null, formats: format ? [format] : [] })),
   })),
 });
 
