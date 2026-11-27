@@ -45,8 +45,8 @@ const INK_USE = {
 
 const STYLE_USE = {
   outline: "A black border. The default; not used on the home screen.",
-  light: "A light gray border (line ink): Kino, Ausdruck.",
-  fill: "A light gray fill (#eeeeee): Wetter, Feld.",
+  light: "A light gray border (line ink): Kino, Ausdruck, Feld.",
+  fill: "A light gray fill (#eeeeee): Wetter.",
   dark: "Black, modules switch to TILE_INK_DARK: the date, Matt, Fiona.",
   bleed: "No container; a module's graphics may reach into the padding while its text keeps the inset.",
 };
@@ -56,8 +56,8 @@ export function designTokens() {
   return {
     grid: {
       ...GRID,
-      cols: 8,
-      rows: 4,
+      cols: GRID.cols,
+      rows: GRID.rows,
       pad: TILE_PAD,
       firstCap: FIRST_CAP,
       canvas: { w: 1448, h: 1072 },
@@ -126,18 +126,20 @@ export function designSpecimens(data) {
   const events = buildSchedule(data.now, 1);
 
   // Grid
-  specimen("Grid", "8 × 4 cells", `${GRID.col} × ${GRID.row} cells, ${GRID.gap} gutters, ${GRID.margin} margin; content ${TILE_PAD} inside (the home screen's tiles outlined)`, 1072, () => {
-    let svg = "";
-    for (let c = 0; c < 8; c++) for (let r = 0; r < 4; r++) {
-      const q = cell(c, r);
-      svg += `<rect x="${q.x}" y="${q.y}" width="${q.w}" height="${q.h}" fill="#eeeeee"/>`;
-    }
-    for (const b of SCREENS.home.boxes) {
-      svg += tile(b.tile, "outline") + note(b.tile.x + 20, b.tile.y + 40, `${b.module} · ${b.size}${b.variant ? ` · ${b.variant}` : ""}`);
-      svg += note(b.tile.x + 20, b.tile.y + 70, `${b.tile.w} × ${b.tile.h}`);
-    }
-    return svg;
-  });
+  for (const [id, screen] of Object.entries(SCREENS)) {
+    specimen("Grid", `${GRID.cols} × ${GRID.rows} cells · ${screen.name}`, `${GRID.col} × ${GRID.row} cells, ${GRID.gap} gutters, ${GRID.margin} margin; content ${TILE_PAD} inside (the ${id} screen's tiles outlined)`, 1072, () => {
+      let svg = "";
+      for (let c = 0; c < GRID.cols; c++) for (let r = 0; r < GRID.rows; r++) {
+        const q = cell(c, r);
+        svg += `<rect x="${q.x}" y="${q.y}" width="${q.w}" height="${q.h}" fill="#eeeeee"/>`;
+      }
+      for (const b of screen.boxes) {
+        svg += tile(b.tile, "outline") + note(b.tile.x + 20, b.tile.y + 40, `${b.module} · ${b.size}${b.variant ? ` · ${b.variant}` : ""}${b.person ? ` · ${b.person}` : ""}`);
+        svg += note(b.tile.x + 20, b.tile.y + 70, `${b.tile.w} × ${b.tile.h}`);
+      }
+      return svg;
+    });
+  }
 
   // Type
   const samples = {
@@ -200,8 +202,19 @@ export function designSpecimens(data) {
     return svg;
   });
 
-  // Cards: each [module, cols, rows, opts, data, mode, caption], laid out left to right on the real cells.
-  const cards = (title, sub, list) => {
+  // Cards: each [module, cols, rows, opts, data, mode, caption], laid out left to right on the real
+  // cells; a row wider than the grid continues as another specimen.
+  const cards = (title, sub, all) => {
+    const lines = [[]];
+    let used = 0;
+    for (const c of all) {
+      if (used + c[1] > GRID.cols) { lines.push([]); used = 0; }
+      lines[lines.length - 1].push(c);
+      used += c[1];
+    }
+    lines.forEach((list, i) => cardLine(lines.length > 1 ? `${title} (${i + 1}/${lines.length})` : title, sub, list));
+  };
+  const cardLine = (title, sub, list) => {
     const rs = Math.max(...list.map((c) => c[2]));
     const h = cell(0, 0, 1, rs).h + 2 * GRID.margin + 34;
     specimen("Cards", title, sub, h, () => {
@@ -222,11 +235,11 @@ export function designSpecimens(data) {
   cards("Datum and Feld", "Small (2 × 1); the Feld is drawn on the Kindle (gauge pieces per state)", [
     ["datum", 2, 1, { tone: "dark" }, data, "full", "datum"],
     ["datum", 2, 1, { tone: "dark", updating: true }, data, "full", "datum · during a check-in"],
-    ["tempelhof", 2, 1, { variant: "feld", tone: "fill" }, feld(at(14, 5)), "full", "tempelhof · open"],
-    ["tempelhof", 2, 1, { variant: "feld", tone: "fill" }, feld(at(5, 30)), "full", "tempelhof · closed"],
+    ["tempelhof", 2, 1, { variant: "feld", tone: "light" }, feld(at(14, 5)), "full", "tempelhof · open"],
+    ["tempelhof", 2, 1, { variant: "feld", tone: "light" }, feld(at(5, 30)), "full", "tempelhof · closed"],
   ]);
   cards("Wetter", "Medium (2 × 2); the three variants", [
-    ["wetter", 2, 2, { variant: "mixed", tone: "fill" }, data, "full", "mixed (home)"],
+    ["wetter", 2, 2, { variant: "mixed", tone: "fill" }, data, "full", "mixed (Fiona's screen)"],
     ["wetter", 2, 2, { variant: "details", tone: "fill" }, data, "full", "details"],
     ["wetter", 2, 2, { variant: "days", tone: "fill" }, data, "full", "days"],
     ["datum", 2, 1, { tone: "dark" }, {}, "fallback", "datum · no connection"],
@@ -254,6 +267,13 @@ export function designSpecimens(data) {
     ["kino", 2, 2, { tone: "light" }, { ...data, kino: { ...data.kino, day: "morgen" } }, "full", "kino · from 22:00"],
     ["kino", 2, 2, { tone: "light" }, longTitles, "full", "kino · long titles"],
     ["kino", 2, 2, { tone: "light" }, noFilms, "full", "kino · none"],
+  ]);
+  const smallBox = moduleBox(tileAt("ausdruck", [0, 0, 2, 1]));
+  const smallWords = ausdruecke.find((e) => fit(smallBox, e).words) ?? ausdruecke[0];
+  cards("Small Ausdruck", "Small (2 × 1), under the date on Fiona's screen: Wörter only when they fit whole", [
+    ["ausdruck", 2, 1, { tone: "light" }, data, "full", "ausdruck · today's"],
+    ["ausdruck", 2, 1, { tone: "light" }, { ...data, ausdruck: longest }, "full", "ausdruck · longest"],
+    ["ausdruck", 2, 1, { tone: "light" }, { ...data, ausdruck: smallWords }, "full", "ausdruck · with Wörter"],
   ]);
   cards("Medium Ausdruck and Präposition", "Medium (2 × 2): Wörter only when they fit whole; the build checks every entry fits", [
     ["ausdruck", 2, 2, { tone: "light" }, data, "full", "ausdruck · today's"],

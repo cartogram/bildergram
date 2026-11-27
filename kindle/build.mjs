@@ -45,10 +45,10 @@ const YEARS = 3; // schedule length — reinstall before it runs out
 
 
 /** The date tile (the same cell on every screen), where "Aktualisiere …" covers the battery reading. */
-const DATE_TILE = SCREENS.home.boxes.find((b) => b.module === "datum");
+const DATE_TILE = Object.values(SCREENS)[0].boxes.find((b) => b.module === "datum");
 for (const [id, s] of Object.entries(SCREENS)) {
   const d = s.boxes.find((b) => b.module === "datum");
-  if (!d || d.x !== DATE_TILE.x || d.y !== DATE_TILE.y || d.w !== DATE_TILE.w || d.h !== DATE_TILE.h) throw new Error(`screen ${id}: the date tile must sit where home's does`);
+  if (!d || d.x !== DATE_TILE.x || d.y !== DATE_TILE.y || d.w !== DATE_TILE.w || d.h !== DATE_TILE.h) throw new Error(`screen ${id}: the date tile must sit where the first screen's does`);
 }
 const UPDATING = (() => {
   const r = datum.updatingRect(moduleBox(DATE_TILE));

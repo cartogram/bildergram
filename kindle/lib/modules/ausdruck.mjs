@@ -18,7 +18,7 @@ import { wrap } from "../eink.mjs";
 
 export const id = "ausdruck";
 export const cadence = "daily";
-export const sizes = ["medium", "large"];
+export const sizes = ["small", "medium", "large"];
 
 const readData = (file) => JSON.parse(readFileSync(new URL(`../../data/${file}`, import.meta.url), "utf8"));
 
@@ -52,7 +52,7 @@ function block(str, y, style, maxW, maxLines) {
 }
 
 /** Lines allowed per part, by size: the medium card is narrow, so its parts wrap further. */
-const LINES = { large: { title: 2, head: 3, example: 4 }, medium: { title: 3, head: 3, example: 6 } };
+const LINES = { large: { title: 2, head: 3, example: 4 }, medium: { title: 3, head: 3, example: 6 }, small: { title: 2, head: 3, example: 4 } };
 
 /** The card's text at scale `k` (1 = the type scale); baselines from the first line (0). Without `example`, just the meaning and the expression. */
 function stack(box, entry, k, example = true) {
@@ -79,7 +79,8 @@ const SCALES = [1, 0.92, 0.86, 0.8];
  * build checks `fits` for every entry.
  */
 export function fit(box, entry) {
-  const medium = box.size === "medium";
+  // Medium and small keep the Wörter only when they fit whole, and may drop the example.
+  const medium = box.size !== "large";
   const list = entry.woerter?.length ? woerter(box, entry.woerter) : null;
   const tries = [];
   if (medium) {

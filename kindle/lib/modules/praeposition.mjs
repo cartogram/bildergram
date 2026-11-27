@@ -14,7 +14,7 @@ import { entryFor as rotate, render as renderEntry } from "./ausdruck.mjs";
 
 export const id = "praeposition";
 export const cadence = "daily";
-export const sizes = ["medium", "large"];
+export const sizes = ["small", "medium", "large"];
 
 export function loadEntries() {
   return JSON.parse(readFileSync(new URL("../../data/praepositionen.json", import.meta.url), "utf8"));

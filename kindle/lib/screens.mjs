@@ -1,12 +1,12 @@
 // ============================================================
 // kindle/lib/screens.mjs — the screens (Phase 8; tiles, Phase 14; one
-// screen per Kindle, Phase 15)
-// A screen is a set of tiles on the 8 × 4 grid (design.mjs GRID,
-// cell()), each filled by a module. Tiles don't overlap, so on the
-// Kindle each can be pasted on its own cadence. Every screen keeps two
-// tiles in the same cells: the date (0, 0) — the "Aktualisiere …" piece
-// goes there — and the Feld (0, 1), so all screens share one set of
-// Kindle-drawn pieces.
+// screen per Kindle, Phase 15; a screen each for Matt and Fiona on the
+// 6 × 2 grid, Phase 17)
+// A screen is a set of tiles on the grid (design.mjs GRID, cell()), each
+// filled by a module. Tiles don't overlap, so on the Kindle each can be
+// pasted on its own cadence. Every screen has the date at (0, 0) — the
+// "Aktualisiere …" piece goes there; the Feld, when a screen has it,
+// sits at (0, 1), so screens share one set of Kindle-drawn pieces.
 // Each tile's size (small, medium, large — design.mjs TILE_SIZES) follows
 // from its span, and must be one its module draws (Phase 16).
 // ============================================================
@@ -40,24 +40,32 @@ function T(module, [col, row, cols = 1, rows = 1], opts = {}) {
 // The tiles every screen shares.
 const DATE = T("datum", [0, 0, 2, 1], { tone: "dark" });
 /** Kindle-drawn: `variant` names its piece set; one set serves every screen (same cell, same tone). */
-const FELD = T("tempelhof", [0, 1, 2, 1], { variant: "feld", tone: "fill" });
+const FELD = T("tempelhof", [0, 1, 2, 1], { variant: "feld", tone: "light" });
 
 /**
  * The screens, by id: name (shown on the admin page) and tiles. Each
- * Kindle shows one (its config's `screen`); both show "home" for now.
- * The cards change with the time of day themselves (the Feld countdown,
- * tomorrow's films from 22:00).
+ * Kindle shows one (its config's `screen`): Matt's shows "matt", Fiona's
+ * "fiona" (Phase 17). Each is three medium columns, read from the right:
+ * the person's rings, then Kino or Wetter, then the date over the Feld
+ * or the Ausdruck. The cards change with the time of day themselves
+ * (the Feld countdown, tomorrow's films from 22:00).
  */
 export const SCREENS = {
-  home: {
-    name: "Start",
+  matt: {
+    name: "Matt",
     boxes: [
       DATE, FELD,
+      T("kino", [2, 0, 2, 2], { tone: "light" }),
+      T("fitness", [4, 0, 2, 2], { variant: "person", person: "Matt", tone: "dark" }),
+    ],
+  },
+  fiona: {
+    name: "Fiona",
+    boxes: [
+      DATE,
+      T("ausdruck", [0, 1, 2, 1], { tone: "light" }),
       T("wetter", [2, 0, 2, 2], { variant: "mixed", tone: "fill" }),
-      T("ausdruck", [4, 0, 4, 2], { tone: "light" }),
-      T("kino", [0, 2, 4, 2], { tone: "light" }),
-      T("fitness", [4, 2, 2, 2], { variant: "person", person: "Matt", tone: "dark" }),
-      T("fitness", [6, 2, 2, 2], { variant: "person", person: "Fiona", tone: "dark" }),
+      T("fitness", [4, 0, 2, 2], { variant: "person", person: "Fiona", tone: "dark" }),
     ],
   },
 };

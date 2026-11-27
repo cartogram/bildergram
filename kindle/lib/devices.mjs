@@ -7,13 +7,13 @@
 // framebuffer (eips pastes pixels as-is).
 //
 // `screen` is the one screen a Kindle shows until its first check-in
-// sets it from the hub (src/routes/kindle.ts); both show "home" for now.
+// sets it from the hub (src/routes/kindle.ts); Matt's shows "matt", Fiona's "fiona" (Phase 17).
 // Keep ids in sync with src/devices.ts (tokens, MACs).
 // ============================================================
 
 export const DEVICES = {
-  kindle_01: { name: "Matt (Paperwhite 3)", width: 1448, height: 1072, rotate: "ccw", screen: "home" },
-  kindle_02: { name: "Fiona (Paperwhite 2)", width: 1024, height: 758, rotate: "ccw", screen: "home" },
+  kindle_01: { name: "Matt (Paperwhite 3)", width: 1448, height: 1072, rotate: "ccw", screen: "matt" },
+  kindle_02: { name: "Fiona (Paperwhite 2)", width: 1024, height: 758, rotate: "ccw", screen: "fiona" },
 };
 
 export const DEFAULT_DEVICE = "kindle_01";

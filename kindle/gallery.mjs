@@ -71,12 +71,14 @@ const ausdruecke = loadAusdruecke();
 const mostWords = ausdruecke.reduce((a, b) => ((b.woerter?.length ?? 0) > (a.woerter?.length ?? 0) ? b : a));
 
 const scenes = [
-  { id: "home", when: "07:30", note: "sample listing and minutes", data: { ...full, tempelhof: feldAt(7, 30) } },
-  { id: "home", when: "05:30", note: "Feld closed", data: { ...full, tempelhof: feldAt(5, 30) } },
-  { id: "home", when: "22:30", note: "Kino shows tomorrow's listing", data: { ...full, kino: { ...full.kino, day: "morgen" }, tempelhof: feldAt(22, 30) } },
-  { id: "home", when: "07:30", note: "the Ausdruck with the most Wörter", data: { ...full, ausdruck: mostWords, tempelhof: feldAt(7, 30) } },
-  { id: "home", when: "07:30", note: "no exercise data yet / stale sync", data: { ...full, fitness: fitnessScenes[2], tempelhof: feldAt(7, 30) } },
-  { id: "home", when: "07:30", note: "no connection (fallback)", data: {}, mode: "fallback" },
+  { id: "matt", when: "07:30", note: "sample listing and minutes", data: { ...full, tempelhof: feldAt(7, 30) } },
+  { id: "fiona", when: "07:30", note: "sample minutes", data: { ...full, tempelhof: feldAt(7, 30) } },
+  { id: "matt", when: "05:30", note: "Feld closed", data: { ...full, tempelhof: feldAt(5, 30) } },
+  { id: "fiona", when: "07:30", note: "the Ausdruck with the most Wörter", data: { ...full, ausdruck: mostWords } },
+  { id: "matt", when: "22:30", note: "Kino shows tomorrow's listing", data: { ...full, kino: { ...full.kino, day: "morgen" }, tempelhof: feldAt(22, 30) } },
+  { id: "fiona", when: "07:30", note: "no exercise data yet / stale sync", data: { ...full, fitness: fitnessScenes[2] } },
+  { id: "matt", when: "07:30", note: "no connection (fallback)", data: {}, mode: "fallback" },
+  { id: "fiona", when: "07:30", note: "no connection (fallback)", data: {}, mode: "fallback" },
 ];
 
 const t0 = performance.now();
@@ -98,26 +100,6 @@ const cards = scenes.map((s, i) => {
   const file = `${String(cards.length + 1).padStart(2, "0")}-wetter.png`;
   writeFileSync(`${OUT}${file}`, encodePng(rasterize(svg + "</svg>")));
   cards.push({ file, title: "Wetter tiles", sub: "details · days · mixed" });
-}
-
-// Medium cards (Phase 16) on a whole screen: one possible home with Kino, Ausdruck and Präposition at 2 × 2.
-{
-  const tiles = [
-    tileAt("datum", [0, 0, 2, 1], { tone: "dark" }),
-    tileAt("tempelhof", [0, 1, 2, 1], { variant: "feld", tone: "fill" }),
-    tileAt("wetter", [2, 0, 2, 2], { variant: "mixed", tone: "fill" }),
-    tileAt("ausdruck", [4, 0, 2, 2], { tone: "light" }),
-    tileAt("praeposition", [6, 0, 2, 2], { tone: "light" }),
-    tileAt("kino", [0, 2, 2, 2], { tone: "light" }),
-    tileAt("fitness", [2, 2, 2, 2], { variant: "person", person: "Matt", tone: "dark" }),
-    tileAt("fitness", [4, 2, 2, 2], { variant: "person", person: "Fiona", tone: "dark" }),
-    tileAt("wetter", [6, 2, 2, 2], { variant: "days", tone: "fill" }),
-  ];
-  const d = { ...full, tempelhof: feldAt(7, 30) };
-  const svg = svgOpen(W, H) + tiles.map((b) => boxSvg(b, moduleSvg(b, d))).join("") + "</svg>";
-  const file = `${String(cards.length + 1).padStart(2, "0")}-medium.png`;
-  writeFileSync(`${OUT}${file}`, encodePng(rasterize(svg)));
-  cards.push({ file, title: "Medium cards", sub: "Kino, Ausdruck and Präposition at 2 × 2 (a layout idea, not a screen)" });
 }
 
 writeFileSync(
@@ -143,7 +125,7 @@ writeFileSync(
   .actual img { width: 1448px; max-width: none; image-rendering: pixelated; }
 </style>
 <main>
-  <h1>Kindle screens — Phase 16 design review</h1>
+  <h1>Kindle screens — Phase 17 design review</h1>
   <p>Rendered ${deDateLong(date)} from live data (Open-Meteo, yorck.de, Tempelhof schedule) at the Paperwhite 3's 1448 × 1072, 16 gray levels.</p>
   <div class="bar"><button id="fit" aria-pressed="true">Fit</button><button id="actual" aria-pressed="false">Actual pixels</button></div>
   <div class="grid">

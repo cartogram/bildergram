@@ -21,11 +21,13 @@ export const INK = { primary: "#000000", paper: "#ffffff" };
 export const RULE = { hair: 3 };
 
 /**
- * Tile grid (Phase 14): 8 × 4 cells of 171 × 256, 8 apart and 12 from
- * the edges (12 + 8·171 + 7·8 + 12 = 1448; 12 + 4·256 + 3·8 + 12 = 1072).
- * cell(col, row, cols, rows) is a tile's rect; its content sits TILE_PAD inside.
+ * Tile grid (Phase 14; 6 × 2 since Phase 17): 6 × 2 cells of 230 × 518,
+ * 8 apart and 14 from the edges (14 + 6·230 + 5·8 + 14 = 1448;
+ * 14 + 2·518 + 8 + 14 = 1072) — three medium tiles across, each the full
+ * height. cell(col, row, cols, rows) is a tile's rect; its content sits
+ * TILE_PAD inside.
  */
-export const GRID = { col: 171, row: 256, gap: 8, margin: 12, radius: 32 };
+export const GRID = { cols: 6, rows: 2, col: 230, row: 518, gap: 8, margin: 14, radius: 32 };
 export const TILE_PAD = 24;
 export const cell = (col, row, cols = 1, rows = 1) => ({
   x: GRID.margin + col * (GRID.col + GRID.gap),
@@ -35,8 +37,8 @@ export const cell = (col, row, cols = 1, rows = 1) => ({
 });
 
 /**
- * Tile sizes (Phase 16), named by span: small 2 × 1 (the date, the Feld),
- * medium 2 × 2 (Wetter, Bewegung), large 4 × 2 (Kino, Ausdruck). A tile
+ * Tile sizes (Phase 16), named by span: small 2 × 1 (the date, the Feld,
+ * the small Ausdruck), medium 2 × 2 (Wetter, Kino, Bewegung), large 4 × 2. A tile
  * gets its size from its span (screens.mjs T()); each module lists the
  * sizes it draws (`sizes`), so a layout can't put a card where it won't fit.
  */

@@ -29,12 +29,13 @@ import { fitnessParam } from "./fitness";
 
 /** The screens kindle/lib/screens.mjs defines (ids, German names, what they show). */
 export const SCREENS = {
-  home: { name: "Start", shows: "Tiles: date, Feld gauge, weather, expression of the day, Kino tonight, Matt + Fiona's exercise rings" },
+  matt: { name: "Matt", shows: "Date, Feld gauge, Kino tonight, Matt's exercise rings" },
+  fiona: { name: "Fiona", shows: "Date, expression of the day, weather, Fiona's exercise rings" },
 } as const;
 export type Screen = keyof typeof SCREENS;
 
 /** Screens showing the fitness module (kindle/lib/screens.mjs). */
-const FITNESS_SCREENS = new Set<string>(["home"]);
+const FITNESS_SCREENS = new Set<string>(["matt", "fiona"]);
 
 export interface KindleConfig {
   /** The one screen this Kindle shows (its cards change with the time of day themselves). */
@@ -72,14 +73,15 @@ const statusKey = (device: string) => `kindle/${device}/status.json`;
 const HISTORY_SECONDS = 7 * 86_400;
 
 export const DEFAULT_CONFIG: KindleConfig = {
-  screen: "home",
+  screen: "matt",
   kino: { cinemas: ["rollberg", "passage", "neues-off"], from: "18:00", letterboxdUser: "", hideSeen: false, hiddenFilms: [] },
   checkinMinutes: 60,
   exit: false,
 };
 
-/** The screen each Kindle starts with; both show the same for now. */
-const defaultConfig = (_device: string): KindleConfig => ({ ...DEFAULT_CONFIG });
+/** The screen each Kindle starts with (kindle/lib/devices.mjs `screen`): Matt's shows "matt", Fiona's "fiona". */
+const DEFAULT_SCREENS: Record<string, Screen> = { kindle_01: "matt", kindle_02: "fiona" };
+const defaultConfig = (device: string): KindleConfig => ({ ...DEFAULT_CONFIG, screen: DEFAULT_SCREENS[device] ?? DEFAULT_CONFIG.screen });
 
 /** Yorck cinemas (slug → name), from yorck.de/kinos. */
 export const YORCK_CINEMAS: Record<string, string> = {
