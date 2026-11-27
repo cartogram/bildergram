@@ -15,6 +15,7 @@ import { deNumber, firstBaseline, STAT, statRow, text, TILE_INK, TILE_INK_DARK, 
 
 export const id = "fitness";
 export const cadence = "hourly";
+export const sizes = ["medium"];
 
 const DAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 

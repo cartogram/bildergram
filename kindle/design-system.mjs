@@ -11,16 +11,16 @@
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { cell, circleLabel, GRID, pill, text, tile, TILE_INK, TILE_INK_DARK, TILE_PAD, TILE_TYPE } from "./lib/design.mjs";
+import { cell, circleLabel, clipText, ELLIPSIS, exactWidth, GRID, pill, text, tile, TILE_INK, TILE_INK_DARK, TILE_PAD, TILE_SIZES, TILE_TYPE } from "./lib/design.mjs";
 import { encodePng, initRenderer, rasterize, svgOpen, W } from "./lib/eink.mjs";
 import * as datum from "./lib/modules/datum.mjs";
 import { fetchWeather } from "./lib/modules/wetter.mjs";
 import { berlinDate } from "./lib/render.mjs";
 import { berlinParts, berlinToUtc, buildSchedule, tempelhofState } from "./lib/schedule.mjs";
-import { boxSvg, moduleBox, moduleSvg, SCREENS, tileAt } from "./lib/screens.mjs";
+import { boxSvg, moduleBox, moduleSvg, MODULES, SCREENS, tileAt } from "./lib/screens.mjs";
 import { sampleFitness, sampleProgramme } from "./samples.mjs";
-import { entryFor, loadEntries as loadAusdruecke } from "./lib/modules/ausdruck.mjs";
-import { entryFor as praepositionFor } from "./lib/modules/praeposition.mjs";
+import { entryFor, fit, loadEntries as loadAusdruecke } from "./lib/modules/ausdruck.mjs";
+import { entryFor as praepositionFor, loadEntries as loadPraepositionen } from "./lib/modules/praeposition.mjs";
 
 const OUT = fileURLToPath(new URL("./dist/gallery/", import.meta.url));
 mkdirSync(OUT, { recursive: true });
@@ -65,7 +65,7 @@ specimen("Grid", "8 × 4 cells", `${GRID.col} × ${GRID.row} cells, ${GRID.gap} 
     svg += `<rect x="${q.x}" y="${q.y}" width="${q.w}" height="${q.h}" fill="#eeeeee"/>`;
   }
   for (const b of SCREENS.home.boxes) {
-    svg += tile(b.tile, "outline") + note(b.tile.x + 20, b.tile.y + 40, `${b.module}${b.variant ? ` · ${b.variant}` : ""}`);
+    svg += tile(b.tile, "outline") + note(b.tile.x + 20, b.tile.y + 40, `${b.module} · ${b.size}${b.variant ? ` · ${b.variant}` : ""}`);
     svg += note(b.tile.x + 20, b.tile.y + 70, `${b.tile.w} × ${b.tile.h}`);
   }
   return svg;
@@ -130,6 +130,20 @@ specimen("Components", "Tiles and pills", "tile(): outline, light (Kino, Ausdruc
   return svg;
 });
 
+specimen("Components", "Ellipsis", `clipText(): a line cut mid-word, ended in ELLIPSIS — three periods ${ELLIPSIS.spacing.toFixed(3)} em closer, about two thirds of the “…” glyph — top row the glyph, bottom row clipText, at three widths — used by the medium Kino titles`, 150, () => {
+  const style = { size: 28, ink: TILE_INK.faint };
+  const title = "Aki Kaurismäki: Fallende Blätter";
+  const glyphClip = (str, st, w) => { let t = str; while (t && exactWidth(`${t}…`, st) > w) t = t.slice(0, -1).trimEnd(); return `${t}…`; };
+  let svg = "";
+  [140, 190, 240].forEach((w, i) => {
+    const x = X + i * 320;
+    svg += `<rect x="${x}" y="20" width="${w}" height="40" fill="#eeeeee"/>` + text(x, 50, glyphClip(title, style, w), style);
+    svg += `<rect x="${x}" y="72" width="${w}" height="40" fill="#eeeeee"/>` + clipText(x, 102, title, style, w);
+    svg += note(x, 140, `${w} px`);
+  });
+  return svg;
+});
+
 // ---------------- Cards ----------------
 
 /**
@@ -174,6 +188,28 @@ cards("Ausdruck", "4 × 2, light border: two expressions with their Wörter", [
   ["ausdruck", 4, 2, { tone: "light" }, data, "full", "today's"],
   ["ausdruck", 4, 2, { tone: "light" }, { ...data, ausdruck: loadAusdruecke()[3] }, "full", "etwas auf die lange Bank schieben"],
 ]);
+// Medium cards (Phase 16): the longest entry, one that keeps its Wörter, a Präposition that shrinks.
+const mediumBox = moduleBox(tileAt("ausdruck", [0, 0, 2, 2]));
+const ausdruecke = loadAusdruecke();
+const praepositionen = loadPraepositionen();
+const asCard = (e) => ({ ausdruck: e.wort, bedeutung: `+ ${e.kasus} · ${e.bedeutung}`, beispiel: e.beispiel });
+const longest = ausdruecke.reduce((a, b) => (b.bedeutung.length + b.ausdruck.length + b.beispiel.length > a.bedeutung.length + a.ausdruck.length + a.beispiel.length ? b : a));
+const withWords = ausdruecke.find((e) => fit(mediumBox, e).words);
+const shrunk = praepositionen.find((e) => fit(mediumBox, asCard(e)).k < 1) ?? praepositionen[0];
+const longTitles = { ...data, kino: { from: "18:00", programme: { cinemas: [{ name: "Rollberg", sessions: ["Aki Kaurismäki: Fallende Blätter", "Die Theorie von Allem", "Godzilla Minus One", "Anatomie eines Falls", "The Zone of Interest"].map((title, i) => ({ date, time: `${18 + i}:00`, title, film: null, formats: [] })) }, { name: "Passage", sessions: [] }] } } };
+const noFilms = { ...data, kino: { programme: { cinemas: [] }, from: "18:00" } };
+cards("Medium Im Kino and Ausdruck", "2 × 2 (the fitness tiles' size): Kino says just heute or morgen, one line per screening (the time in label, the title 28 regular faint); the Ausdruck keeps its Wörter only when they fit whole", [
+  ["kino", 2, 2, { tone: "light" }, data, "full", "kino · medium"],
+  ["kino", 2, 2, { tone: "light" }, { ...data, kino: { ...data.kino, day: "morgen" } }, "full", "kino · from 22:00"],
+  ["kino", 2, 2, { tone: "light" }, longTitles, "full", "kino · long titles"],
+  ["ausdruck", 2, 2, { tone: "light" }, data, "full", "ausdruck · today's"],
+]);
+cards("Medium Ausdruck and Präposition", "2 × 2; the build checks every entry fits", [
+  ["ausdruck", 2, 2, { tone: "light" }, { ...data, ausdruck: longest }, "full", "ausdruck · longest"],
+  ["ausdruck", 2, 2, { tone: "light" }, { ...data, ausdruck: withWords }, "full", "ausdruck · with Wörter"],
+  ["praeposition", 2, 2, { tone: "light" }, data, "full", "praeposition · today's"],
+  ["praeposition", 2, 2, { tone: "light" }, { ...data, praeposition: shrunk }, "full", "praeposition · shrunk"],
+]);
 cards("Bewegung", "2 × 2 per person (sample minutes)", [
   ["fitness", 2, 2, { variant: "person", person: "Matt", tone: "dark" }, data, "full", "Matt"],
   ["fitness", 2, 2, { variant: "person", person: "Fiona", tone: "dark" }, data, "full", "Fiona"],
@@ -187,7 +223,8 @@ const typeAudit = [
   ["display · 104 bold", "the temperature (the day of the month is 88: at 104 it would touch the Akku pill)"],
   ["heading · 32 bold", "the expression and the Präposition on the cards; the month"],
   ["body · 32", "the example sentences; the Kino rows (time bold)"],
-  ["label · 28 bold", "tile titles (Tempelhof, Im Kino, Matt), field labels (Niederschlag, Wind, the days), the card titles, the weekday, the Feld lines and countdown"],
+  ["label · 28 bold", "the medium Kino times; tile titles (Tempelhof, Im Kino, Matt), field labels (Niederschlag, Wind, the days), the card titles, the weekday, the Feld lines and countdown"],
+  ["28 regular", "the medium Kino titles (faint, clipText with the ELLIPSIS) — the one 28 that isn't bold"],
   ["STAT.value · 28 bold", "values: high/low, precipitation, wind, the days' temperatures, the exercise legend"],
   ["small · 24", "“heute ab 18:00”, “+ 3 weitere”, the Wörter, the pills and cinema letters (bold)"],
 ];
@@ -234,6 +271,7 @@ writeFileSync(
   ${groups.map((g) => `<h2 id="${g}">${g}</h2>\n  ${sections.filter((s) => s.group === g).map((s) => `<section><h3>${s.title}</h3><p>${s.sub}</p><img src="${s.file}" width="1448" height="${s.h}" alt="${s.title}"></section>`).join("\n  ")}`).join("\n  ")}
   <h2 id="Audit">Where the tokens are used</h2>
   <section><h3>Type</h3><p>Five sizes, plus the stat value.</p>${table(["Token", "Used for"], typeAudit)}</section>
+  <section><h3>Sizes</h3><p>Named by span (design.mjs TILE_SIZES); each module lists the sizes it draws, and screens.mjs T() refuses any other.</p>${table(["Size", "Span", "Modules"], Object.entries(TILE_SIZES).map(([size, [c, r]]) => [size, `${c} × ${r}`, Object.keys(MODULES).filter((m) => MODULES[m].sizes.includes(size)).join(", ")]))}</section>
   <section><h3>Color</h3><p>Four inks on paper (inverted on dark tiles), plus the passed dots and the fill.</p>${table(["Gray", "Token", "Used for"], inkAudit)}</section>
 </main>`,
 );

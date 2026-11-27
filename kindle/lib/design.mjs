@@ -35,6 +35,15 @@ export const cell = (col, row, cols = 1, rows = 1) => ({
 });
 
 /**
+ * Tile sizes (Phase 16), named by span: small 2 × 1 (the date, the Feld),
+ * medium 2 × 2 (Wetter, Bewegung), large 4 × 2 (Kino, Ausdruck). A tile
+ * gets its size from its span (screens.mjs T()); each module lists the
+ * sizes it draws (`sizes`), so a layout can't put a card where it won't fit.
+ */
+export const TILE_SIZES = { small: [2, 1], medium: [2, 2], large: [4, 2] };
+export const tileSize = (cols, rows) => Object.keys(TILE_SIZES).find((k) => TILE_SIZES[k][0] === cols && TILE_SIZES[k][1] === rows);
+
+/**
  * Tile spacing (Phase 14): a tile's first line puts its capitals FIRST_CAP
  * below the content box's top (baseline = FIRST_CAP + 0.716 × size, Arimo's
  * cap height); its last line sits on the content box's bottom edge.
@@ -177,6 +186,29 @@ export function exactWidth(str, style) {
   const s = style.caps ? str.toUpperCase() : str;
   const w = style.weight === "bold" ? boldTextWidth(s, style.size) : regularTextWidth(s, style.size);
   return w + (style.spacing ?? 0) * Math.max(0, [...s].length - 1);
+}
+
+/**
+ * The ellipsis (Phase 16): three periods set ELLIPSIS.spacing em closer —
+ * about two thirds of the "…" glyph's width (19 px instead of 28 at 28) —
+ * so a clipped line keeps more of its text. clipText() draws a line cut
+ * mid-word to end in it.
+ */
+export const ELLIPSIS = { str: "...", spacing: -1 / 14 };
+const ellipsisStyle = (style) => ({ ...style, spacing: Math.round(style.size * ELLIPSIS.spacing * 10) / 10 });
+
+/**
+ * `str` at (x, y) in `style`, fitting `w`: whole when it fits, otherwise cut
+ * mid-word (not at a word, as wrap() does) and ended with the ELLIPSIS.
+ * Measured with exactWidth(), so the dots end at x + w.
+ */
+export function clipText(x, y, str, style, w) {
+  if (exactWidth(str, style) <= w) return text(x, y, str, style);
+  const dots = ellipsisStyle(style);
+  const dotsW = exactWidth(ELLIPSIS.str, dots);
+  let t = str;
+  while (t && exactWidth(t, style) + dotsW > w) t = t.slice(0, -1).trimEnd();
+  return text(x, y, t, style) + text(x + exactWidth(t, style), y, ELLIPSIS.str, dots);
 }
 
 /** Largest size ≤ style.size (in 2 px steps) at which `str` fits `maxWidth`. */

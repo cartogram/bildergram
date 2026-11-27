@@ -16,6 +16,8 @@
 //     screen has been downloaded;
 //   - the "Aktualisiere …" piece shown during a check-in;
 //   - layout.env with the eips paste positions (from screens.mjs).
+// It also checks that every Ausdruck and Präposition fits its card at
+// each size the module draws (Phase 16).
 //
 // One bundle per device (kindle/lib/devices.mjs), drawn at its size:
 // kindle/dist/<device>/
@@ -31,7 +33,10 @@ import { W, encodePng, initRenderer, paste, rasterize, rotate, rotatedOrigin, sv
 import * as tempelhof from "./lib/modules/tempelhof.mjs";
 import { buildSchedule, hhmm, nextEvent } from "./lib/schedule.mjs";
 import * as datum from "./lib/modules/datum.mjs";
-import { HOURLY_SCREENS, SCREENS, boxSvg, deviceBoxes, moduleBox, screenSvg } from "./lib/screens.mjs";
+import { HOURLY_SCREENS, SCREENS, boxSvg, deviceBoxes, moduleBox, screenSvg, tileAt } from "./lib/screens.mjs";
+import { TILE_SIZES } from "./lib/design.mjs";
+import * as ausdruck from "./lib/modules/ausdruck.mjs";
+import * as praeposition from "./lib/modules/praeposition.mjs";
 import { getTemplehofStatus } from "./lib/templehof.ts";
 
 const REPO = fileURLToPath(new URL("..", import.meta.url));
@@ -110,6 +115,29 @@ function renderRegion(svg, P, width) {
   return out;
 }
 
+/**
+ * Fit check (Phase 16): every Ausdruck and Präposition at each card size
+ * must fit without overflowing or cutting a line short. Returns a summary
+ * line (how many keep their Wörter, shrink, or lose the example).
+ */
+function verifyCards() {
+  const asCard = (e) => ({ ausdruck: e.wort, bedeutung: `+ ${e.kasus} · ${e.bedeutung}`, beispiel: e.beispiel });
+  const sets = [["Ausdruck", ausdruck.loadEntries()], ["Präposition", praeposition.loadEntries().map(asCard)]];
+  const out = [];
+  for (const size of ausdruck.sizes) {
+    const [cols, rows] = TILE_SIZES[size];
+    const box = moduleBox(tileAt("ausdruck", [0, 0, cols, rows]));
+    for (const [name, entries] of sets) {
+      const fits = entries.map((e) => ausdruck.fit(box, e));
+      const bad = fits.findIndex((f) => !f.fits);
+      if (bad >= 0) throw new Error(`${name} ${bad} („${entries[bad].ausdruck}“) doesn't fit the ${size} card`);
+      const n = (f) => fits.filter(f).length;
+      out.push(`${size} ${name} ${entries.length}: ${n((f) => f.words)} with Wörter, ${n((f) => f.k < 1)} shrunk, ${n((f) => !f.example)} without example`);
+    }
+  }
+  return out.join("; ");
+}
+
 const fixture = {
   date: "2026-11-23",
   battery: 84,
@@ -135,6 +163,7 @@ await initRenderer();
 const now = Date.now();
 const events = buildSchedule(now, YEARS);
 const checked = verifySchedule(events, now);
+const cardFit = verifyCards();
 const bgKeys = [...new Set(events.map((e) => e.bg))];
 // Gauge label pairs "since-target" (e.g. "1800-0700") per state: the previous event's time and the next one's.
 const gaugePairs = { open: new Set(), closed: new Set() };
@@ -282,5 +311,5 @@ for (const deviceId of Object.keys(DEVICES)) {
 console.log(
   `kindle/dist: ${events.length} Tempelhof events (${YEARS}y, verified at ${checked} instants), ` +
     `${bgKeys.length} panels/variant, countdown to ${maxMinutes} min — ${((performance.now() - t0) / 1000).toFixed(1)}s\n  ` +
-    summary.join("\n  "),
+    summary.join("\n  ") + `\n  cards fit: ${cardFit}`,
 );

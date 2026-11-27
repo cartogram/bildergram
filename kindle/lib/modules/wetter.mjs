@@ -14,6 +14,7 @@ import { deNumber, deWeekdayShort, firstBaseline, STAT, text, TILE_INK, TILE_TYP
 
 export const id = "wetter";
 export const cadence = "hourly";
+export const sizes = ["medium"];
 
 /** Tempelhofer Feld. */
 export const DEFAULT_LOCATION = { lat: 52.473, lon: 13.401 };
