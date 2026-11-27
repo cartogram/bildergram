@@ -13,7 +13,6 @@ import { entryFor } from "./modules/ausdruck.mjs";
 import { parseFitness } from "./modules/fitness.mjs";
 import { entryFor as praepositionFor } from "./modules/praeposition.mjs";
 import { entryFor as wortFor } from "./modules/wort.mjs";
-import { SAMPLE as fondfolioSample } from "./modules/fondfolio.mjs";
 import { moonState } from "./modules/mond.mjs";
 import { fetchWeather } from "./modules/wetter.mjs";
 import { berlinParts, buildSchedule, tempelhofState } from "./schedule.mjs";
@@ -35,7 +34,7 @@ export function kinoDay(ms) {
  * fetched. `now` (ms) drives the Tempelhof state for full renders.
  */
 export async function screenData(id, {
-  date = berlinDate(), battery = null, cinemas = DEFAULT_CINEMAS, from = "18:00", letterboxd = null, hidden = [], fitness = null, foto = null, token = null, now = Date.now(),
+  date = berlinDate(), battery = null, cinemas = DEFAULT_CINEMAS, from = "18:00", letterboxd = null, hidden = [], fitness = null, foto = null, fondfolio = null, token = null, now = Date.now(),
 } = {}) {
   const modules = new Set(SCREENS[id].boxes.map((b) => b.module));
   const data = { date, battery };
@@ -70,8 +69,8 @@ export async function screenData(id, {
       })
       .catch((err) => console.error("[screen] photo unavailable:", err)));
   }
-  // A mock-up until Fondfolio's API exists.
-  if (modules.has("fondfolio")) data.fondfolio = fondfolioSample;
+  // Fondfolio's orders this month (the hub fetches it); without it the card shows a dash.
+  if (modules.has("fondfolio")) data.fondfolio = fondfolio === null ? null : { count: fondfolio };
   // The moon at noon on the day (the base is drawn once a day).
   if (modules.has("mond")) data.mond = moonState(Date.parse(`${date}T11:00:00Z`));
   // Exercise minutes come from the hub (the iPhones post them there).

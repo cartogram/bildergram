@@ -11,6 +11,9 @@ interface HubSecrets {
   /** Each iPhone's bearer token for POST /api/fitness (src/routes/fitness.ts) */
   FITNESS_TOKEN_MATT?: string;
   FITNESS_TOKEN_FIONA?: string;
+  /** Bearer token for Fondfolio's orders-this-month endpoint (FONDFOLIO_URL); without it the card shows a dash. */
+  FONDFOLIO_TOKEN?: string;
+  FONDFOLIO_URL?: string;
 }
 
 /**

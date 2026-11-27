@@ -35,6 +35,26 @@ export const SCREENS = {
 } as const;
 export type Screen = keyof typeof SCREENS;
 
+/** Screens with the Fondfolio card (kindle/lib/screens.mjs): they get this month's order count. */
+const FONDFOLIO_SCREENS = new Set<string>(["fiona"]);
+
+/**
+ * This month's Fondfolio orders, from Fondfolio's dashboard (FONDFOLIO_URL,
+ * Bearer FONDFOLIO_TOKEN), or null when it isn't configured or doesn't
+ * answer within 3 s — the card then shows a dash rather than holding up the screen.
+ */
+async function fondfolioOrders(env: AppEnv): Promise<number | null> {
+  if (!env.FONDFOLIO_URL || !env.FONDFOLIO_TOKEN) return null;
+  try {
+    const res = await fetch(env.FONDFOLIO_URL, { headers: { Authorization: `Bearer ${env.FONDFOLIO_TOKEN}` }, signal: AbortSignal.timeout(3000) });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { orders?: unknown };
+    return Number.isInteger(body.orders) && (body.orders as number) >= 0 ? (body.orders as number) : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Screens with a Foto tile (kindle/lib/screens.mjs): they get the day's photo. */
 const FOTO_SCREENS = new Set<string>(["matt"]);
 
@@ -163,6 +183,11 @@ async function renderScreen(env: AppEnv, device: string, config: KindleConfig, p
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   // Screens with the fitness module get everyone's exercise minutes (the iPhones post them here).
   if (FITNESS_SCREENS.has(params.screen)) url.searchParams.set("fitness", await fitnessParam(env, params.date ?? berlinToday()));
+  // Screens with the Fondfolio card get this month's order count (left out when Fondfolio doesn't answer).
+  if (FONDFOLIO_SCREENS.has(params.screen)) {
+    const orders = await fondfolioOrders(env);
+    if (orders !== null) url.searchParams.set("fondfolio", String(orders));
+  }
   // Screens with a Foto tile get the day's photo: the renderer fetches it from this hub with its token.
   if (FOTO_SCREENS.has(params.screen)) {
     const photo = await photoFor(env, device, params.date ?? berlinToday());

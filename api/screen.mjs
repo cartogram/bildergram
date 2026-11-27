@@ -6,6 +6,7 @@
 //        &letterboxd=<user>&hide=<yorck film slugs>   (IM KINO: leave out seen/hidden films)
 //        &fitness=<JSON { people: [{ name, goal, days, syncedAt }] }>   (from the hub)
 //        &foto=<the hub's /api/photos/<id>.png>   (the day's photo; fetched with the token)
+//        &fondfolio=<n>   (Fondfolio's orders this month, from the hub)
 //     → PNG of the screen's base: everything the server draws (top bar,
 //       weather, cinema listing, phrase), Kindle-drawn boxes (Tempelhof)
 //       left blank, rotated 8-bit gray for eips, at the device's size
@@ -50,12 +51,14 @@ export async function GET(request) {
     // Validated by the module (parseFitness); a bad parameter just means no data.
   }
 
+  // Fondfolio's orders this month (from the hub); absent or malformed → the card shows a dash.
+  const fondfolio = /^\d{1,4}$/.test(q.get("fondfolio") ?? "") ? Number(q.get("fondfolio")) : null;
   // The day's photo: only a hub photo URL (https, or a local hub in development).
   const fotoParam = q.get("foto") ?? "";
   const foto = /^(https:\/\/[^/\s]+|http:\/\/(localhost|127\.0\.0\.1)(:\d+)?)\/api\/photos\/[a-z0-9]+\.png$/.test(fotoParam) ? fotoParam : null;
 
   try {
-    const png = await renderScreen(screen, { date, battery, cinemas, from, letterboxd, hidden, fitness, foto, token: process.env.RENDERER_TOKEN }, q.get("preview") ? "full" : "base", device);
+    const png = await renderScreen(screen, { date, battery, cinemas, from, letterboxd, hidden, fitness, foto, fondfolio, token: process.env.RENDERER_TOKEN }, q.get("preview") ? "full" : "base", device);
     return new Response(png, { headers: { "content-type": "image/png", "cache-control": "no-store" } });
   } catch (err) {
     // Shows up in the Vercel function logs (e.g. Open-Meteo or yorck.de being down).

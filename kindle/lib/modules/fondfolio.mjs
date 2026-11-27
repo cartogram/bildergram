@@ -1,10 +1,10 @@
 // ============================================================
-// Module: Fondfolio (Phase 17, a mock-up)
+// Module: Fondfolio (Phase 17)
 // Fondfolio Sales this month: one number, usually between 1 and 10, laid
 // out like the Feld tile — the number large and left-aligned above, "Fondfolio
-// Sales" / "this month" at the bottom left. A small card. The number will come
-// from Fondfolio's API (not built yet); until then the renderer passes a
-// sample, and without one the card shows a dash.
+// Sales" / "this month" at the bottom left. A small card. The number is
+// the orders placed this month, from Fondfolio's dashboard
+// (/api/stats/orders-this-month, fetched by the hub); without it, a dash.
 //
 // Cadence: daily.
 // ============================================================
@@ -14,9 +14,6 @@ import { text, TILE_TYPE } from "../design.mjs";
 export const id = "fondfolio";
 export const cadence = "daily";
 export const sizes = ["small"];
-
-/** Until Fondfolio's API exists: the number the renderer shows. */
-export const SAMPLE = { count: 7 };
 
 /** The two lines' spacing, as on the Feld tile (tempelhof.mjs LEAD). */
 const LEAD = 32;

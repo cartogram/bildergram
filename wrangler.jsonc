@@ -16,7 +16,9 @@
   // Vercel screen renderer (api/screen.mjs). Secrets: ADMIN_TOKEN,
   // RENDERER_TOKEN, DEVICE_TOKEN_KINDLE_01 (wrangler secret put).
   "vars": {
-    "RENDERER_URL": "https://bildergram-kino.vercel.app"
+    "RENDERER_URL": "https://bildergram-kino.vercel.app",
+    // Fondfolio's orders this month, for the Fondfolio Sales card (Bearer FONDFOLIO_TOKEN, a secret).
+    "FONDFOLIO_URL": "https://my.fondfolio.com/api/stats/orders-this-month"
   },
 
   // No cron triggers: the Kindle checks in when it needs data. The explicit
