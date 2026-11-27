@@ -1,11 +1,12 @@
 // ============================================================
 // Worker Entry Point — Kindle hub (Phase 7)
-// The Kindle dashboard checks in here for its schedule and the
+// The Kindle dashboard checks in here for its screen and the
 // screens (rendered by the Vercel function at RENDERER_URL); the
-// iPhones post exercise minutes; the admin SPA edits schedules and
-// goals. Everything else is the SPA.
+// iPhones post exercise minutes; the admin SPA edits each Kindle's
+// screen and the goals, and shows the Design. Everything else is the SPA.
 // ============================================================
 
+import { handleDesignAdmin } from "./routes/design";
 import { handleFitnessAdmin, handleFitnessPhone } from "./routes/fitness";
 import { handleKindleAdmin, handleKindleDevice } from "./routes/kindle";
 
@@ -24,6 +25,9 @@ export default {
     }
     if (path === "/api/admin/fitness") {
       return handleFitnessAdmin(request, env);
+    }
+    if (path === "/api/admin/design" || path.startsWith("/api/admin/design/")) {
+      return handleDesignAdmin(request, env);
     }
     if (path.startsWith("/api/")) {
       return Response.json({ error: "not found" }, { status: 404 });

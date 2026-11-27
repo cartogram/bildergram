@@ -26,3 +26,4 @@ worker-configuration.d.ts
 kindle/dist/
 .vercel
 .env*
+.worktrees

@@ -10,7 +10,7 @@
 // (both, as many days as fit).
 // ============================================================
 
-import { deNumber, deWeekdayShort, firstBaseline, STAT, text, TILE_INK, TILE_TYPE, weatherIcon, width } from "../design.mjs";
+import { deNumber, deWeekdayShort, firstBaseline, LIST, STAT, text, TILE_INK, TILE_TYPE, weatherIcon, width } from "../design.mjs";
 
 export const id = "wetter";
 export const cadence = "hourly";
@@ -95,16 +95,19 @@ function header(box, w) {
  * right-aligned in one, highs in the other), so they line up row to row.
  */
 function dayRows(box, w, bottom, minY) {
+  // In the list rows' size (design.mjs LIST, like the Kino listing): the day and the temperatures bold.
   const days = w.days.slice(1);
-  const n = Math.min(days.length, Math.floor((bottom - minY) / STAT.lead) + 1);
-  const highW = Math.ceil(width("−10°", STAT.value)) + 14;
+  const n = Math.min(days.length, Math.floor((bottom - minY) / LIST.lead) + 1);
+  const bold = { size: LIST.size, weight: "bold" };
+  const highW = Math.ceil(width("−10°", bold)) + 14;
+  const icon = 46;
   let svg = "";
   days.slice(0, n).forEach((d, i) => {
-    const y = bottom - (n - 1 - i) * STAT.lead;
-    svg += weatherIcon(d.code, -2, y - 32, 40);
-    svg += text(52, y, deWeekdayShort(d.date), TILE_TYPE.label);
-    svg += text(box.w - highW, y, deNumber(Math.round(d.min) || 0), { ...STAT.value, ink: TILE_INK.faint }, { anchor: "end" });
-    svg += text(box.w, y, deg(d.max), { ...STAT.value, ink: TILE_INK.ink }, { anchor: "end" });
+    const y = bottom - (n - 1 - i) * LIST.lead;
+    svg += weatherIcon(d.code, -2, y - 38, icon);
+    svg += text(icon + 12, y, deWeekdayShort(d.date), bold);
+    svg += text(box.w - highW, y, deNumber(Math.round(d.min) || 0), { ...bold, ink: TILE_INK.faint }, { anchor: "end" });
+    svg += text(box.w, y, deg(d.max), { ...bold, ink: TILE_INK.ink }, { anchor: "end" });
   });
   return svg;
 }

@@ -12,7 +12,7 @@
 // Data: kindle/lib/kino.mjs → fetchProgramme(slugs).
 // ============================================================
 
-import { CIRCLE_LABEL, circleLabel, clipText, exactWidth, firstBaseline, STAT, text, TILE_INK, TILE_TYPE, width } from "../design.mjs";
+import { CIRCLE_LABEL, circleLabel, clipText, exactWidth, firstBaseline, LIST, STAT, text, TILE_INK, TILE_TYPE, width } from "../design.mjs";
 import { wrap } from "../eink.mjs";
 
 export const id = "kino";
@@ -45,21 +45,22 @@ export function render(box, programme, { date, day = "heute", from = "18:00" } =
   return svg + (medium ? rowsMedium(box, rows, letters) : list(box, rows, letters));
 }
 
-/** Large: one row per screening — time, title, the cinema's letter. */
+/** Large: one row per screening — time, title, the cinema's letter — in the list rows' size (design.mjs LIST, like the weather's next days). */
 function list(box, rows, letters) {
   let svg = "";
-  const timeW = Math.ceil(width("00:00", { ...ROW, weight: "bold" })) + 18;
+  const row = { size: LIST.size };
+  const timeW = Math.ceil(width("00:00", { ...row, weight: "bold" })) + 18;
   const titleW = box.w - timeW - CIRCLE_LABEL.d - 20;
   // Rows from ROWS_TOP down to the bottom edge; when some are left out,
   // the last row's place goes to "+ n weitere" (on the bottom line).
-  let fit = Math.floor((box.h - ROWS_TOP) / ROW_LEAD) + 1;
-  if (fit < rows.length) fit = Math.floor((box.h - MORE - ROWS_TOP) / ROW_LEAD) + 1;
+  let fit = Math.floor((box.h - ROWS_TOP) / LIST.lead) + 1;
+  if (fit < rows.length) fit = Math.floor((box.h - MORE - ROWS_TOP) / LIST.lead) + 1;
   rows.slice(0, fit).forEach((r, i) => {
-    const y = ROWS_TOP + i * ROW_LEAD;
-    svg += text(0, y, r.time, { ...ROW, weight: "bold" });
-    svg += text(timeW, y, wrap(r.title, ROW.size, titleW, 1)[0], ROW);
+    const y = ROWS_TOP + i * LIST.lead;
+    svg += text(0, y, r.time, { ...row, weight: "bold" });
+    svg += text(timeW, y, wrap(r.title, row.size, titleW, 1)[0], row);
     // The cinema's letter in a circle, centred on the row's lowercase letters.
-    svg += circleLabel(box.w - CIRCLE_LABEL.d / 2, y - Math.round(ROW.size * 0.36), letters.get(r.cinema));
+    svg += circleLabel(box.w - CIRCLE_LABEL.d / 2, y - Math.round(row.size * 0.36), letters.get(r.cinema));
   });
   if (fit < rows.length) svg += text(0, box.h, `+ ${rows.length - fit} weitere`, SMALL);
   return svg;

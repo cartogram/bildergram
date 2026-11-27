@@ -353,3 +353,91 @@ input[type="text"] {
   gap: 10px 16px;
   align-items: center;
 }
+
+/* ---------- Views and the Design view (Phase 16) ---------- */
+
+.views {
+  display: flex;
+  gap: 4px;
+}
+
+.view {
+  color: var(--text);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 14px;
+}
+
+.view.active {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+
+#design {
+  display: grid;
+  gap: 16px;
+}
+
+.card h3 {
+  font-size: 15px;
+  margin-top: 10px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table-wrap table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+}
+
+.table-wrap th,
+.table-wrap td {
+  text-align: left;
+  vertical-align: top;
+  padding: 6px 10px 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.table-wrap th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.sw {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--muted);
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: -2px;
+}
+
+.specimen {
+  display: grid;
+  gap: 6px;
+}
+
+.specimen figcaption {
+  font-size: 14px;
+}
+
+.specimen .preview {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  display: grid;
+  place-items: center;
+}
+
+.specimen .preview img {
+  border: 0;
+  border-radius: 6px;
+}

@@ -20,7 +20,7 @@ import { SCREENS, boxSvg, moduleBox, moduleSvg, screenSvg, tileAt } from "./lib/
 import { cell, TILE_PAD } from "./lib/design.mjs";
 import * as wetter from "./lib/modules/wetter.mjs";
 import { svgOpen, W, H } from "./lib/eink.mjs";
-import { sampleProgramme } from "./samples.mjs";
+import { sampleProgramme } from "./lib/samples.mjs";
 
 const OUT = fileURLToPath(new URL("./dist/gallery/", import.meta.url));
 mkdirSync(OUT, { recursive: true });

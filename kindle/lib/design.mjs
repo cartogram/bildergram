@@ -117,6 +117,13 @@ export function circleLabel(cx, cy, str, { fill = INK.primary, ink = INK.paper }
  * weather's details and days and the exercise legend, so they read alike.
  */
 export const STAT = { value: { size: 28, weight: "bold" }, lead: 38 };
+
+/**
+ * List rows (Phase 16): the Kino listing and the weather's next days read
+ * alike — 36 px, 48 apart (the stat rows' 28/38 in proportion); the lead
+ * item (time, day) bold.
+ */
+export const LIST = { size: 36, lead: 48 };
 export function statRow(x, y, w, label, parts, { labelX = x, labelInk = TILE_INK.ink } = {}) {
   let svg = text(labelX, y, label, { ...TILE_TYPE.label, ink: labelInk });
   let right = x + w;

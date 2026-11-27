@@ -1,8 +1,10 @@
 // ============================================================
-// Admin SPA — Kindle dashboards (Phase 9–10; one screen each, Phase 15)
+// Admin SPA — Kindle dashboards (Phase 9–10; one screen each, Phase 15;
+// Design, Phase 16)
 // For each Kindle: shows its last check-in and battery history, edits
 // its screen, check-in interval and cinemas, and previews the screen at
-// its size. For both: the weekly exercise goals and each iPhone's
+// its size. The Design view (#design) shows the tile design: tokens and
+// every card, rendered by the renderer (kindle/lib/specimens.mjs). For both: the weekly exercise goals and each iPhone's
 // last sync (Phase 12). Talks to /api/admin/* with the admin token (asked
 // for once and kept in this browser's localStorage).
 // ============================================================
@@ -166,7 +168,7 @@ function renderLogin(message = ""): void {
   document.getElementById("login")!.addEventListener("submit", (e) => {
     e.preventDefault();
     setToken((document.getElementById("token") as HTMLInputElement).value.trim());
-    void load();
+    route();
   });
 }
 
@@ -274,6 +276,7 @@ function render(state: AdminState): void {
     <main>
       <header class="top">
         <h1>Kindle dashboard</h1>
+        ${navHtml("kindles")}
         <div class="tabs" role="tablist" aria-label="Kindle">
           ${state.devices.map((d) => `<button type="button" role="tab" class="tab device-tab" data-device="${d.id}" aria-selected="${d.id === state.device}">${escapeHtml(d.name)}</button>`).join("")}
         </div>
@@ -393,7 +396,7 @@ async function loadFitness(): Promise<void> {
       if (!res.ok || !body.people) throw new Error(body.error ?? `HTTP ${res.status}`);
       box.innerHTML = fitnessHtml(body.people);
       const m = document.getElementById("fitness-msg");
-      if (m) m.textContent = "Saved. Nacht shows the new goals from the next check-in.";
+      if (m) m.textContent = "Saved. The screens show the new goals from the next check-in.";
     } catch (err) {
       if ((err as Error).message === "unauthorized") return;
       if (msg) {
@@ -505,4 +508,141 @@ async function load(): Promise<void> {
   }
 }
 
-void load();
+// ------------------------------------------------------------------
+// Design (#design)
+// ------------------------------------------------------------------
+
+interface DesignInfo {
+  rendered: string;
+  tokens: {
+    grid: { cols: number; rows: number; col: number; row: number; gap: number; margin: number; pad: number; radius: number; firstCap: number; canvas: { w: number; h: number }; note: string };
+    sizes: { name: string; cols: number; rows: number; w: number; h: number; modules: string[] }[];
+    type: { name: string; size: number; bold: boolean; lead?: number; use: string }[];
+    inks: { name: string; hex: string; dark: string; use: string }[];
+    extraGrays: { hex: string; use: string }[];
+    tileStyles: { name: string; use: string }[];
+    components: { name: string; use: string }[];
+  };
+  specimens: { group: string; title: string; sub: string; h: number }[];
+}
+
+let designUrls: string[] = [];
+
+/** The top-level views: the Kindles (default) and the Design. */
+function navHtml(active: "kindles" | "design"): string {
+  const link = (href: string, view: "kindles" | "design", label: string) =>
+    `<a href="${href}" class="view${active === view ? " active" : ""}"${active === view ? ' aria-current="page"' : ""}>${label}</a>`;
+  return `<nav class="views" aria-label="View">${link("#", "kindles", "Kindles")}${link("#design", "design", "Design")}</nav>`;
+}
+
+const table = (head: string[], rows: string[][]) =>
+  `<div class="table-wrap"><table><thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows
+    .map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`)
+    .join("")}</tbody></table></div>`;
+const swatch = (hex: string) => (hex ? `<span class="sw" style="background:${escapeHtml(hex)}"></span><code>${escapeHtml(hex)}</code>` : "");
+
+function designHtml(d: DesignInfo): string {
+  const t = d.tokens;
+  const g = t.grid;
+  const groups = [...new Set(d.specimens.map((s) => s.group))];
+  return `
+    <section class="card">
+      <h2>Tokens</h2>
+      <p class="muted">The tiles as the Kindle draws them: Arimo, the panel's 16 grays, the ${g.canvas.w} × ${g.canvas.h} canvas (the Paperwhite 2 draws it at 71 %). Rendered ${escapeHtml(d.rendered)}.</p>
+      <h3>Grid</h3>
+      <p class="muted">${escapeHtml(g.note)}</p>
+      ${table(["Cells", "Cell", "Gap", "Margin", "Padding", "Radius", "First line"], [[`${g.cols} × ${g.rows}`, `${g.col} × ${g.row}`, `${g.gap}`, `${g.margin}`, `${g.pad}`, `${g.radius}`, `capitals ${g.firstCap} below the top`]])}
+      <h3>Sizes</h3>
+      ${table(["Size", "Span", "Tile", "Modules"], t.sizes.map((s) => [escapeHtml(s.name), `${s.cols} × ${s.rows}`, `${s.w} × ${s.h}`, escapeHtml(s.modules.join(", "))]))}
+      <h3>Type</h3>
+      ${table(["Token", "Size", "Weight", "Used for"], t.type.map((x) => [escapeHtml(x.name), `${x.size}${x.lead ? ` / ${x.lead}` : ""}`, x.bold ? "bold" : "regular", escapeHtml(x.use)]))}
+      <h3>Inks</h3>
+      ${table(["Token", "On paper", "On dark", "Used for"], [
+        ...t.inks.map((x) => [escapeHtml(x.name), swatch(x.hex), swatch(x.dark), escapeHtml(x.use)]),
+        ...t.extraGrays.map((x) => ["—", swatch(x.hex), "", escapeHtml(x.use)]),
+      ])}
+      <h3>Tile styles</h3>
+      ${table(["Style", "Used for"], t.tileStyles.map((x) => [escapeHtml(x.name), escapeHtml(x.use)]))}
+      <h3>Components</h3>
+      ${table(["Component", "Used for"], t.components.map((x) => [`<code>${escapeHtml(x.name)}</code>`, escapeHtml(x.use)]))}
+    </section>
+    ${groups
+      .map(
+        (group) => `<section class="card">
+      <h2>${escapeHtml(group)}</h2>
+      ${d.specimens
+        .map((s, i) => ({ s, i }))
+        .filter(({ s }) => s.group === group)
+        .map(({ s, i }) => `<figure class="specimen">
+          <figcaption><strong>${escapeHtml(s.title)}</strong> <span class="muted">${escapeHtml(s.sub)}</span></figcaption>
+          <div class="preview" id="specimen-${i}" style="aspect-ratio: 1448 / ${s.h}"><p class="muted">Rendering…</p></div>
+        </figure>`)
+        .join("")}
+    </section>`,
+      )
+      .join("")}`;
+}
+
+/** Load the specimens' images three at a time (each is a render on the renderer). */
+async function loadSpecimens(d: DesignInfo): Promise<void> {
+  let next = 0;
+  const worker = async () => {
+    while (next < d.specimens.length) {
+      const i = next++;
+      const box = document.getElementById(`specimen-${i}`);
+      if (!box) return; // the view changed
+      try {
+        const res = await api(`/api/admin/design/${i}.png`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const url = URL.createObjectURL(await res.blob());
+        designUrls.push(url);
+        box.innerHTML = `<img src="${url}" alt="${escapeHtml(d.specimens[i].title)}" width="1448" height="${d.specimens[i].h}">`;
+      } catch (err) {
+        if ((err as Error).message === "unauthorized") return;
+        box.innerHTML = `<p class="error">Unavailable: ${escapeHtml((err as Error).message)}</p>`;
+      }
+    }
+  };
+  await Promise.all([worker(), worker(), worker()]);
+}
+
+async function loadDesign(): Promise<void> {
+  if (!sessionToken) {
+    renderLogin();
+    return;
+  }
+  for (const u of designUrls) URL.revokeObjectURL(u);
+  designUrls = [];
+  app.innerHTML = `
+    <main>
+      <header class="top">
+        <h1>Kindle dashboard</h1>
+        ${navHtml("design")}
+        <button type="button" class="ghost" id="logout">Forget token</button>
+      </header>
+      <div id="design"><p class="muted">Loading the design…</p></div>
+    </main>`;
+  document.getElementById("logout")!.addEventListener("click", () => {
+    setToken(null);
+    renderLogin();
+  });
+  const box = document.getElementById("design")!;
+  try {
+    const res = await api("/api/admin/design");
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 120)}`);
+    const d = (await res.json()) as DesignInfo;
+    box.innerHTML = designHtml(d);
+    void loadSpecimens(d);
+  } catch (err) {
+    if ((err as Error).message !== "unauthorized") box.innerHTML = `<p class="error">Design unavailable: ${escapeHtml((err as Error).message)}</p>`;
+  }
+}
+
+/** Show the view the URL names. */
+function route(): void {
+  if (location.hash === "#design") void loadDesign();
+  else void load();
+}
+
+window.addEventListener("hashchange", route);
+route();

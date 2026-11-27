@@ -14,7 +14,7 @@
     "kindle:build": "node kindle/build.mjs",
     "kindle:install": "sh kindle/install.sh",
     "kindle:gallery": "node kindle/gallery.mjs",
-    "kindle:design": "node kindle/design-system.mjs",
+    "kindle:design": "node kindle/design.mjs",
     "renderer:dev": "node kindle/renderer-dev-server.mjs",
     "lint": "tsc --noEmit"
   },
