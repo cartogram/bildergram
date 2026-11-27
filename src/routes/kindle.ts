@@ -41,16 +41,31 @@ const FONDFOLIO_SCREENS = new Set<string>(["fiona"]);
 /**
  * This month's Fondfolio orders, from Fondfolio's dashboard (FONDFOLIO_URL,
  * Bearer FONDFOLIO_TOKEN), or null when it isn't configured or doesn't
- * answer within 3 s — the card then shows a dash rather than holding up the screen.
+ * answer within 8 s (a cold function and database can take a few
+ * seconds) — the card then shows a dash rather than holding up the
+ * screen. Failures are logged (wrangler tail, the Workers dashboard).
  */
 async function fondfolioOrders(env: AppEnv): Promise<number | null> {
-  if (!env.FONDFOLIO_URL || !env.FONDFOLIO_TOKEN) return null;
+  if (!env.FONDFOLIO_URL || !env.FONDFOLIO_TOKEN) {
+    console.warn("[fondfolio] not configured: FONDFOLIO_URL or FONDFOLIO_TOKEN missing");
+    return null;
+  }
+  const t0 = Date.now();
   try {
-    const res = await fetch(env.FONDFOLIO_URL, { headers: { Authorization: `Bearer ${env.FONDFOLIO_TOKEN}` }, signal: AbortSignal.timeout(3000) });
-    if (!res.ok) return null;
+    const res = await fetch(env.FONDFOLIO_URL, { headers: { Authorization: `Bearer ${env.FONDFOLIO_TOKEN}` }, signal: AbortSignal.timeout(8000) });
+    if (!res.ok) {
+      console.warn(`[fondfolio] HTTP ${res.status} after ${Date.now() - t0} ms: ${(await res.text()).slice(0, 120)}`);
+      return null;
+    }
     const body = (await res.json()) as { orders?: unknown };
-    return Number.isInteger(body.orders) && (body.orders as number) >= 0 ? (body.orders as number) : null;
-  } catch {
+    if (!Number.isInteger(body.orders) || (body.orders as number) < 0) {
+      console.warn(`[fondfolio] unexpected body after ${Date.now() - t0} ms: ${JSON.stringify(body).slice(0, 120)}`);
+      return null;
+    }
+    console.log(`[fondfolio] ${body.orders} orders (${Date.now() - t0} ms)`);
+    return body.orders as number;
+  } catch (err) {
+    console.warn(`[fondfolio] failed after ${Date.now() - t0} ms: ${err instanceof Error ? err.message : String(err)}`);
     return null;
   }
 }
