@@ -53,9 +53,8 @@ export function render(box, { date, battery, updating = false }) {
  * Where we are in time, to the right of the day (Phase 17; the Zeit card
  * folded into the date, for a tile with a birthday, `born`): two rows set
  * like the weather's next days — T (Tag) then W (Woche), each label just
- * right of the day — kept low in contrast, so the date stays the brightest thing on the tile: the labels faint, then
- * the year's count (faint, the "low") and the life's count (muted, the
- * "high"), right-aligned in two columns at the tile's right edge.
+ * right of the day — kept low in contrast, so the date stays the brightest thing on the tile: the labels faint, the numbers muted, then
+ * the year's count and the life's count, both muted, right-aligned in two columns at the tile's right edge.
  * `ys` are the rows' baselines; `style` their type; `labelX` where the T and W go.
  */
 export function timeRows(box, date, born, { ys = [75, 112], style = STAT.value, labelX = null } = {}) {
@@ -67,6 +66,6 @@ export function timeRows(box, date, born, { ys = [75, 112], style = STAT.value, 
   const highW = Math.ceil(width("00.000", style)) + 18;
   return rows.map(([label, year, life], i) =>
     (labelX === null ? "" : text(labelX, ys[i], label, { ...TILE_TYPE.label, ink: P.faint })) +
-    text(box.w - highW, ys[i], year, { ...style, ink: P.faint }, { anchor: "end" }) +
+    text(box.w - highW, ys[i], year, { ...style, ink: P.muted }, { anchor: "end" }) +
     text(box.w, ys[i], life, { ...style, ink: P.muted }, { anchor: "end" })).join("");
 }
