@@ -49,9 +49,9 @@ function T(module, [col, row, cols = 1, rows = 1], opts = {}) {
 export const toScreen = (b, r) => ({ x: b.x + r.x * GRID.scale, y: b.y + r.y * GRID.scale, w: r.w * GRID.scale, h: r.h * GRID.scale });
 
 // The tiles every screen shares.
-const DATE = T("datum", [0, 0], { tone: "dark" });
-/** Matt's date tile: the same cell and tone, with his day and week of the year and of his life (the Zeit card folded in). */
+/** Each Kindle's date tile: the same cell and tone, with the day and week of the year and of that person's life (the Zeit card folded in). */
 const DATE_MATT = T("datum", [0, 0], { tone: "dark", born: "1987-12-12" });
+const DATE_FIONA = T("datum", [0, 0], { tone: "dark", born: "1986-08-20" });
 /** Kindle-drawn: `variant` names its piece set; one set serves every screen (same cell, same tone). */
 const FELD = T("tempelhof", [0, 1], { variant: "feld", tone: "light" });
 
@@ -78,7 +78,7 @@ export const SCREENS = {
   fiona: {
     name: "Fiona",
     boxes: [
-      DATE,
+      DATE_FIONA,
       T("wort", [0, 1], { tone: "light" }),
       T("wetter", [1, 0, 1, 2], { variant: "mixed", tone: "fill" }),
       T("fitness", [2, 0, 1, 2], { variant: "person", person: "Fiona", tone: "dark" }),
