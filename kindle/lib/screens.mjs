@@ -72,14 +72,14 @@ export const SCREENS = {
       T("foto", [0, 2], { tone: "bleed" }),
       T("kino", [1, 0, 1, 3], { tone: "light" }),
       T("fitness", [2, 0, 1, 2], { variant: "person", person: "Matt", tone: "dark" }),
-      T("wort", [2, 2], { tone: "light", offset: 183 }),
+      T("wort", [2, 2], { tone: "light", source: "phrase", offset: 183 }),
     ],
   },
   fiona: {
     name: "Fiona",
     boxes: [
       DATE_FIONA,
-      T("wort", [0, 1], { tone: "light" }),
+      T("wort", [0, 1], { tone: "light", source: "phrase" }),
       T("wetter", [1, 0, 1, 2], { variant: "mixed", tone: "fill" }),
       T("fitness", [2, 0, 1, 2], { variant: "person", person: "Fiona", tone: "dark" }),
       T("fondfolio", [2, 2], { tone: "light" }),
@@ -127,6 +127,8 @@ export function moduleSvg(b, data, mode = "full") {
   if (b.module === "zeit") return zeit.render(box, { date: data.date });
   if (b.module === "mond") return mond.render(box, data.mond);
   if (b.module === "fondfolio") return fondfolio.render(box, data.fondfolio);
+  // A phrase tile (source: "phrase") reads the Ausdruck list; a word tile with an `offset` its own word; otherwise the screen's.
+  if (b.module === "wort" && b.source === "phrase") return data.date ? wort.render(box, wort.phraseFor(data.date, b.offset ?? 0)) : "";
   if (b.module === "wort") return wort.render(box, b.offset && data.date ? wort.entryFor(data.date, undefined, b.offset) : data.wort);
   if (b.module === "fitness") return fitness.render(box, data.fitness, { date: data.date });
   if (b.module === "kino") return kino.render(box, data.kino.programme, { date: data.kino.date ?? data.date, day: data.kino.day ?? "heute", from: data.kino.from });

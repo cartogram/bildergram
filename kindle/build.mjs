@@ -34,7 +34,7 @@ import * as tempelhof from "./lib/modules/tempelhof.mjs";
 import { buildSchedule, hhmm, nextEvent } from "./lib/schedule.mjs";
 import * as datum from "./lib/modules/datum.mjs";
 import { HOURLY_SCREENS, SCREENS, boxSvg, deviceBoxes, moduleBox, screenSvg, tileAt, toScreen } from "./lib/screens.mjs";
-import { TILE_SIZES, width } from "./lib/design.mjs";
+import { TILE_SIZES } from "./lib/design.mjs";
 import * as ausdruck from "./lib/modules/ausdruck.mjs";
 import * as praeposition from "./lib/modules/praeposition.mjs";
 import * as wort from "./lib/modules/wort.mjs";
@@ -136,12 +136,15 @@ function verifyCards() {
       out.push(`${size} ${name} ${entries.length}: ${n((f) => f.words)} with Wörter, ${n((f) => f.k < 1)} shrunk, ${n((f) => !f.example)} without example`);
     }
   }
-  // The Wort des Tages: the German on one line, at MIN_SIZE at the smallest.
+  // The Wort des Tages card: every word, and every phrase (the Ausdruck list), must fit the small card.
   const wbox = moduleBox(tileAt("wort", [0, 0, ...TILE_SIZES.small]));
   const words = wort.loadEntries();
-  const tooWide = words.find((e) => width(e.wort, { size: wort.MIN_SIZE, weight: "bold" }) > wbox.w);
-  if (tooWide) throw new Error(`Wort des Tages „${tooWide.wort}“ doesn't fit the small card`);
-  out.push(`Wort des Tages ${words.length}: ${words.filter((e) => wort.germanSize(wbox, e) < 36).length} shrunk`);
+  const phrases = ausdruck.loadEntries().map((e) => ({ wort: e.ausdruck, en: e.bedeutung }));
+  for (const [name, list] of [["word", words], ["phrase", phrases]]) {
+    const bad = list.find((e) => !wort.layout(wbox, e).fits);
+    if (bad) throw new Error(`Wort des Tages ${name} „${bad.wort}“ doesn't fit the small card`);
+  }
+  out.push(`Wort des Tages ${words.length} words, ${phrases.length} phrases: ${phrases.filter((e) => wort.germanSize(wbox, e) < 36).length} phrases shrunk`);
   return out.join("; ");
 }
 
