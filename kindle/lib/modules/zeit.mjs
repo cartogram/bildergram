@@ -40,6 +40,9 @@ export function isoWeek(date) {
   return { week, weeks: weekOf(Date.UTC(year, 11, 28)).week };
 }
 
+/** The day of a life on `date`, counting the birthday as day 1. */
+export const lifeDay = (date, born) => Math.round((utc(date) - utc(born)) / DAY) + 1;
+
 /** The week of a life on `date`, counting the birthday's week as week 1. */
 export const lifeWeek = (date, born) => Math.floor((utc(date) - utc(born)) / DAY / 7) + 1;
 
