@@ -193,7 +193,8 @@ export function render(box, state) {
   const dateY = box.h - (PILL.h - PILL.above); // the dates (and today's pill) on the bottom edge
   // The moons between the title and the dates.
   const top = titleY + 16, bottom = dateY - PILL.above - 10;
-  const r = Math.min(col / 2 - 10, (bottom - top) / 2);
+  // The moons at 90 % of what fits, for air around them.
+  const r = Math.round(0.9 * Math.min(col / 2 - 10, (bottom - top) / 2));
   const cy = (top + bottom) / 2;
   let svg = text(box.w / 2, titleY, "Mondphasen", TILE_TYPE.label, { anchor: "middle" });
   moons.forEach((m, i) => {

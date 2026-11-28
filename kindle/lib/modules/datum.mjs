@@ -41,7 +41,8 @@ export function render(box, { date, battery, updating = false }) {
       labelX: Math.ceil(exactWidth(day, { size: 88, weight: "bold" })) - 4 + 14,
       ys: [112 - Math.round(88 * 0.716) + Math.round(STAT.value.size * 0.716), 112],
     }) : "") +
-    text(0, first, weekday, TILE_TYPE.label, ink("muted")) +
+    // The weekday, the day and the month all bright, as one date.
+    text(0, first, weekday, TILE_TYPE.label, ink("ink")) +
     // The day at 88, not the display 104: at 104 a month with a descender would touch the pill.
     text(-4, 112, day, { size: 88, weight: "bold" }, ink("ink")) +
     text(0, 150, month, TILE_TYPE.heading, ink("ink"))
