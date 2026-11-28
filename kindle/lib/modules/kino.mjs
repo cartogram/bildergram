@@ -1,7 +1,7 @@
 // ============================================================
 // Module: Im Kino (Phase 8; a tile since Phase 14)
 // The evening's screenings at the chosen Yorck cinemas in one list by
-// time, latest first (Phase 17): the time (bold), the title, the cinema's letter in a circle; as
+// time: the time (bold), the title, the cinema's letter in a circle; as
 // many as fit, then "+ n weitere". From 22:00 Berlin time the tile shows
 // tomorrow's listing ("morgen ab 18:00" — render.mjs kinoDay).
 // Medium (Phase 16) and tall (a full column, Phase 17) say just "heute"
@@ -33,8 +33,7 @@ const MORE = 40;
 export function render(box, programme, { date, day = "heute", from = "18:00" } = {}) {
   const rows = programme.cinemas
     .flatMap((c) => c.sessions.filter((s) => s.date === date && s.time >= from).map((s) => ({ ...s, cinema: c.name })))
-    // Latest first (Phase 17), then by title.
-    .sort((a, b) => b.time.localeCompare(a.time) || a.title.localeCompare(b.title));
+    .sort((a, b) => a.time.localeCompare(b.time) || a.title.localeCompare(b.title));
   const medium = box.size !== "large";
   const y1 = firstBaseline(TILE_TYPE.label.size);
   let svg = text(0, y1, "Im Kino", TILE_TYPE.label) + text(box.w, y1, medium ? day : `${day} ab ${from}`, SMALL, { anchor: "end" });
@@ -114,11 +113,11 @@ const TALL_LEAD = 84;
  * Tall (a full column, Phase 17): two lines per screening — the time in
  * the label style, then at the right its language versions in outlined
  * pills and the cinema's letter (all on the time's baseline), then the title on its own line
- * (28 regular, faint, cut with clipText at the column's width).
+ * (28 regular, muted, cut with clipText at the column's width).
  */
 function rowsTall(box, rows, letters) {
   const time = TILE_TYPE.label;
-  const title = { size: STAT.value.size, ink: TILE_INK.faint };
+  const title = { size: STAT.value.size, ink: TILE_INK.muted };
   const timeW = Math.ceil(exactWidth("00:00", time)) + 12;
   // A screening's last line is its title: it fits while that's on or above the bottom edge (or "+ n weitere").
   const fitting = (bottom) => Math.floor((bottom - TALL_DROP - ROWS_TOP) / TALL_LEAD) + 1;
