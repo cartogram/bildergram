@@ -170,15 +170,28 @@ gauge_step() {
 # Hub check-in (Wi-Fi on only for its duration)
 # ------------------------------------------------------------------
 
-wifi_up() {
+# Wi-Fi on, then wait up to $1 seconds for it to connect.
+wifi_try() {
   lipc-set-prop com.lab126.wifid enable 1 >/dev/null 2>&1
   _n=0
-  while [ $_n -lt 45 ]; do
+  while [ $_n -lt "$1" ]; do
     [ "$(lipc-get-prop com.lab126.wifid cmState 2>/dev/null)" = CONNECTED ] && return 0
     sleep 1
     _n=$((_n + 1))
   done
   return 1
+}
+
+# Wi-Fi on and connected. After many suspend/resume cycles (the Feld wakes
+# the Kindle every minute) wifid can wedge: enabled but never connecting,
+# until it's restarted (Matt's Paperwhite 3 failed every check-in for a day).
+# So when it doesn't connect, log its state, restart wifid and try once more.
+wifi_up() {
+  wifi_try 45 && return 0
+  log "Wi-Fi not connecting (cmState=$(lipc-get-prop com.lab126.wifid cmState 2>/dev/null || echo ?)): restarting wifid"
+  initctl restart wifid >/dev/null 2>&1 || { initctl stop wifid >/dev/null 2>&1; initctl start wifid >/dev/null 2>&1; }
+  sleep 5
+  wifi_try 45
 }
 
 wifi_down() {
